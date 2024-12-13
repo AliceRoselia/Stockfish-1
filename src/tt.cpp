@@ -235,12 +235,16 @@ std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) cons
     TTEntry* replace = tte;
     uint8_t least_valuable_entry = 255;
     for (int i = 1; i < ClusterSize; ++i)
+    {
         uint8_t entry_value = tte[i].depth8 - tte[i].relative_age(generation8) * 2;
         if ((replace->depth8 - replace->relative_age(generation8) * 2
             > entry_value) &&
             entry_value < least_valuable_entry)
+        {
             replace = &tte[i];
             least_valuable_entry = entry_value;
+        }
+    }
 
     return {false, TTData(), TTWriter(replace)};
 }
