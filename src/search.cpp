@@ -51,7 +51,8 @@
 #include "ucioption.h"
 
 namespace Stockfish {
-
+int soft_relative_history_constant = 1000;
+TUNE(SetRange(600,1400),soft_relative_history_constant);
 namespace TB = Tablebases;
 
 void syzygy_extend_pv(const OptionsMap&            options,
@@ -1349,7 +1350,7 @@ moves_loop:  // When in check, search starts here
         // remember it, to update its stats later.
 
         //Update: only if value is not much worse.
-        if (move != bestMove && moveCount <= 32 && (value + 1000 >= bestValue))
+        if (move != bestMove && moveCount <= 32 && (value + soft_relative_history_constant >= bestValue))
         {
             if (capture)
                 capturesSearched.push_back(move);
