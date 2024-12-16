@@ -120,7 +120,7 @@ void update_all_stats(const Position&      pos,
                       Square               prevSq,
                       ValueList<Move, 32>& quietsSearched,
                       ValueList<Move, 32>& capturesSearched,
-                      Depth                depth
+                      Depth                depth,
                       bool is_nullmove);
 
 }  // namespace
@@ -645,13 +645,13 @@ Value Search::Worker::search(
         {
             // Bonus for a quiet ttMove that fails high (~2 Elo)
             if (!ttCapture)
-                update_quiet_histories(pos, ss, *this, ttData.move, stat_bonus(depth));
+                update_quiet_histories(pos, ss, *this, ttData.move, stat_bonus(depth,(ss - 1)->currentMove != Move::null()));
 
             // Extra penalty for early quiet moves of
             // the previous ply (~1 Elo on STC, ~2 Elo on LTC)
             if (prevSq != SQ_NONE && (ss - 1)->moveCount <= 2 && !priorCapture)
                 update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
-                                              -stat_malus(depth + 1));
+                                              -stat_malus(depth + 1),(ss - 1)->currentMove != Move::null());
         }
 
         // Partial workaround for the graph history interaction problem
@@ -1217,7 +1217,7 @@ moves_loop:  // When in check, search starts here
                     value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
 
                 // Post LMR continuation history updates (~1 Elo)
-                int bonus = 2 * (value >= beta) * stat_bonus(newDepth);
+                int bonus = 2 * (value >= beta) * stat_bonus(newDepth,(ss - 1)->currentMove != Move::null());
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
             }
         }
