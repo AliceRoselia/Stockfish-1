@@ -100,10 +100,10 @@ Value to_corrected_static_eval(Value v, const Worker& w, const Position& pos, St
 }
 
 // History and stats update bonus, based on depth
-int stat_bonus(Depth d) { return std::min(168 * d - 100, 1718); }
+int stat_bonus(Depth d, bool is_nullmove) { return std::min(168 * d - 100, 1718) + std::min(432 * d - 100, 1600)*is_nullmove; }
 
 // History and stats update malus, based on depth
-int stat_malus(Depth d) { return std::min(768 * d - 257, 2351); }
+int stat_malus(Depth d, bool is_nullmove) { return std::min(768 * d - 257, 2351) + std::min(864 * d - 100, 2100)*is_nullmove; }
 
 // Add a small random component to draw evaluations to avoid 3-fold blindness
 Value value_draw(size_t nodes) { return VALUE_DRAW - 1 + Value(nodes & 0x2); }
@@ -120,7 +120,8 @@ void update_all_stats(const Position&      pos,
                       Square               prevSq,
                       ValueList<Move, 32>& quietsSearched,
                       ValueList<Move, 32>& capturesSearched,
-                      Depth                depth);
+                      Depth                depth
+                      bool is_nullmove);
 
 }  // namespace
 
@@ -798,8 +799,8 @@ Value Search::Worker::search(
     improving |= ss->staticEval >= beta + 100;
 
     // Step 9. Null move search with verification search (~35 Elo)
-    if (cutNode && (ss - 1)->currentMove != Move::null() && eval >= beta
-        && ss->staticEval >= beta - 21 * depth + 421 && !excludedMove && pos.non_pawn_material(us)
+    // Update: we will remove the eval>=beta and ss->staticEval >= beta - 21 * depth + 421 and pos.non_pawn_material(us) out.
+    if (cutNode && (ss - 1)->currentMove != Move::null() && !excludedMove
         && ss->ply >= thisThread->nmpMinPly && !is_loss(beta))
     {
         assert(eval - beta >= 0);
@@ -1374,7 +1375,8 @@ moves_loop:  // When in check, search starts here
     // If there is a move that produces search value greater than alpha,
     // we update the stats of searched moves.
     else if (bestMove)
-        update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth);
+
+        update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth, (ss - 1)->currentMove == Move::null());
 
     // Bonus for prior countermove that caused the fail low
     else if (!priorCapture && prevSq != SQ_NONE)
@@ -1797,14 +1799,15 @@ void update_all_stats(const Position&      pos,
                       Square               prevSq,
                       ValueList<Move, 32>& quietsSearched,
                       ValueList<Move, 32>& capturesSearched,
-                      Depth                depth) {
+                      Depth                depth,
+                      bool is_nullmove) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
     Piece                  moved_piece    = pos.moved_piece(bestMove);
     PieceType              captured;
 
-    int bonus = stat_bonus(depth);
-    int malus = stat_malus(depth);
+    int bonus = stat_bonus(depth,is_nullmove);
+    int malus = stat_malus(depth,is_nullmove);
 
     if (!pos.capture_stage(bestMove))
     {
