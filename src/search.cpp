@@ -100,10 +100,10 @@ Value to_corrected_static_eval(Value v, const Worker& w, const Position& pos, St
 }
 
 // History and stats update bonus, based on depth
-int stat_bonus(Depth d, bool is_nullmove) { return std::min(168 * d - 100, 1718) + std::min(432 * d - 100, 1600)*is_nullmove; }
+int stat_bonus(Depth d, bool is_nullmove) { return std::min(168 * d - 100, 1718) + std::min(144 * d - 100, 1600)*is_nullmove; }
 
 // History and stats update malus, based on depth
-int stat_malus(Depth d, bool is_nullmove) { return std::min(768 * d - 257, 2351) + std::min(864 * d - 100, 2100)*is_nullmove; }
+int stat_malus(Depth d, bool is_nullmove) { return std::min(768 * d - 257, 2351) + std::min(720 * d - 250, 2300)*is_nullmove; }
 
 // Add a small random component to draw evaluations to avoid 3-fold blindness
 Value value_draw(size_t nodes) { return VALUE_DRAW - 1 + Value(nodes & 0x2); }
