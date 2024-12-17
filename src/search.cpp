@@ -52,6 +52,10 @@
 
 namespace Stockfish {
 
+
+int m_value=1280, m_constant=1250, m_bestValue=1280, m_beta=0, m_depth = 0;
+TUNE(SetRange(1,10000),m_value,SetRange(1,10000),m_constant,SetRange(1,10000),m_bestValue,SetRange(-10000,10000),m_beta,SetRange(-10000,10000),m_depth);
+
 namespace TB = Tablebases;
 
 void syzygy_extend_pv(const OptionsMap&            options,
@@ -1349,7 +1353,7 @@ moves_loop:  // When in check, search starts here
         // remember it, to update its stats later.
 
         //Update: only if value is not much worse.
-        if (move != bestMove && moveCount <= 32 && (value + 984 >= bestValue || is_loss(value)))
+        if (move != bestMove && moveCount <= 32 && (value*m_value + 1024*m_constant - bestValue*m_bestValue + beta*m_beta + 128*depth*m_depth  >= 0 ))
         {
             if (capture)
                 capturesSearched.push_back(move);
