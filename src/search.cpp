@@ -990,7 +990,7 @@ moves_loop:  // When in check, search starts here
         //Evaluation fluctuation heuristic.
         if (!rootNode)
         {
-            int eval_dif = ss->staticEval - (ss-1)->staticEval;
+            int eval_dif = ss->staticEval + (ss-1)->staticEval; //(ss-1) is from different side perspective, so I + means -.
             r -= std::min(eval_dif*eval_dif,1048576)/1024; //
         }
 
