@@ -991,7 +991,7 @@ moves_loop:  // When in check, search starts here
         if (!rootNode)
         {
             int eval_dif = ss->staticEval + (ss-1)->staticEval; //(ss-1) is from different side perspective, so I + means -.
-            r -= std::min(eval_dif*eval_dif,65536)/64 - 512; //
+            r -= std::min(eval_dif*eval_dif,131072)/128 - 512; //
         }
 
         // Step 14. Pruning at shallow depth (~120 Elo).
