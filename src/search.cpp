@@ -987,6 +987,12 @@ moves_loop:  // When in check, search starts here
 
         Depth r = reduction(improving, depth, moveCount, delta);
 
+        if (!rootNode)
+        {
+            int eval_dif = ss->staticEval - (ss-1)->staticEval;
+            r -= eval_dif*eval_dif/1024;
+        }
+
         // Step 14. Pruning at shallow depth (~120 Elo).
         // Depth conditions are important for mate finding.
         if (!rootNode && pos.non_pawn_material(us) && !is_loss(bestValue))
