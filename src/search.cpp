@@ -988,10 +988,10 @@ moves_loop:  // When in check, search starts here
         Depth r = reduction(improving, depth, moveCount, delta);
 
         //Evaluation fluctuation heuristic.
-        if (!rootNode)
+        if (!rootNode && !ss->inCheck && !(ss-1)->inCheck) // If in check, the static evals are pointless, so we need to check for these conditions.
         {
             int eval_dif = ss->staticEval + (ss-1)->staticEval; //(ss-1) is from different side perspective, so I + means -.
-            r -= std::min(eval_dif*eval_dif,131072)/128 - 512; //
+            r -= std::min(eval_dif*eval_dif,131072)/128; //
         }
 
         // Step 14. Pruning at shallow depth (~120 Elo).
