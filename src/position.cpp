@@ -43,6 +43,92 @@ using std::string;
 
 namespace Stockfish {
 
+
+#ifndef PSQT_INCLUDED
+#define PSQT_INCLUDED
+Value pawn_psqt[SQUARE_NB] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+Value knight_psqt[SQUARE_NB] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+Value bishop_psqt[SQUARE_NB] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
+Value rook_psqt[SQUARE_NB] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+Value queen_psqt[SQUARE_NB] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+Value king_psqt[SQUARE_NB] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
+
+
+TUNE(SetRange(-100,100),pawn_psqt);
+TUNE(SetRange(-300,300),knight_psqt);
+TUNE(SetRange(-300,300),bishop_psqt);
+TUNE(SetRange(-500,500),rook_psqt);
+TUNE(SetRange(-900,900),queen_psqt);
+TUNE(SetRange(-1000,1000),king_psqt); //Not sure how much the king position is worth. Let's set it to 1000.
+
+
+
+
+Value PieceBonusValue[PIECE_TYPE_NB][SQUARE_NB];
+
+
+
+
+
+
+#endif // PSQT_INCLUDED
+
 namespace Zobrist {
 
 Key psq[PIECE_NB][SQUARE_NB];
@@ -152,8 +238,51 @@ void Position::init() {
                     count++;
                 }
     assert(count == 3668);
+
+    for (int i=0; i<SQUARE_NB; ++i){
+    PieceBonusValue[PAWN][i] = pawn_psqt[i];
+    PieceBonusValue[KNIGHT][i] = knight_psqt[i];
+    PieceBonusValue[BISHOP][i] = bishop_psqt[i];
+    PieceBonusValue[ROOK][i] = rook_psqt[i];
+    PieceBonusValue[QUEEN][i] = queen_psqt[i];
+    PieceBonusValue[KING][i] = king_psqt[i];
+}
 }
 
+
+inline void Position::put_piece(Piece pc, Square s) {
+
+    board[s] = pc;
+    byTypeBB[ALL_PIECES] |= byTypeBB[type_of(pc)] |= s;
+    byColorBB[color_of(pc)] |= s;
+    pieceCount[pc]++;
+    pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
+    st->PieceSquareBonus[color_of(pc)] += PieceBonusValue[type_of(pc)][s];
+}
+
+inline void Position::remove_piece(Square s) {
+
+    Piece pc = board[s];
+    byTypeBB[ALL_PIECES] ^= s;
+    byTypeBB[type_of(pc)] ^= s;
+    byColorBB[color_of(pc)] ^= s;
+    board[s] = NO_PIECE;
+    pieceCount[pc]--;
+    pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
+    st->PieceSquareBonus[color_of(pc)] -= PieceBonusValue[type_of(pc)][s];
+}
+
+inline void Position::move_piece(Square from, Square to) {
+
+    Piece    pc     = board[from];
+    Bitboard fromTo = from | to;
+    byTypeBB[ALL_PIECES] ^= fromTo;
+    byTypeBB[type_of(pc)] ^= fromTo;
+    byColorBB[color_of(pc)] ^= fromTo;
+    board[from] = NO_PIECE;
+    board[to]   = pc;
+    st->PieceSquareBonus[color_of(pc)] += PieceBonusValue[type_of(pc)][to] - PieceBonusValue[type_of(pc)][from];
+}
 
 // Initializes the position object with the given FEN string.
 // This function is not very robust - make sure that input FENs are correct,

@@ -32,6 +32,13 @@
 
 namespace Stockfish {
 
+
+
+
+
+
+
+
 class TranspositionTable;
 
 // StateInfo struct stores information needed to restore a Position object to
@@ -47,6 +54,7 @@ struct StateInfo {
     Key    minorPieceKey;
     Key    nonPawnKey[COLOR_NB];
     Value  nonPawnMaterial[COLOR_NB];
+    Value  PieceSquareBonus[COLOR_NB];
     int    castlingRights;
     int    rule50;
     int    pliesFromNull;
@@ -168,6 +176,7 @@ class Position {
     int   rule50_count() const;
     Value non_pawn_material(Color c) const;
     Value non_pawn_material() const;
+    Value piece_square_bonus(Color c) const;
 
     // Position consistency check, for debugging
     bool pos_is_ok() const;
@@ -312,6 +321,8 @@ inline Key Position::non_pawn_key(Color c) const { return st->nonPawnKey[c]; }
 
 inline Value Position::non_pawn_material(Color c) const { return st->nonPawnMaterial[c]; }
 
+inline Value Position::piece_square_bonus(Color c) const { return st->PieceSquareBonus[c];}
+
 inline Value Position::non_pawn_material() const {
     return non_pawn_material(WHITE) + non_pawn_material(BLACK);
 }
@@ -337,36 +348,7 @@ inline bool Position::capture_stage(Move m) const {
 
 inline Piece Position::captured_piece() const { return st->capturedPiece; }
 
-inline void Position::put_piece(Piece pc, Square s) {
 
-    board[s] = pc;
-    byTypeBB[ALL_PIECES] |= byTypeBB[type_of(pc)] |= s;
-    byColorBB[color_of(pc)] |= s;
-    pieceCount[pc]++;
-    pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
-}
-
-inline void Position::remove_piece(Square s) {
-
-    Piece pc = board[s];
-    byTypeBB[ALL_PIECES] ^= s;
-    byTypeBB[type_of(pc)] ^= s;
-    byColorBB[color_of(pc)] ^= s;
-    board[s] = NO_PIECE;
-    pieceCount[pc]--;
-    pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
-}
-
-inline void Position::move_piece(Square from, Square to) {
-
-    Piece    pc     = board[from];
-    Bitboard fromTo = from | to;
-    byTypeBB[ALL_PIECES] ^= fromTo;
-    byTypeBB[type_of(pc)] ^= fromTo;
-    byColorBB[color_of(pc)] ^= fromTo;
-    board[from] = NO_PIECE;
-    board[to]   = pc;
-}
 
 inline void Position::do_move(Move m, StateInfo& newSt) { do_move(m, newSt, gives_check(m)); }
 
