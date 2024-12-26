@@ -120,7 +120,7 @@ TUNE(SetRange(-1000,1000),king_psqt); //Not sure how much the king position is w
 
 
 
-Value PieceBonusValue[PIECE_TYPE_NB][SQUARE_NB];
+Value PieceBonusValue[COLOR_NB][PIECE_TYPE_NB][SQUARE_NB];
 
 
 
@@ -240,13 +240,21 @@ void Position::init() {
     assert(count == 3668);
 
     for (int i=0; i<SQUARE_NB; ++i){
-    PieceBonusValue[PAWN][i] = pawn_psqt[i];
-    PieceBonusValue[KNIGHT][i] = knight_psqt[i];
-    PieceBonusValue[BISHOP][i] = bishop_psqt[i];
-    PieceBonusValue[ROOK][i] = rook_psqt[i];
-    PieceBonusValue[QUEEN][i] = queen_psqt[i];
-    PieceBonusValue[KING][i] = king_psqt[i];
-}
+        int j = (7-(i>>3))<<3 + (i&7);
+        PieceBonusValue[WHITE][PAWN][i] = pawn_psqt[i];
+        PieceBonusValue[WHITE][KNIGHT][i] = knight_psqt[i];
+        PieceBonusValue[WHITE][BISHOP][i] = bishop_psqt[i];
+        PieceBonusValue[WHITE][ROOK][i] = rook_psqt[i];
+        PieceBonusValue[WHITE][QUEEN][i] = queen_psqt[i];
+        PieceBonusValue[WHITE][KING][i] = king_psqt[i];
+        //flip the board.
+        PieceBonusValue[BLACK][PAWN][j] = pawn_psqt[i];
+        PieceBonusValue[BLACK][KNIGHT][j] = knight_psqt[i];
+        PieceBonusValue[BLACK][BISHOP][j] = bishop_psqt[i];
+        PieceBonusValue[BLACK][ROOK][j] = rook_psqt[i];
+        PieceBonusValue[BLACK][QUEEN][j] = queen_psqt[i];
+        PieceBonusValue[BLACK][KING][j] = king_psqt[i];
+    }
 }
 
 
@@ -257,7 +265,7 @@ inline void Position::put_piece(Piece pc, Square s) {
     byColorBB[color_of(pc)] |= s;
     pieceCount[pc]++;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
-    st->PieceSquareBonus[color_of(pc)] += PieceBonusValue[type_of(pc)][s];
+    st->PieceSquareBonus[color_of(pc)] += PieceBonusValue[color_of(pc)][type_of(pc)][s];
 }
 
 inline void Position::remove_piece(Square s) {
@@ -269,7 +277,7 @@ inline void Position::remove_piece(Square s) {
     board[s] = NO_PIECE;
     pieceCount[pc]--;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
-    st->PieceSquareBonus[color_of(pc)] -= PieceBonusValue[type_of(pc)][s];
+    st->PieceSquareBonus[color_of(pc)] -= PieceBonusValue[color_of(pc)][type_of(pc)][s];
 }
 
 inline void Position::move_piece(Square from, Square to) {
@@ -281,7 +289,7 @@ inline void Position::move_piece(Square from, Square to) {
     byColorBB[color_of(pc)] ^= fromTo;
     board[from] = NO_PIECE;
     board[to]   = pc;
-    st->PieceSquareBonus[color_of(pc)] += PieceBonusValue[type_of(pc)][to] - PieceBonusValue[type_of(pc)][from];
+    st->PieceSquareBonus[color_of(pc)] += PieceBonusValue[color_of(pc)][type_of(pc)][to] - PieceBonusValue[color_of(pc)][type_of(pc)][from];
 }
 
 // Initializes the position object with the given FEN string.
