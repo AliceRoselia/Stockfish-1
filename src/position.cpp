@@ -240,7 +240,7 @@ void Position::init() {
     assert(count == 3668);
 
     for (int i=0; i<SQUARE_NB; ++i){
-        int j = (7-(i>>3))<<3 + (i&7);
+        int j = ((7-(i>>3))<<3) + (i&7);
         PieceBonusValue[WHITE][PAWN][i] = pawn_psqt[i];
         PieceBonusValue[WHITE][KNIGHT][i] = knight_psqt[i];
         PieceBonusValue[WHITE][BISHOP][i] = bishop_psqt[i];
