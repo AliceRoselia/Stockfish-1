@@ -41,7 +41,7 @@ namespace Stockfish {
 // the point of view of the given color. It can be divided by PawnValue to get
 // an approximation of the material advantage on the board in terms of pawns.
 int Eval::simple_eval(const Position& pos, Color c) {
-    return (pos.piece_square_bonus(c)-pos.piece_square_bonus(~c) + 83); //83 is the tempo advantage.
+    return (pos.piece_square_bonus(c)-pos.piece_square_bonus(~c) + 85); //85 is the tempo advantage.
 }
 
 bool Eval::use_smallnet(const Position& pos) {
