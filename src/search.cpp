@@ -1355,7 +1355,8 @@ moves_loop:  // When in check, search starts here
         if (move != bestMove && moveCount <= 32)
         {
             if (capture)
-                capturesSearched.push_back(move);
+                if (value + 1000 >= bestValue)
+                    capturesSearched.push_back(move);
             else
                 quietsSearched.push_back(move);
         }
