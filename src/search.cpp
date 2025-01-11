@@ -1354,12 +1354,10 @@ moves_loop:  // When in check, search starts here
         // remember it, to update its stats later.
 
         //Update: only if value is not much worse.
-        if (move != bestMove && moveCount <= 32)
+        if (move != bestMove && moveCount <= 32 && (value + 1400 - (400*capture) >= bestValue))
         {
-            if (capture){
-                if (value + 800 >= bestValue)
-                    capturesSearched.push_back(move);
-            }
+            if (capture)
+                capturesSearched.push_back(move);
             else
                 quietsSearched.push_back(move);
         }
