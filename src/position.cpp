@@ -54,7 +54,12 @@ Value queen_psqt[] = {2464,2456,2451,2453,2450,2440,2461,2465,2461,2460,2459,245
 Value king_psqt[] = {-11,1,-5,-29,-21,-21,-4,-13,-3,-5,-7,-10,-8,-10,-4,-7,-19,-2,-3,-2,-2,-1,-3,-13,-6,4,9,2,6,8,3,-11,2,12,10,13,12,17,15,-2,-1,21,17,14,9,27,25,5,-6,9,3,5,4,12,17,-4,-6,-6,1,-6,-9,-14,0,-11};
 
 
-
+TUNE(SetRange(0,300),pawn_psqt);
+TUNE(SetRange(600,800),knight_psqt);
+TUNE(SetRange(600,800),bishop_psqt);
+TUNE(SetRange(1000,1200),rook_psqt);
+TUNE(SetRange(2400,2600),queen_psqt);
+TUNE(SetRange(-100,100),king_psqt); //Not sure how much the king position is worth. Let's set it to 1000.
 
 
 Value PieceBonusValue[COLOR_NB][PIECE_TYPE_NB][SQUARE_NB];
