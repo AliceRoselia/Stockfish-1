@@ -728,6 +728,7 @@ Value Search::Worker::search(
         // Skip early pruning when in check
         ss->staticEval = eval = (ss - 2)->staticEval;
         improving             = false;
+        opponentWorsening = false;
         goto moves_loop;
     }
     else if (excludedMove)
@@ -983,10 +984,10 @@ moves_loop:  // When in check, search starts here
         if (ss->ttPv)
             r -= 1037 + (ttData.value > alpha) * 965 + (ttData.depth >= depth) * 960;
 
-        if (!rootNode && !ss->inCheck && !(ss-1)->inCheck) // If in check, the static evals are pointless, so we need to check for these conditions.
+        if (!rootNode && !ss->inCheck && !(ss-1)->inCheck && opponentWorsening) // If in check, the static evals are pointless, so we need to check for these conditions.
         {
             int eval_dif = ss->staticEval + (ss-1)->staticEval; //(ss-1) is from different side perspective, so I + means -.
-            r -= std::min(eval_dif*eval_dif,1048576)/512 - 300; //
+            r -= std::clamp(eval_dif*eval_dif,65536,1048576)/512 - 128; //
         }
         // Step 14. Pruning at shallow depth (~120 Elo).
         // Depth conditions are important for mate finding.
