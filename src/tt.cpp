@@ -142,7 +142,7 @@ void TTWriter::write(
 
     Cluster* cluster = reinterpret_cast<Cluster*>(entry&(~3));
     uintptr_t loc = entry&3;
-    TTEntry* entry2 = &((cluster->entry)[loc]);
+    TTEntry* entry2 = &((cluster->keys)[loc]);
 
     entry2->save(&(cluster->entry),loc,k, v, pv, b, d, m, ev, generation8);
 }
