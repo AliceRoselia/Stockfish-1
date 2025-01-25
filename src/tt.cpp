@@ -144,7 +144,7 @@ void TTWriter::write(
     uintptr_t loc = entry&3;
     TTEntry* entry2 = &((cluster->entry)[loc]);
 
-    entry2->save(&(cluster->keys),loc,k, v, pv, b, d, m, ev, generation8);
+    entry2->save((cluster->keys),loc,k, v, pv, b, d, m, ev, generation8);
 }
 
 
