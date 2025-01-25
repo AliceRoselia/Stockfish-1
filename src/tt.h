@@ -70,8 +70,8 @@ struct TTWriter {
 
    private:
     friend class TranspositionTable;
-    TTEntry* entry;
-    TTWriter(TTEntry* tte);
+    uintptr_t entry;
+    TTWriter(uintptr_t tte);
 };
 
 
@@ -92,7 +92,7 @@ class TranspositionTable {
     probe(const Key key) const;  // The main method, whose retvals separate local vs global objects
     TTEntry* first_entry(const Key key)
       const;  // This is the hash function; its only external use is memory prefetching.
-
+    uint16_t* get_keys(const Key key) const;
    private:
     friend struct TTEntry;
 
