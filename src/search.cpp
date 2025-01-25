@@ -983,10 +983,12 @@ moves_loop:  // When in check, search starts here
         if (ss->ttPv)
             r -= 1037 + (ttData.value > alpha) * 965 + (ttData.depth >= depth) * 960;
 
-        if (!rootNode && !ss->inCheck && !(ss-1)->inCheck) // If in check, the static evals are pointless, so we need to check for these conditions.
+        if (!rootNode && !ss->inCheck && !(ss-1)->inCheck && opponentWorsening) // If in check, the static evals are pointless, so we need to check for these conditions.
+        //If opponent is not worsening, then this is likely a bad move, no need for extension.
+        //However, if this is a good move, then we need to ensure it is really a good move.
         {
             int eval_dif = ss->staticEval + (ss-1)->staticEval; //(ss-1) is from different side perspective, so I + means -.
-            r -= std::min(eval_dif*eval_dif,1048576)/512 - 300; //
+            r -= std::min(eval_dif,1024); //
         }
         // Step 14. Pruning at shallow depth (~120 Elo).
         // Depth conditions are important for mate finding.
