@@ -125,7 +125,7 @@ uint8_t TTEntry::relative_age(const uint8_t generation8) const {
 static constexpr int ClusterSize = 3;
 
 struct Cluster {
-    uint64_t keys; // 3 keys and 1 pad.
+    uint16_t keys[4]; // 3 keys and 1 pad.
     TTEntry entry[ClusterSize];
     //char    padding[2];  // Pad to 32 bytes
 };
@@ -255,7 +255,7 @@ std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) cons
 }
 
 uint16_t* TranspositionTable::get_keys(const Key key) const{
-    return reinterpret_cast<uint16_t*>(&table[mul_hi64(key, clusterCount)]);
+    return reinterpret_cast<uint16_t*>(&table[mul_hi64(key, clusterCount)].keys);
 }
 
 
