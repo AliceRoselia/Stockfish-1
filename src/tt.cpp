@@ -90,7 +90,7 @@ bool TTEntry::is_occupied() const { return bool(depth8); }
 
 // Populates the TTEntry with a new node's data, possibly
 // overwriting an old position. The update is not atomic and can be racy.
-void TTEntry::save(uint16_t* keyptr, int keyloc,
+void TTEntry::save(uint16_t* keyptr,
   Key k, Value v, bool pv, Bound b, Depth d, Move m, Value ev, uint8_t generation8) {
 
     // Preserve the old ttmove if we don't have a new one
@@ -144,7 +144,7 @@ void TTWriter::write(
     uintptr_t loc = entry&3;
     TTEntry* entry2 = &((cluster->entry)[loc]);
 
-    entry2->save((cluster->keys),loc,k, v, pv, b, d, m, ev, generation8);
+    entry2->save((cluster->keys)+loc,k, v, pv, b, d, m, ev, generation8);
 }
 
 
