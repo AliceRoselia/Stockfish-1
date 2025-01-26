@@ -124,7 +124,7 @@ uint8_t TTEntry::relative_age(const uint8_t generation8) const {
 
 static constexpr int ClusterSize = 3;
 
-struct Cluster {
+struct alignas(32) Cluster {
     uint16_t keys[4]; // 3 keys and 1 pad.
     TTEntry entry[ClusterSize];
     //char    padding[2];  // Pad to 32 bytes
@@ -228,17 +228,50 @@ uint8_t TranspositionTable::generation() const { return generation8; }
 // to be replaced later. The replace value of an entry is calculated as its depth
 // minus 8 times its relative age. TTEntry t1 is considered more valuable than
 // TTEntry t2 if its replace value is greater than that of t2.
+constexpr int lookup[] = {0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,2,0,0,0,1,0};
+
+/*
+0.0
+0.0
+0.0
+0.0
+1.0
+0.0
+0.0
+0.0
+1.0
+0.0
+0.0
+0.0
+1.0
+0.0
+0.0
+0.0
+2.0
+0.0
+0.0
+0.0
+1.0
+0.0
+*/
+
 std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) const {
 
     TTEntry* const tte   = first_entry(key);
     const uint16_t key16 = uint16_t(key);  // Use the low 16 bits as key inside the cluster
     uint16_t* keys = get_keys(key);
+    __m128i target = _mm_set1_epi16(key16);
+    __m128i loaded = _mm_loadu_si128(reinterpret_cast<const __m128i*>(keys));
+    __m128i mask = _mm_cmpeq_epi16(target, loaded);
+    uint16_t loc = _mm_movemask_epi8(mask)&0b010101;
 
-    for (int i = 0; i < ClusterSize; ++i)
-        if (keys[i] == key16)
-            // This gap is the main place for read races.
-            // After `read()` completes that copy is final, but may be self-inconsistent.
-            return {tte[i].is_occupied(), tte[i].read(), TTWriter(reinterpret_cast<uintptr_t>(keys)|i)};
+    //loc &= (-loc);
+
+    if (loc){
+        int i = lookup[loc];
+        return {tte[i].is_occupied(), tte[i].read(), TTWriter(reinterpret_cast<uintptr_t>(keys)|i)};
+    }
+
 
     // Find an entry to be replaced according to the replacement strategy
     //uintptr_t replace = reinterpret_cast<uintptr_t>(keys);
