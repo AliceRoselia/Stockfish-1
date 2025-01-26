@@ -255,22 +255,32 @@ constexpr int lookup[] = {0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,2,0,0,0,1,0};
 0.0
 */
 
+
+
 std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) const {
 
     TTEntry* const tte   = first_entry(key);
     const uint16_t key16 = uint16_t(key);  // Use the low 16 bits as key inside the cluster
     uint16_t* keys = get_keys(key);
+    //#ifdef _EMMINTRIN_H_INCLUDED (Whatever enables __m128)
     __m128i target = _mm_set1_epi16(key16);
     __m128i loaded = _mm_loadu_si128(reinterpret_cast<const __m128i*>(keys));
     __m128i mask = _mm_cmpeq_epi16(target, loaded);
     uint16_t loc = _mm_movemask_epi8(mask)&0b010101;
 
-    //loc &= (-loc);
-
     if (loc){
         int i = lookup[loc];
         return {tte[i].is_occupied(), tte[i].read(), TTWriter(reinterpret_cast<uintptr_t>(keys)|i)};
     }
+    //#else
+    /*
+        for (int i = 0; i < ClusterSize; ++i)
+        if (keys[i] == key16)
+            // This gap is the main place for read races.
+            // After `read()` completes that copy is final, but may be self-inconsistent.
+            return {tte[i].is_occupied(), tte[i].read(), TTWriter(reinterpret_cast<uintptr_t>(keys)|i)};
+    */
+    //#endif // _EMMINTRIN_H_INCLUDED
 
 
     // Find an entry to be replaced according to the replacement strategy
