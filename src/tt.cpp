@@ -255,7 +255,7 @@ std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) cons
 }
 
 uint16_t* TranspositionTable::get_keys(const Key key) const{
-    return reinterpret_cast<uint16_t*>(&table[mul_hi64(key, clusterCount)].keys);
+    return reinterpret_cast<uint16_t*>(&table[mul_hi64(key, clusterCount)].keys[0]);
 }
 
 
