@@ -56,7 +56,7 @@ struct TTEntry {
     }
 
     bool is_occupied() const;
-    void save(uint16_t* keyptr, int keyloc,Key k, Value v, bool pv, Bound b, Depth d, Move m, Value ev, uint8_t generation8);
+    void save(uint16_t* keyptr ,Key k, Value v, bool pv, Bound b, Depth d, Move m, Value ev, uint8_t generation8);
     // The returned age is a multiple of TranspositionTable::GENERATION_DELTA
     uint8_t relative_age(const uint8_t generation8) const;
 
@@ -94,17 +94,17 @@ void TTEntry::save(uint16_t* keyptr,
   Key k, Value v, bool pv, Bound b, Depth d, Move m, Value ev, uint8_t generation8) {
 
     // Preserve the old ttmove if we don't have a new one
-    if (m || uint16_t(k) != keyptr[keyloc])
+    if (m || uint16_t(k) != *keyptr)
         move16 = m;
 
     // Overwrite less valuable entries (cheapest checks first)
-    if (b == BOUND_EXACT || uint16_t(k) != keyptr[keyloc] || d - DEPTH_ENTRY_OFFSET + 2 * pv > depth8 - 4
+    if (b == BOUND_EXACT || uint16_t(k) != *keyptr || d - DEPTH_ENTRY_OFFSET + 2 * pv > depth8 - 4
         || relative_age(generation8))
     {
         assert(d > DEPTH_ENTRY_OFFSET);
         assert(d < 256 + DEPTH_ENTRY_OFFSET);
 
-        keyptr[keyloc]     = uint16_t(k);
+        *keyptr     = uint16_t(k);
         depth8    = uint8_t(d - DEPTH_ENTRY_OFFSET);
         genBound8 = uint8_t(generation8 | uint8_t(pv) << 2 | b);
         value16   = int16_t(v);
@@ -144,7 +144,7 @@ void TTWriter::write(
     uintptr_t loc = entry&3;
     TTEntry* entry2 = &((cluster->entry)[loc]);
 
-    entry2->save((cluster->keys)+loc,k, v, pv, b, d, m, ev, generation8);
+    entry2->save(&(cluster->keys)[loc],k, v, pv, b, d, m, ev, generation8);
 }
 
 
