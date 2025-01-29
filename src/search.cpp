@@ -52,6 +52,9 @@
 
 namespace Stockfish {
 
+int bonus_multiplier_capture_history = 1272;
+TUNE(bonus_multiplier_capture_history,1000,1500);
+
 namespace TB = Tablebases;
 
 void syzygy_extend_pv(const OptionsMap&            options,
@@ -1813,7 +1816,7 @@ void update_all_stats(const Position&      pos,
     {
         // Increase stats for the best move in case it was a capture move
         captured = type_of(pos.piece_on(bestMove.to_sq()));
-        captureHistory[material_imbalance(pos,pos.side_to_move())][moved_piece][bestMove.to_sq()][captured] << bonus * 1272 / 1024;
+        captureHistory[material_imbalance(pos,pos.side_to_move())][moved_piece][bestMove.to_sq()][captured] << bonus * bonus_multiplier_capture_history / 1024;
     }
 
     // Extra penalty for a quiet early move that was not a TT move in

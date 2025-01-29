@@ -75,6 +75,8 @@ inline int material_imbalance(const Position& pos, Color side){
 // the entry. The first template parameter T is the base type of the array,
 // and the second template parameter D limits the range of updates in [-D, D]
 // when we update values with the << operator
+
+
 template<typename T, int D>
 class StatsEntry {
 
@@ -91,11 +93,24 @@ class StatsEntry {
     operator const T&() const { return entry; }
 
     void operator<<(int bonus) {
-        // Make sure that bonus is in range [-D, D]
-        int clampedBonus = std::clamp(bonus, -D, D);
-        entry += clampedBonus - entry * std::abs(clampedBonus) / D;
+        if constexpr(D == -1){
+            int capture_history_limit_value = get_capture_history_limit_value();
+            int clampedBonus = std::clamp(bonus, -capture_history_limit_value, capture_history_limit_value);
+            entry += clampedBonus - entry * std::abs(clampedBonus) / capture_history_limit_value;
 
-        assert(std::abs(entry) <= D);
+            assert(std::abs(entry) <= capture_history_limit_value);
+        }
+        else{
+            int clampedBonus = std::clamp(bonus, -D, D);
+            entry += clampedBonus - entry * std::abs(clampedBonus) / D;
+
+            assert(std::abs(entry) <= D);
+        }
+        // Make sure that bonus is in range [-D, D]
+        //int clampedBonus = std::clamp(bonus, -D, D);
+        //entry += clampedBonus - entry * std::abs(clampedBonus) / D;
+
+        //assert(std::abs(entry) <= D);
     }
 };
 
@@ -119,7 +134,8 @@ using LowPlyHistory =
   Stats<std::int16_t, 7183, LOW_PLY_HISTORY_SIZE, int(SQUARE_NB) * int(SQUARE_NB)>;
 
 // CapturePieceToHistory is addressed by a move's [material_imbalance][piece][to][captured piece type]
-using CapturePieceToHistory = Stats<std::int16_t, 10692,13, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
+
+using CapturePieceToHistory = Stats<std::int16_t, -1,13, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
 using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;

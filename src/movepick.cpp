@@ -27,6 +27,7 @@
 
 namespace Stockfish {
 
+
 namespace {
 
 enum Stages {

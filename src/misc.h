@@ -37,6 +37,8 @@
 
 namespace Stockfish {
 
+int get_capture_history_limit_value();
+
 std::string engine_version_info();
 std::string engine_info(bool to_uci = false);
 std::string compiler_info();
