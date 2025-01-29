@@ -68,7 +68,7 @@ inline int non_pawn_index(const Position& pos) {
 // the entry. The first template parameter T is the base type of the array,
 // and the second template parameter D limits the range of updates in [-D, D]
 // when we update values with the << operator
-template<typename T, int D,int inverse_beta = 16>
+template<typename T, int D,int inverse_beta = 1024>
 class StatsEntry {
 
     static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type");
@@ -91,6 +91,7 @@ class StatsEntry {
         //entry += clampedBonus - entry * std::abs(clampedBonus) / D;
         momentum += (clampedBonus-momentum)/inverse_beta;
         entry += momentum - entry*std::abs(momentum)/D;
+        //entry -= entry * std::abs(clampedBonus) / D;
 
         //assert(std::abs(entry) <= D);
     }
