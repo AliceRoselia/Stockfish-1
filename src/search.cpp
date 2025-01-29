@@ -54,6 +54,8 @@ namespace Stockfish {
 
 int bonus_multiplier_capture_history = 1272;
 TUNE(bonus_multiplier_capture_history,1000,1500);
+int capture_history_initialize = -631;
+TUNE(capture_history_initialize,-1500,500);
 
 namespace TB = Tablebases;
 
@@ -516,7 +518,7 @@ void Search::Worker::iterative_deepening() {
 void Search::Worker::clear() {
     mainHistory.fill(63);
     lowPlyHistory.fill(108);
-    captureHistory.fill(-631);
+    captureHistory.fill(capture_history_initialize);
     pawnHistory.fill(-1210);
     pawnCorrectionHistory.fill(0);
     minorPieceCorrectionHistory.fill(0);
