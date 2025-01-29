@@ -67,7 +67,7 @@ inline int material_imbalance(const Position& pos, Color side){
     int material = (pos.count<PAWN>(side) + pos.count<KNIGHT>(side)*3 + pos.count<BISHOP>(side)*3 + pos.count<ROOK>(side)*5 + pos.count<QUEEN>(side)*9 -
                     pos.count<PAWN>(~side) + pos.count<KNIGHT>(~side)*3 + pos.count<BISHOP>(~side)*3 + pos.count<ROOK>(~side)*5 + pos.count<QUEEN>(~side)*9
     );
-    return std::clamp(material,-6,6)+6;
+    return std::clamp(material,-5,5)+5;
 }
 
 // StatsEntry is the container of various numerical statistics. We use a class
@@ -112,7 +112,7 @@ using Stats = MultiArray<StatsEntry<T, D>, Sizes...>;
 // It uses 2 tables (one for each color) indexed by the move's from and to squares,
 // see https://www.chessprogramming.org/Butterfly_Boards (~11 elo)
 //Update: use material imbalance as well.
-using ButterflyHistory = Stats<std::int16_t, 7183,13, COLOR_NB, int(SQUARE_NB) * int(SQUARE_NB)>;
+using ButterflyHistory = Stats<std::int16_t, 7183,11, COLOR_NB, int(SQUARE_NB) * int(SQUARE_NB)>;
 
 // LowPlyHistory is adressed by play and move's from and to squares, used
 // to improve move ordering near the root
@@ -120,7 +120,7 @@ using LowPlyHistory =
   Stats<std::int16_t, 7183, LOW_PLY_HISTORY_SIZE, int(SQUARE_NB) * int(SQUARE_NB)>;
 
 // CapturePieceToHistory is addressed by a move's [material_imbalance][piece][to][captured piece type]
-using CapturePieceToHistory = Stats<std::int16_t, 10692,13, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
+using CapturePieceToHistory = Stats<std::int16_t, 10692,11, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
 using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;
