@@ -67,7 +67,7 @@ inline int material_imbalance(const Position& pos, Color side){
     int material = (pos.count<PAWN>(side) + pos.count<KNIGHT>(side)*3 + pos.count<BISHOP>(side)*3 + pos.count<ROOK>(side)*5 + pos.count<QUEEN>(side)*9 -
                     pos.count<PAWN>(~side) + pos.count<KNIGHT>(~side)*3 + pos.count<BISHOP>(~side)*3 + pos.count<ROOK>(~side)*5 + pos.count<QUEEN>(~side)*9
     );
-    return std::clamp(material,-2,2)/2+1;
+    return std::clamp(material,-1,1)/1+1;
 }
 
 // StatsEntry is the container of various numerical statistics. We use a class
