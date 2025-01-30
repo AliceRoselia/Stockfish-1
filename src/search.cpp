@@ -513,7 +513,7 @@ void Search::Worker::iterative_deepening() {
 void Search::Worker::clear() {
     mainHistory.fill(63);
     lowPlyHistory.fill(108);
-    captureHistory.fill(-500);
+    captureHistory.fill(-560);
     pawnHistory.fill(-1210);
     pawnCorrectionHistory.fill(0);
     minorPieceCorrectionHistory.fill(0);
@@ -1826,7 +1826,7 @@ void update_all_stats(const Position&      pos,
     {
         moved_piece = pos.moved_piece(move);
         captured    = type_of(pos.piece_on(move.to_sq()));
-        captureHistory[material_imbalance(pos,pos.side_to_move())][moved_piece][move.to_sq()][captured] << -malus * 1205 / 1024;
+        captureHistory[material_imbalance(pos,pos.side_to_move())][moved_piece][move.to_sq()][captured] << -malus * 1300 / 1024;
     }
 }
 
