@@ -513,7 +513,7 @@ void Search::Worker::iterative_deepening() {
 void Search::Worker::clear() {
     mainHistory.fill(63);
     lowPlyHistory.fill(108);
-    captureHistory.fill(-543);
+    captureHistory.fill(-580);
     pawnHistory.fill(-1210);
     pawnCorrectionHistory.fill(0);
     minorPieceCorrectionHistory.fill(0);
@@ -1813,7 +1813,7 @@ void update_all_stats(const Position&      pos,
     {
         // Increase stats for the best move in case it was a capture move
         captured = type_of(pos.piece_on(bestMove.to_sq()));
-        captureHistory[material_imbalance(pos,pos.side_to_move())][moved_piece][bestMove.to_sq()][captured] << bonus * 1278 / 1024;
+        captureHistory[material_imbalance(pos,pos.side_to_move())][moved_piece][bestMove.to_sq()][captured] << bonus * 1293 / 1024;
     }
 
     // Extra penalty for a quiet early move that was not a TT move in
