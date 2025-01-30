@@ -53,9 +53,9 @@
 namespace Stockfish {
 
 int bonus_multiplier_capture_history = 1272;
-TUNE(bonus_multiplier_capture_history,1000,1500);
+TUNE(SetRange(1000,1500),bonus_multiplier_capture_history);
 int capture_history_initialize = -631;
-TUNE(capture_history_initialize,-1500,500);
+TUNE(SetRange(-1500,500),capture_history_initialize);
 
 namespace TB = Tablebases;
 

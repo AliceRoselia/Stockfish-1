@@ -39,7 +39,7 @@ namespace Stockfish {
 
 
 int capture_history_limit_value = 10692;
-TUNE(capture_history_limit_value,7000,13000);
+TUNE(SetRange(7000,13000),capture_history_limit_value);
 
 int get_capture_history_limit_value(){
     return capture_history_limit_value;
