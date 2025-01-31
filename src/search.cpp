@@ -1151,7 +1151,7 @@ moves_loop:  // When in check, search starts here
             {
                 int fluctuation_val = fluctuation_value(*thisThread,pos,ss);
                 //dbg_hit_on(fluctuation_val >= 100);
-                if (fluctuation_val >= 120)
+                if (fluctuation_val >= 80)
                 {
                     if (depth+extension <=0){
                         extension = 1;
