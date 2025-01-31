@@ -519,8 +519,16 @@ void Search::Worker::clear() {
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory[WHITE].fill(0);
     nonPawnCorrectionHistory[BLACK].fill(0);
+    pawnFluctiationHistory.fill(0);
+    minorPieceFluctuationHistory.fill(0);
+    nonPawnFluctuationHistory[WHITE].fill(0);
+    nonPawnFluctuationHistory[BLACK].fill(0);
+
 
     for (auto& to : continuationCorrectionHistory)
+        for (auto& h : to)
+            h.fill(0);
+    for (auto& to : continuationFluctuationHistory)
         for (auto& h : to)
             h.fill(0);
 
@@ -1137,6 +1145,8 @@ moves_loop:  // When in check, search starts here
           &thisThread->continuationHistory[ss->inCheck][capture][movedPiece][move.to_sq()];
         ss->continuationCorrectionHistory =
           &thisThread->continuationCorrectionHistory[movedPiece][move.to_sq()];
+        ss->continuationFluctuationHistory =
+          &thisThread->continuationFluctuationHistory[movedPiece][move.to_sq()];
         uint64_t nodeCount = rootNode ? uint64_t(nodes) : 0;
 
         // Decrease reduction for PvNodes (*Scaler)
@@ -1444,6 +1454,21 @@ moves_loop:  // When in check, search starts here
 
         if (m.is_ok())
             (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()] << bonus;
+
+        //Update uncertainty/fluctuation histories after adjusting correction history.
+        if (!is_decisive(bestValue)){
+            int fluctuation = int(bestValue - ss->staticEval)*int(bestValue - ss->staticEval)/1024 - 30000;
+            dbg_mean_of(fluctuation);
+            thisThread->pawnFluctiationHistory[us][pawn_structure_index<Fluctuation>(pos)]  << fluctuation;
+            thisThread->minorPieceFluctuationHistory[us][minor_piece_index(pos)] << fluctuation;
+            thisThread->nonPawnFluctuationHistory[WHITE][non_pawn_index<WHITE>(pos)][us] << fluctuation;
+            thisThread->nonPawnFluctuationHistory[BLACK][non_pawn_index<BLACK>(pos)][us] << fluctuation;
+
+            if (m.is_ok())
+                (*(ss - 2)->continuationFluctuationHistory)[pos.piece_on(m.to_sq())][m.to_sq()] << fluctuation;
+
+        }
+
     }
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);

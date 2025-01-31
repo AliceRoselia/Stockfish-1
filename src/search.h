@@ -64,6 +64,7 @@ struct Stack {
     Move*                       pv;
     PieceToHistory*             continuationHistory;
     CorrectionHistory<PieceTo>* continuationCorrectionHistory;
+    FluctuationHistory<PieceTo>* continuationFluctuationHistory;
     int                         ply;
     Move                        currentMove;
     Move                        excludedMove;
@@ -291,6 +292,11 @@ class Worker {
     CorrectionHistory<Minor>        minorPieceCorrectionHistory;
     CorrectionHistory<NonPawn>      nonPawnCorrectionHistory[COLOR_NB];
     CorrectionHistory<Continuation> continuationCorrectionHistory;
+
+    FluctuationHistory<Pawn>        pawnFluctiationHistory;
+    FluctuationHistory<Minor>        minorPieceFluctuationHistory;
+    FluctuationHistory<NonPawn>      nonPawnFluctuationHistory[COLOR_NB];
+    FluctuationHistory<Continuation> continuationFluctuationHistory;
 
    private:
     void iterative_deepening();

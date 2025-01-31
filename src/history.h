@@ -37,6 +37,8 @@ constexpr int PAWN_HISTORY_SIZE        = 512;    // has to be a power of 2
 constexpr int CORRECTION_HISTORY_SIZE  = 32768;  // has to be a power of 2
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 4;
+constexpr int FLUCTUATION_HISTORY_SIZE = 32768;
+constexpr int FLUCTUATION_HISTORY_LIMIT = 30000;
 
 static_assert((PAWN_HISTORY_SIZE & (PAWN_HISTORY_SIZE - 1)) == 0,
               "PAWN_HISTORY_SIZE has to be a power of 2");
@@ -46,12 +48,13 @@ static_assert((CORRECTION_HISTORY_SIZE & (CORRECTION_HISTORY_SIZE - 1)) == 0,
 
 enum PawnHistoryType {
     Normal,
-    Correction
+    Correction,
+    Fluctuation
 };
 
 template<PawnHistoryType T = Normal>
 inline int pawn_structure_index(const Position& pos) {
-    return pos.pawn_key() & ((T == Normal ? PAWN_HISTORY_SIZE : CORRECTION_HISTORY_SIZE) - 1);
+    return pos.pawn_key() & ((T == Normal ? PAWN_HISTORY_SIZE : (T==Correction ? CORRECTION_HISTORY_SIZE : FLUCTUATION_HISTORY_SIZE)) - 1);
 }
 
 inline int minor_piece_index(const Position& pos) {
@@ -138,6 +141,9 @@ enum CorrHistType {
     Continuation,  // Combined history of move pairs
 };
 
+
+
+
 namespace Detail {
 
 template<CorrHistType _>
@@ -160,10 +166,33 @@ struct CorrHistTypedef<Continuation> {
     using type = MultiArray<CorrHistTypedef<PieceTo>::type, PIECE_NB, SQUARE_NB>;
 };
 
+template<CorrHistType _> // Using correction hist type because they are the same and the namespace can only have one.
+struct FlucHistTypedef {
+    using type = Stats<std::int16_t, FLUCTUATION_HISTORY_LIMIT, COLOR_NB, FLUCTUATION_HISTORY_SIZE>;
+};
+
+template<>
+struct FlucHistTypedef<NonPawn> {
+    using type = Stats<std::int16_t, FLUCTUATION_HISTORY_LIMIT, FLUCTUATION_HISTORY_SIZE, COLOR_NB>;
+};
+
+template<>
+struct FlucHistTypedef<PieceTo> {
+    using type = Stats<std::int16_t, FLUCTUATION_HISTORY_LIMIT, PIECE_NB, SQUARE_NB>;
+};
+
+template<>
+struct FlucHistTypedef<Continuation> {
+    using type = MultiArray<FlucHistTypedef<PieceTo>::type, PIECE_NB, SQUARE_NB>;
+};
+
 }
 
 template<CorrHistType T>
 using CorrectionHistory = typename Detail::CorrHistTypedef<T>::type;
+
+template<CorrHistType T>
+using FluctuationHistory = typename Detail::FlucHistTypedef<T>::type;
 
 }  // namespace Stockfish
 
