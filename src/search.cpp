@@ -97,6 +97,19 @@ int correction_value(const Worker& w, const Position& pos, const Stack* ss) {
     return (7000 * pcv + 6300 * micv + 7550 * (wnpcv + bnpcv) + 6320 * cntcv);
 }
 
+int fluctuation_value(const Worker& w, const Position& pos, const Stack* ss) {
+    const Color us    = pos.side_to_move();
+    const auto  m     = (ss - 1)->currentMove;
+    const auto  pfv   = w.pawnFluctuationHistory[us][pawn_structure_index<Correction>(pos)];
+    const auto  mifv  = w.minorPieceFluctuationHistory[us][minor_piece_index(pos)];
+    const auto  wnpfv = w.nonPawnFluctuationHistory[WHITE][non_pawn_index<WHITE>(pos)][us];
+    const auto  bnpfv = w.nonPawnFluctuationHistory[BLACK][non_pawn_index<BLACK>(pos)][us];
+    const auto  cntfv =
+      m.is_ok() ? (*(ss - 2)->continuationFluctuationHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
+                 : 0;
+
+    return (6 * pfv + 10* mifv + 8 * (wnpfv + bnpfv) + 15 * cntfv);
+}
 // Add correctionHistory value to raw staticEval and guarantee evaluation
 // does not hit the tablebase range.
 Value to_corrected_static_eval(Value v, const int cv) {
@@ -253,6 +266,7 @@ void Search::Worker::iterative_deepening() {
         (ss - i)->continuationHistory =
           &this->continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
         (ss - i)->continuationCorrectionHistory = &this->continuationCorrectionHistory[NO_PIECE][0];
+        (ss - i)->continuationFluctuationHistory= &this->continuationFluctuationHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
         (ss - i)->reduction                     = 0;
     }
@@ -519,7 +533,7 @@ void Search::Worker::clear() {
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory[WHITE].fill(0);
     nonPawnCorrectionHistory[BLACK].fill(0);
-    pawnFluctiationHistory.fill(0);
+    pawnFluctuationHistory.fill(0);
     minorPieceFluctuationHistory.fill(0);
     nonPawnFluctuationHistory[WHITE].fill(0);
     nonPawnFluctuationHistory[BLACK].fill(0);
@@ -823,6 +837,7 @@ Value Search::Worker::search(
         ss->currentMove                   = Move::null();
         ss->continuationHistory           = &thisThread->continuationHistory[0][0][NO_PIECE][0];
         ss->continuationCorrectionHistory = &thisThread->continuationCorrectionHistory[NO_PIECE][0];
+        ss->continuationFluctuationHistory= &thisThread->continuationFluctuationHistory[NO_PIECE][0];
 
         pos.do_null_move(st, tt);
 
@@ -903,6 +918,8 @@ Value Search::Worker::search(
               &this->continuationHistory[ss->inCheck][true][movedPiece][move.to_sq()];
             ss->continuationCorrectionHistory =
               &this->continuationCorrectionHistory[movedPiece][move.to_sq()];
+            ss->continuationFluctuationHistory =
+              &this->continuationFluctuationHistory[movedPiece][move.to_sq()];
 
             // Perform a preliminary qsearch to verify that the move holds
             value = -qsearch<NonPV>(pos, ss + 1, -probCutBeta, -probCutBeta + 1);
@@ -1068,6 +1085,7 @@ moves_loop:  // When in check, search starts here
             // (* Scaler) Generally, higher singularBeta (i.e closer to ttValue)
             // and lower extension margins scale well.
 
+
             if (!rootNode && move == ttData.move && !excludedMove
                 && depth >= 5 - (thisThread->completedDepth > 33) + ss->ttPv
                 && is_valid(ttData.value) && !is_decisive(ttData.value)
@@ -1129,6 +1147,20 @@ moves_loop:  // When in check, search starts here
                                                   [type_of(pos.piece_on(move.to_sq()))]
                           > 4126)
                 extension = 1;
+            if (depth+extension <6) // This doesn't have an effect at higher depth.
+            {
+                int fluctuation_val = fluctuation_value(*thisThread,pos,ss);
+                //dbg_hit_on(fluctuation_val >= 100);
+                if (fluctuation_val >= 100)
+                {
+                    if (depth+extension <=0){
+                        extension = 1;
+                    }
+                    else{
+                        extension += 1;
+                    }
+                }
+            }
         }
 
         // Step 16. Make the move
@@ -1456,16 +1488,36 @@ moves_loop:  // When in check, search starts here
             (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()] << bonus;
 
         //Update uncertainty/fluctuation histories after adjusting correction history.
-        if (!is_decisive(bestValue)){
-            int fluctuation = int(bestValue - ss->staticEval)*int(bestValue - ss->staticEval)/1024 - 30000;
-            dbg_mean_of(fluctuation);
-            thisThread->pawnFluctiationHistory[us][pawn_structure_index<Fluctuation>(pos)]  << fluctuation;
-            thisThread->minorPieceFluctuationHistory[us][minor_piece_index(pos)] << fluctuation;
-            thisThread->nonPawnFluctuationHistory[WHITE][non_pawn_index<WHITE>(pos)][us] << fluctuation;
-            thisThread->nonPawnFluctuationHistory[BLACK][non_pawn_index<BLACK>(pos)][us] << fluctuation;
+        if (!is_decisive(bestValue) && depth <= 7)
+        {
+            int fluctuation = int(bestValue - ss->staticEval)*int(bestValue - ss->staticEval)/1024 - 72;
+            //dbg_correl_of(fluctuation,debug_value, depth);
+            //dbg_mean_of(fluctuation);
 
-            if (m.is_ok())
-                (*(ss - 2)->continuationFluctuationHistory)[pos.piece_on(m.to_sq())][m.to_sq()] << fluctuation;
+            /*
+            sample at depth=6
+            Correl. #1: Total 34030 Coefficient 0.147478
+            Correl. #2: Total 28069 Coefficient 0.48804
+            Correl. #3: Total 25717 Coefficient 0.555912
+            Correl. #4: Total 19518 Coefficient 0.562675
+            Correl. #5: Total 12716 Coefficient 0.675092
+            Correl. #6: Total 9132 Coefficient 0.764273
+            Correl. #7: Total 6554 Coefficient 0.706748
+
+            */
+
+
+            if (depth == 6)
+            {
+
+
+                thisThread->pawnFluctuationHistory[us][pawn_structure_index<Fluctuation>(pos)]  << fluctuation;
+                thisThread->minorPieceFluctuationHistory[us][minor_piece_index(pos)] << fluctuation;
+                thisThread->nonPawnFluctuationHistory[WHITE][non_pawn_index<WHITE>(pos)][us] << fluctuation;
+                thisThread->nonPawnFluctuationHistory[BLACK][non_pawn_index<BLACK>(pos)][us] << fluctuation;
+                if (m.is_ok())
+                    (*(ss - 2)->continuationFluctuationHistory)[pos.piece_on(m.to_sq())][m.to_sq()] << fluctuation;
+            }
 
         }
 
@@ -1676,7 +1728,8 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
           &thisThread->continuationHistory[ss->inCheck][capture][movedPiece][move.to_sq()];
         ss->continuationCorrectionHistory =
           &thisThread->continuationCorrectionHistory[movedPiece][move.to_sq()];
-
+        ss->continuationFluctuationHistory =
+          &thisThread->continuationFluctuationHistory[movedPiece][move.to_sq()];
         value = -qsearch<nodeType>(pos, ss + 1, -beta, -alpha);
         pos.undo_move(move);
 

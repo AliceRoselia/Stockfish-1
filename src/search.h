@@ -293,7 +293,7 @@ class Worker {
     CorrectionHistory<NonPawn>      nonPawnCorrectionHistory[COLOR_NB];
     CorrectionHistory<Continuation> continuationCorrectionHistory;
 
-    FluctuationHistory<Pawn>        pawnFluctiationHistory;
+    FluctuationHistory<Pawn>         pawnFluctuationHistory;
     FluctuationHistory<Minor>        minorPieceFluctuationHistory;
     FluctuationHistory<NonPawn>      nonPawnFluctuationHistory[COLOR_NB];
     FluctuationHistory<Continuation> continuationFluctuationHistory;
