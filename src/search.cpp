@@ -1153,7 +1153,7 @@ moves_loop:  // When in check, search starts here
                 //dbg_hit_on(fluctuation_val >= 100);
                 if (fluctuation_val >= 80)
                 {
-                    extension = std::max(extension,1);
+                    extension = std::max(extension,2);
                 }
             }
         }
