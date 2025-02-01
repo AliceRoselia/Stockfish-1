@@ -108,7 +108,7 @@ int fluctuation_value(const Worker& w, const Position& pos, const Stack* ss) {
       m.is_ok() ? (*(ss - 2)->continuationFluctuationHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
 
-    return (6 * pfv + 10* mifv + 8 * (wnpfv + bnpfv) + 15 * cntfv);
+    return (-16 * pfv + 72* mifv + 85 * (wnpfv + bnpfv) + 87 * cntfv);
 }
 // Add correctionHistory value to raw staticEval and guarantee evaluation
 // does not hit the tablebase range.
@@ -1149,12 +1149,13 @@ moves_loop:  // When in check, search starts here
                 extension = 1;
             if (depth+extension <6) // This doesn't have an effect at higher depth.
             {
+
                 int fluctuation_val = fluctuation_value(*thisThread,pos,ss);
-                //dbg_hit_on(fluctuation_val >= 100);
-                if (fluctuation_val >= 80)
-                {
-                    extension = std::max(extension,2);
-                }
+                dbg_hit_on(fluctuation_val >= 300);
+                //if (fluctuation_val >= 160)
+                //{
+                //    extension = std::max(extension,2);
+                //}
             }
         }
 
@@ -1485,9 +1486,21 @@ moves_loop:  // When in check, search starts here
         //Update uncertainty/fluctuation histories after adjusting correction history.
         if (!is_decisive(bestValue) && depth <= 7)
         {
-            int fluctuation = int(bestValue - ss->staticEval)*int(bestValue - ss->staticEval)/1024 - 72;
-            //dbg_correl_of(fluctuation,debug_value, depth);
-            //dbg_mean_of(fluctuation);
+            int debug_value = fluctuation_value(*thisThread,pos,ss);
+            int fluctuation = int(bestValue - ss->staticEval)*int(bestValue - ss->staticEval)/1024 - 125;
+            dbg_correl_of(fluctuation,debug_value, depth);
+            dbg_mean_of(fluctuation);
+            if (depth == 6){
+                int constant = 3;
+                int c_value = -61;
+                int error = fluctuation-debug_value*constant/16384 - c_value;
+                dbg_mean_of(thisThread->pawnFluctuationHistory[us][pawn_structure_index<Fluctuation>(pos)]*error,1);
+                dbg_mean_of(thisThread->minorPieceFluctuationHistory[us][minor_piece_index(pos)]*error,2);
+                dbg_mean_of((thisThread->nonPawnFluctuationHistory[WHITE][non_pawn_index<WHITE>(pos)][us] + thisThread->nonPawnFluctuationHistory[BLACK][non_pawn_index<BLACK>(pos)][us])*error,3);
+                dbg_mean_of((*(ss - 2)->continuationFluctuationHistory)[pos.piece_on(m.to_sq())][m.to_sq()]*error,4);
+                dbg_mean_of(error*debug_value*constant/16384,5);
+                dbg_mean_of(error,6);
+            }
 
             /*
             sample at depth=6
