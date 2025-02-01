@@ -72,7 +72,7 @@ template<typename T, int D>
 class StatsEntry {
 
     static_assert(std::is_arithmetic<T>::value, "Not an arithmetic type");
-    static_assert(D <= std::numeric_limits<T>::max(), "D overflows T");
+    static_assert(D*3 <= std::numeric_limits<T>::max(), "D overflows T");
 
     T entry;
 
@@ -85,9 +85,9 @@ class StatsEntry {
 
     void operator<<(int bonus) {
         // Make sure that bonus is in range [-D, D]
-        int clampedBonus = std::clamp(bonus, -D/3, D/3);
+        int clampedBonus = std::clamp(bonus, -D, D);
         int squaredBonus = clampedBonus * clampedBonus;
-        entry += clampedBonus - (entry * std::abs(clampedBonus)  - squaredBonus/2)/ (D/3) + squaredBonus*entry/(2*(D/3)*(D/3));
+        entry += clampedBonus - (entry * std::abs(clampedBonus)  - squaredBonus/2)/ D + squaredBonus*entry/(2*D*D);
 
         assert(std::abs(entry) <= D);
     }
@@ -116,7 +116,7 @@ using LowPlyHistory =
 using CapturePieceToHistory = Stats<std::int16_t, 10692, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
-using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;
+using PieceToHistory = Stats<std::int32_t, 30000, PIECE_NB, SQUARE_NB>;
 
 // ContinuationHistory is the combined history of a given pair of moves, usually
 // the current one given a previous one. The nested history table is based on
