@@ -1327,7 +1327,7 @@ int Position::psqt_correction() const{
 }
 
 
-constexpr int PSQT_LEARNING_RATE[PIECE_TYPE_NB] = {0,2,5,6,10,18,19,0};
+constexpr int PSQT_LEARNING_RATE[PIECE_TYPE_NB] = {0,2061,5108,6105,10186,18397,19401,0};
 
 template<PieceType t,Color c>
 void Position::update_psqt_helper(Value error){
@@ -1335,7 +1335,7 @@ void Position::update_psqt_helper(Value error){
 
     Bitboard currentpieces = pieces(c,t);
     Piece p = make_piece(c,t);
-    int v = PSQT_LEARNING_RATE[t]*error/1024;
+    int v = PSQT_LEARNING_RATE[t]*error/1048576;
     while (currentpieces){
         Square s = pop_lsb(currentpieces);
         // Do something with square s and piece p.

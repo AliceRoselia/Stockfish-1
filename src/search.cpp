@@ -52,7 +52,7 @@
 
 namespace Stockfish {
 
-constexpr int PSQT_LIMIT = 8192;
+constexpr int PSQT_LIMIT = 2048;
 //constexpr int PSQT_CORRECTION_LIMIT = 2000000;
 
 namespace TB = Tablebases;
