@@ -71,6 +71,12 @@ namespace {
 // tests at these types of time controls.
 
 // Futility margin
+Value qsearch_futility_margin(bool improving, bool oppWorsening){
+    Value improvingDeduction = improving * futilityMult * 2;
+    Value worseningDeduction = oppWorsening * futilityMult / 3;
+    return -improvingDeduction - worseningDeduction;
+}
+
 Value futility_margin(Depth d, bool noTtCutNode, bool improving, bool oppWorsening) {
     Value futilityMult       = 112 - 26 * noTtCutNode;
     Value improvingDeduction = improving * futilityMult * 2;
@@ -1554,7 +1560,10 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         }
 
         // Stand pat. Return immediately if static value is at least beta
-        if (bestValue >= beta)
+        improving = ss->staticEval > (ss - 2)->staticEval;
+        opponentWorsening = ss->staticEval + (ss - 1)->staticEval > 2;
+        Value margin = qsearch_futility_margin(improving, opponentWorsening);
+        if (bestValue - margin >= beta)
         {
             if (!is_decisive(bestValue))
                 bestValue = (bestValue + beta) / 2;
