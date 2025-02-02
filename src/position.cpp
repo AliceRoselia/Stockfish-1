@@ -1327,7 +1327,7 @@ int Position::psqt_correction() const{
 }
 
 
-constexpr int PSQT_LEARNING_RATE[PIECE_TYPE_NB] = {0,2061,5108,6105,10186,18397,19401,0};
+constexpr int PSQT_LEARNING_RATE[PIECE_TYPE_NB] = {0,2059,5108,6066,10199,18349,19370,0};
 
 template<PieceType t,Color c>
 void Position::update_psqt_helper(Value error){
