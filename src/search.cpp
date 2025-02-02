@@ -100,7 +100,7 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     const auto psqtcv = pos.psqt_correction();
     //dbg_mean_of(std::abs(psqtcv));
     //dbg_mean_of(std::abs(pcv),1);
-    return (7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv; + psqtcv);
+    return (7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv + psqtcv);
 
 }
 
@@ -1460,34 +1460,10 @@ moves_loop:  // When in check, search starts here
         auto bonus = std::clamp(int(bestValue - ss->staticEval) * depth / 8,
                                 -CORRECTION_HISTORY_LIMIT / 4, CORRECTION_HISTORY_LIMIT / 4);
 
-        thisThread->pawnCorrectionHistory[us][pawn_structure_index<Correction>(pos)]
-          << bonus * 114 / 128;
-        thisThread->minorPieceCorrectionHistory[us][minor_piece_index(pos)] << bonus * 146 / 128;
-        thisThread->nonPawnCorrectionHistory[WHITE][non_pawn_index<WHITE>(pos)][us]
-          << bonus * nonPawnWeight / 128;
-        thisThread->nonPawnCorrectionHistory[BLACK][non_pawn_index<BLACK>(pos)][us]
-          << bonus * nonPawnWeight / 128;
-
-
-        if (m.is_ok())
-            (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()] << bonus;
+        update_correction_history(pos, ss, *thisThread, bonus);
 
             //pos.update_psqt_correction(int(bestValue - ss->staticEval) * depth);
         pos.update_psqt_correction(std::clamp(int(bestValue - (ss->staticEval ))* depth,-PSQT_LIMIT,PSQT_LIMIT));
-        /*
-        if (depth <= 8)
-        {
-        if (is_win(bestValue))
-            pos.update_psqt_correction(PSQT_DECISIVE_UPDATE* depth);
-        else if (is_loss(bestValue))
-            pos.update_psqt_correction(-PSQT_DECISIVE_UPDATE* depth);
-        else
-            pos.update_psqt_correction(int(bestValue - (ss->staticEval )) * depth);
-        }
-        */
-
-        update_correction_history(pos, ss, *thisThread, bonus);
-
     }
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);
