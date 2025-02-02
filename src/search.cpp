@@ -72,6 +72,7 @@ namespace {
 
 // Futility margin
 Value qsearch_futility_margin(bool improving, bool oppWorsening){
+    Value futilityMult       = 112;
     Value improvingDeduction = improving * futilityMult * 2;
     Value worseningDeduction = oppWorsening * futilityMult / 3;
     return -improvingDeduction - worseningDeduction;
@@ -1560,8 +1561,8 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         }
 
         // Stand pat. Return immediately if static value is at least beta
-        improving = ss->staticEval > (ss - 2)->staticEval;
-        opponentWorsening = ss->staticEval + (ss - 1)->staticEval > 2;
+        bool improving = ss->staticEval > (ss - 2)->staticEval;
+        bool opponentWorsening = ss->staticEval + (ss - 1)->staticEval > 2;
         Value margin = qsearch_futility_margin(improving, opponentWorsening);
         if (bestValue - margin >= beta)
         {
