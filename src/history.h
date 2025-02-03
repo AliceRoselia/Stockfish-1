@@ -64,8 +64,8 @@ inline int non_pawn_index(const Position& pos) {
 }
 
 inline int material_imbalance(const Position& pos, Color side){
-    int material = (pos.count<PAWN>(side) + pos.count<KNIGHT>(side)*4 + pos.count<BISHOP>(side)*4 + pos.count<ROOK>(side)*6 + pos.count<QUEEN>(side)*12 -
-                    pos.count<PAWN>(~side) + pos.count<KNIGHT>(~side)*4 + pos.count<BISHOP>(~side)*4 + pos.count<ROOK>(~side)*6 + pos.count<QUEEN>(~side)*12
+    int material = (pos.count<PAWN>(side) + pos.count<KNIGHT>(side)*3 + pos.count<BISHOP>(side)*4 + pos.count<ROOK>(side)*6 + pos.count<QUEEN>(side)*12 -
+                    pos.count<PAWN>(~side) + pos.count<KNIGHT>(~side)*3 + pos.count<BISHOP>(~side)*4 + pos.count<ROOK>(~side)*6 + pos.count<QUEEN>(~side)*12
     );
     return std::clamp(material,-6,6)+6;
 }
