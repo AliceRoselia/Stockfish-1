@@ -98,9 +98,7 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
                  : 0;
 
     const auto psqtcv = pos.psqt_correction();
-    //dbg_mean_of(std::abs(psqtcv));
-    //dbg_mean_of(std::abs(pcv),1);
-    return (7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv + psqtcv);
+    return (7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv + 2*psqtcv);
 
 }
 
