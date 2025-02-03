@@ -93,8 +93,9 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     const auto  cntcv =
       m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
+    const auto tempo = w.tempoCorrectionHistory;
 
-    return 7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv;
+    return 7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv + 2048*tempo;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -112,6 +113,7 @@ void update_correction_history(const Position& pos,
 
     static constexpr int nonPawnWeight = 159;
 
+    workerThread.tempoCorrectionHistory << bonus;
     workerThread.pawnCorrectionHistory[pawn_structure_index<Correction>(pos)][us]
       << bonus * 104 / 128;
     workerThread.minorPieceCorrectionHistory[minor_piece_index(pos)][us] << bonus * 145 / 128;
