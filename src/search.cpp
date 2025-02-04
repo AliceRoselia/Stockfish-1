@@ -97,6 +97,21 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     return 7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv;
 }
 
+
+int reduction_correction_value(const Worker& w, const Position& pos, const Stack* const ss) {
+    const Color us    = pos.side_to_move();
+    const auto  m     = (ss - 1)->currentMove;
+    const auto  pcv   = w.pawnCorrectionHistory[pawn_structure_index<Correction>(pos)][us];
+    const auto  micv  = w.minorPieceCorrectionHistory[minor_piece_index(pos)][us];
+    const auto  wnpcv = w.nonPawnCorrectionHistory[WHITE][non_pawn_index<WHITE>(pos)][us];
+    const auto  bnpcv = w.nonPawnCorrectionHistory[BLACK][non_pawn_index<BLACK>(pos)][us];
+    const auto  cntcv =
+      m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
+                 : 0;
+    //Currently set as the same as correction_value, but might change later.
+    return 7000 * pcv + 9500 * micv + 5000 * (wnpcv + bnpcv) + 6000 * cntcv;
+}
+
 // Add correctionHistory value to raw staticEval and guarantee evaluation
 // does not hit the tablebase range.
 Value to_corrected_static_eval(const Value v, const int cv) {
@@ -958,6 +973,9 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+    int reduction_corr = reduction_correction_value(*thisThread, pos, ss)/16384;
+    //dbg_mean_of(std::abs(reduction_corr));
+    //bool failhigh = false;
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -997,7 +1015,9 @@ moves_loop:  // When in check, search starts here
 
         int delta = beta - alpha;
 
-        Depth r = reduction(improving, depth, moveCount, delta);
+        Depth r = reduction(improving, depth, moveCount, delta) + reduction_corr;
+        //dbg_mean_of(std::abs(r),1);
+
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
@@ -1116,8 +1136,11 @@ moves_loop:  // When in check, search starts here
                 // over the original beta, we assume this expected cut-node is not
                 // singular (multiple moves fail high), and we can prune the whole
                 // subtree by returning a softbound.
-                else if (value >= beta && !is_decisive(value))
+                else if (value >= beta && !is_decisive(value)){
+                    //dbg_correl_of(reduction_corr,1,2);
                     return value;
+
+                }
 
                 // Negative extensions
                 // If other moves failed high over (ttValue - margin) without the
@@ -1350,6 +1373,7 @@ moves_loop:  // When in check, search starts here
                 {
                     ss->cutoffCnt += (extension < 2);
                     assert(value >= beta);  // Fail high
+                    //failhigh = true;
                     break;
                 }
                 else
@@ -1457,6 +1481,7 @@ moves_loop:  // When in check, search starts here
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);
 
+    //dbg_correl_of(reduction_corr,int(failhigh),2);
     return bestValue;
 }
 
