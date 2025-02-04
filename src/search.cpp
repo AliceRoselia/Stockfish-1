@@ -1837,7 +1837,9 @@ void update_all_stats(const Position&      pos,
         captured    = type_of(pos.piece_on(move.to_sq()));
 
         captureHistory[is_endgame(pos)][moved_piece][move.to_sq()][captured] << -malus * 1224 / 1024;
-
+    }
+    }
+}
 
 
 // Updates histories of the move pairs formed by moves
