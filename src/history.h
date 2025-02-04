@@ -63,11 +63,9 @@ inline int non_pawn_index(const Position& pos) {
     return pos.non_pawn_key(c) & (CORRECTION_HISTORY_SIZE - 1);
 }
 
-inline int material_imbalance(const Position& pos, Color side){
-    int material = (pos.count<PAWN>(side) + pos.count<KNIGHT>(side)*3 + pos.count<BISHOP>(side)*3 + pos.count<ROOK>(side)*5 + pos.count<QUEEN>(side)*9 -
-                    pos.count<PAWN>(~side) - pos.count<KNIGHT>(~side)*3 - pos.count<BISHOP>(~side)*3 - pos.count<ROOK>(~side)*5 - pos.count<QUEEN>(~side)*9
-    );
-    return std::clamp(material,-6,6)+6;
+inline int is_endgame(const Position& pos){
+    int material = pos.non_pawn_material();
+    return (material <= 3814);
 }
 
 // StatsEntry is the container of various numerical statistics. We use a class
@@ -118,8 +116,8 @@ using ButterflyHistory = Stats<std::int16_t, 7183, COLOR_NB, int(SQUARE_NB) * in
 using LowPlyHistory =
   Stats<std::int16_t, 7183, LOW_PLY_HISTORY_SIZE, int(SQUARE_NB) * int(SQUARE_NB)>;
 
-// CapturePieceToHistory is addressed by a move's [material_imbalance][piece][to][captured piece type]
-using CapturePieceToHistory = Stats<std::int16_t, 10692,13, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
+// CapturePieceToHistory is addressed by a move's [is_endgame][piece][to][captured piece type]
+using CapturePieceToHistory = Stats<std::int16_t, 10692,2, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
 using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;
