@@ -82,6 +82,26 @@ Value futility_margin(Depth d, bool noTtCutNode, bool improving, bool oppWorseni
 constexpr int futility_move_count(bool improving, Depth depth) {
     return (3 + depth * depth) / (2 - improving);
 }
+int pcv1_coef = 7037;
+TUNE(SetRange(6537,7537),pcv1_coef);
+int pcv2_coef = 7037;
+TUNE(SetRange(6537,7537),pcv2_coef);
+int micv1_coef = 6671;
+TUNE(SetRange(6171,7171),micv1_coef);
+int micv2_coef = 6671;
+TUNE(SetRange(6171,7171),micv2_coef);
+int npcv1_coef = 7631;
+TUNE(SetRange(7131,8131),npcv1_coef);
+int npcv2_coef = 7631;
+TUNE(SetRange(7131,8131),npcv2_coef);
+int cntcv1_coef = 6362;
+TUNE(SetRange(5862,6862),cntcv1_coef);
+int cntcv2_coef = 6362;
+TUNE(SetRange(5862,6862),cntcv2_coef);
+int positive_reduction_divisor = 34112;
+int negative_reduction_divisor = 34112;
+TUNE(SetRange(29112,39112),positive_reduction_divisor);
+TUNE(SetRange(29112,39112),negative_reduction_divisor);
 
 int correction_value(const Worker& w, const Position& pos, const Stack* const ss) {
     const Color us    = pos.side_to_move();
@@ -94,7 +114,21 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
       m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
 
-    return 7037 * pcv + 6671 * micv + 7631 * (wnpcv + bnpcv) + 6362 * cntcv;
+    return pcv1_coef * pcv + micv1_coef * micv + npcv1_coef * (wnpcv + bnpcv) + cntcv1_coef * cntcv;
+}
+
+int reduction_correction_value(const Worker& w, const Position& pos, const Stack* const ss) {
+    const Color us    = pos.side_to_move();
+    const auto  m     = (ss - 1)->currentMove;
+    const auto  pcv   = w.pawnCorrectionHistory[pawn_structure_index<Correction>(pos)][us];
+    const auto  micv  = w.minorPieceCorrectionHistory[minor_piece_index(pos)][us];
+    const auto  wnpcv = w.nonPawnCorrectionHistory[WHITE][non_pawn_index<WHITE>(pos)][us];
+    const auto  bnpcv = w.nonPawnCorrectionHistory[BLACK][non_pawn_index<BLACK>(pos)][us];
+    const auto  cntcv =
+      m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
+                 : 0;
+
+    return pcv2_coef * pcv + micv2_coef * micv + npcv2_coef * (wnpcv + bnpcv) + cntcv2_coef * cntcv;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -749,6 +783,7 @@ Value Search::Worker::search(
     // Step 6. Static evaluation of the position
     Value      unadjustedStaticEval = VALUE_NONE;
     const auto correctionValue      = correction_value(*thisThread, pos, ss);
+    const auto RcorrectionValue     = reduction_correction_value(*thisThread, pos, ss);
     if (ss->inCheck)
     {
         // Skip early pruning when in check
@@ -1171,8 +1206,8 @@ moves_loop:  // When in check, search starts here
 
         r += 307 - moveCount * 64;
 
-        r -= std::abs(correctionValue) / 34112;
-
+        //r -= std::abs(correctionValue) / 34112;
+        r -= std::max(RcorrectionValue/positive_reduction_divisor,-RcorrectionValue/negative_reduction_divisor);
         // Increase reduction for cut nodes
         if (cutNode)
             r += 2355 - (ttData.depth >= depth && ss->ttPv) * 1141;
