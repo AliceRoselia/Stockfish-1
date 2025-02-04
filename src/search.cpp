@@ -958,6 +958,7 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+    int is_currently_endgame = is_endgame(pos); //Used later.
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1022,7 +1023,7 @@ moves_loop:  // When in check, search starts here
             {
                 Piece capturedPiece = pos.piece_on(move.to_sq());
                 int   captHist =
-                  thisThread->captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)];
+                  thisThread->captureHistory[is_currently_endgame][movedPiece][move.to_sq()][type_of(capturedPiece)];
 
                 // Futility pruning for captures
                 if (!givesCheck && lmrDepth < 7 && !ss->inCheck)
@@ -1188,8 +1189,9 @@ moves_loop:  // When in check, search starts here
         if (capture)
             ss->statScore =
               688 * int(PieceValue[pos.captured_piece()]) / 100
-              + thisThread->captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())]
+              + thisThread->captureHistory[is_currently_endgame][movedPiece][move.to_sq()][type_of(pos.captured_piece())]
               - 4653;
+
         else
             ss->statScore = 2 * thisThread->mainHistory[us][move.from_to()]
                           + (*contHist[0])[movedPiece][move.to_sq()]
@@ -1421,7 +1423,7 @@ moves_loop:  // When in check, search starts here
         // bonus for prior countermoves that caused the fail low
         Piece capturedPiece = pos.captured_piece();
         assert(capturedPiece != NO_PIECE);
-        thisThread->captureHistory[pos.piece_on(prevSq)][prevSq][type_of(capturedPiece)]
+        thisThread->captureHistory[is_currently_endgame][pos.piece_on(prevSq)][prevSq][type_of(capturedPiece)]
           << stat_bonus(depth) * 2;
     }
 
@@ -1819,8 +1821,9 @@ void update_all_stats(const Position&      pos,
     {
         // Increase stats for the best move in case it was a capture move
         captured = type_of(pos.piece_on(bestMove.to_sq()));
-        captureHistory[moved_piece][bestMove.to_sq()][captured] << bonus * 1236 / 1024;
-    }
+
+        captureHistory[is_endgame(pos)][moved_piece][bestMove.to_sq()][captured] << bonus * 1236 / 1024;
+
 
     // Extra penalty for a quiet early move that was not a TT move in
     // previous ply when it gets refuted.
@@ -1832,9 +1835,9 @@ void update_all_stats(const Position&      pos,
     {
         moved_piece = pos.moved_piece(move);
         captured    = type_of(pos.piece_on(move.to_sq()));
-        captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1224 / 1024;
-    }
-}
+
+        captureHistory[is_endgame(pos)][moved_piece][move.to_sq()][captured] << -malus * 1224 / 1024;
+
 
 
 // Updates histories of the move pairs formed by moves
