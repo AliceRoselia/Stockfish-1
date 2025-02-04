@@ -1015,7 +1015,7 @@ moves_loop:  // When in check, search starts here
 
         int delta = beta - alpha;
 
-        Depth r = reduction(improving, depth, moveCount, delta) + reduction_corr;
+        Depth r = reduction(improving, depth, moveCount, delta) - reduction_corr;
         //dbg_mean_of(std::abs(r),1);
 
 
