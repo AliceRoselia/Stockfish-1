@@ -1139,7 +1139,7 @@ moves_loop:  // When in check, search starts here
                     extension = -2;
             }
         }
-        bool sacrifice = pos.see_ge(move,PawnValue-KnightValue);
+        bool sacrifice = !pos.see_ge(move,PawnValue-KnightValue);
 
         // Step 16. Make the move
         pos.do_move(move, st, givesCheck, &tt);
