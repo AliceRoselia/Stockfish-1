@@ -197,6 +197,7 @@ void MovePicker::score() {
 
 // Returns the next move satisfying a predicate function.
 // This never returns the TT move, as it was emitted before.
+/*
 template<typename Pred>
 Move MovePicker::select(Pred filter) {
 
@@ -205,6 +206,18 @@ Move MovePicker::select(Pred filter) {
             return *cur++;
 
     return Move::none();
+}*/
+
+Move MovePicker::select_capture(){
+    while (cur < endMoves){
+        if (pos.see_ge(*cur, -cur->value / 18)){
+
+        }
+        else{
+            std::pop_heap(endMoves--);
+        }
+        std::pop_heap(endMoves--);
+    }
 }
 
 // This is the most important method of the MovePicker class. We emit one
@@ -228,6 +241,8 @@ top:
     case CAPTURE_INIT :
     case PROBCUT_INIT :
     case QCAPTURE_INIT :
+
+        /*
         cur = endBadCaptures = moves;
         endMoves             = generate<CAPTURES>(pos, cur);
 
@@ -235,6 +250,15 @@ top:
         partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
         ++stage;
         goto top;
+
+        */
+        cur = endBadCaptures = moves;
+        endMoves             = generate<CAPTURES>(pos, cur);
+        score<CAPTURES>();
+        std::make_heap(cur,endMoves);
+        ++stage;
+        goto top;
+
 
     case GOOD_CAPTURE :
         if (select([&]() {
