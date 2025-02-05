@@ -1139,6 +1139,7 @@ moves_loop:  // When in check, search starts here
                     extension = -2;
             }
         }
+        bool sacrifice = pos.see_ge(move,PawnValue-KnightValue);
 
         // Step 16. Make the move
         pos.do_move(move, st, givesCheck, &tt);
@@ -1225,7 +1226,7 @@ moves_loop:  // When in check, search starts here
                 const bool doDeeperSearch    = value > (bestValue + 41 + 2 * newDepth);
                 const bool doShallowerSearch = value < bestValue + 9;
 
-                newDepth += doDeeperSearch - doShallowerSearch;
+                newDepth += doDeeperSearch - doShallowerSearch + sacrifice; // if a sacrifice is not ruled out by LMR, might be good and must search deeper.
 
                 if (newDepth > d)
                     value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
