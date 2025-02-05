@@ -225,9 +225,10 @@ top:
     case CAPTURE_INIT :
     case PROBCUT_INIT :
     case QCAPTURE_INIT :
-        cur = endBadCaptures = moves;
-        endMoves             = generate<CAPTURES>(pos, cur);
-
+        //std::cout<<"QCAPTURE_INIT"<<std::endl;
+        cur = moves;
+        beginGoodQuiets = endMoves = beginBadCaptures = endBadCaptures = generate<CAPTURES>(pos, cur);
+        --beginBadCaptures;
         score<CAPTURES>();
         //partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
         std::make_heap(cur,endMoves);
@@ -237,21 +238,22 @@ top:
     case GOOD_CAPTURE :
         if (select([&]() {
                 // Move losing capture to endBadCaptures to be tried later
-                return pos.see_ge(*cur, -cur->value / 18) ? true
-                                                          : (*endBadCaptures++ = *cur, false);
+                return pos.see_ge(*cur, -cur->value / 18) ? true: false;
             }))
             return *(cur);
 
-
+        endBadCaptures = endMoves;
         ++stage;
         [[fallthrough]];
 
     case QUIET_INIT :
+        //std::cout<<"QUIET_INIT"<<std::endl;
         if (!skipQuiets)
         {
-            cur      = endBadCaptures;
+            //std::cout<<beginGoodQuiets<<std::endl;
+            cur      = beginGoodQuiets;
             endMoves = beginBadQuiets = endBadQuiets = generate<QUIETS>(pos, cur);
-
+            --beginBadQuiets;
             score<QUIETS>();
             //partial_insertion_sort(cur, endMoves, quiet_threshold(depth));
             std::make_heap(cur,endMoves);
@@ -267,31 +269,35 @@ top:
                 return *(cur);
 
             // Remaining quiets are bad
-            beginBadQuiets = cur;
             endBadQuiets = endMoves;
         }
 
         // Prepare the pointers to loop over the bad captures
-        cur      = moves;
+        //cur      = moves;
+        cur = beginBadCaptures;
         endMoves = endBadCaptures;
 
         ++stage;
         [[fallthrough]];
 
     case BAD_CAPTURE :
-        if (select([]() { return true; }))
-            return *(cur);
+        if (cur > endMoves){
+            return *(cur--);
+        }
 
         // Prepare the pointers to loop over the bad quiets
         cur      = beginBadQuiets;
         endMoves = endBadQuiets;
+        //std::cout<<beginBadQuiets<<std::endl;
+        //std::cout<<endBadQuiets<<std::endl;
 
         ++stage;
         [[fallthrough]];
 
     case BAD_QUIET :
-        if (!skipQuiets)
-            return select([]() { return true; });
+        if (cur > endMoves && !skipQuiets){
+            return *(cur--);
+        }
 
         return Move::none();
 
