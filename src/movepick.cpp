@@ -240,7 +240,7 @@ top:
                 // Move losing capture to endBadCaptures to be tried later
                 return pos.see_ge(*cur, -cur->value / 18) ? true: false;
             }))
-            return *(cur);
+            return *(endMoves);
 
         endBadCaptures = endMoves;
         ++stage;
@@ -265,8 +265,8 @@ top:
     case GOOD_QUIET :
         if (!skipQuiets && select([]() { return true; }))
         {
-            if ((cur)->value > -7998 || (cur)->value <= quiet_threshold(depth))
-                return *(cur);
+            if ((endMoves)->value > -7998 || (endMoves)->value <= quiet_threshold(depth))
+                return *(endMoves);
 
             // Remaining quiets are bad
             endBadQuiets = endMoves;
