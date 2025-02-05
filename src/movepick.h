@@ -52,8 +52,10 @@ class MovePicker {
     void skip_quiet_moves();
 
    private:
-    template<typename Pred>
-    Move select(Pred);
+    Move select();
+    Move select_probcut();
+    bool select_capture();
+    bool select_quiet();
     template<GenType>
     void     score();
     ExtMove* begin() { return cur; }
@@ -66,7 +68,7 @@ class MovePicker {
     const PieceToHistory**       continuationHistory;
     const PawnHistory*           pawnHistory;
     Move                         ttMove;
-    ExtMove *                    cur, *endMoves, *endBadCaptures, *beginBadQuiets, *endBadQuiets;
+    ExtMove *                    cur, *endMoves, *beginBadCaptures, *endBadCaptures, *beginBadQuiets, *endBadQuiets, *beginGoodQuiets;
     int                          stage;
     int                          threshold;
     Depth                        depth;
@@ -74,7 +76,7 @@ class MovePicker {
     bool                         skipQuiets = false;
     ExtMove                      moves[MAX_MOVES];
 };
-
+Value quiet_threshold(Depth d);
 }  // namespace Stockfish
 
 #endif  // #ifndef MOVEPICK_H_INCLUDED

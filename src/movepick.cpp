@@ -57,18 +57,7 @@ enum Stages {
 
 // Sort moves in descending order up to and including a given limit.
 // The order of moves smaller than the limit is left unspecified.
-void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 
-    for (ExtMove *sortedEnd = begin, *p = begin + 1; p < end; ++p)
-        if (p->value >= limit)
-        {
-            ExtMove tmp = *p, *q;
-            *p          = *++sortedEnd;
-            for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
-                *q = *(q - 1);
-            *q = tmp;
-        }
-}
 
 }  // namespace
 
@@ -208,24 +197,86 @@ Move MovePicker::select(Pred filter) {
     return Move::none();
 }*/
 
-Move MovePicker::select_capture(){
-    while (cur < endMoves){
-        if (pos.see_ge(*cur, -cur->value / 18)){
+bool MovePicker::select_capture(){
+    //std::cout<<cur<<" capture "<<endMoves<<std::endl;
+    while (cur < endMoves)
+    {
+        if (*cur!=ttMove){
+            if (pos.see_ge(*cur, -cur->value / 18)){
 
+                std::pop_heap(cur,endMoves--);
+                return true;
+            }
+            else{
+                std::pop_heap(cur,endMoves--);
+                *(endBadCaptures--) = *endMoves; //For example, if the moves were 5 4 3 2 1... and you pop to 4 3 2 1 5... then
+            }
         }
         else{
-            std::pop_heap(endMoves--);
+            std::pop_heap(cur,endMoves--); //Just pop the heap.
         }
-        std::pop_heap(endMoves--);
     }
+    return false;
+}
+
+Value quiet_threshold(Depth d){
+    return -3560*d;
+}
+
+bool MovePicker::select_quiet(){
+    //std::cout<<cur<<" quiet "<<endMoves<<std::endl;
+    while (cur < endMoves)
+    {
+        if (*cur!=ttMove){
+            if ( cur->value > -7998 || cur->value <= quiet_threshold(depth)){
+
+                std::pop_heap(cur,endMoves--);
+                return true;
+            }
+            else{
+                std::pop_heap(cur,endMoves--);
+                *(endBadQuiets--) = *endMoves; //For example, if the moves were 5 4 3 2 1... and you pop to 4 3 2 1 5... then
+            }
+        }
+        else{
+            std::pop_heap(cur,endMoves--); //Just pop the heap.
+        }
+    }
+    return false;
+}
+
+Move MovePicker::select(){
+    //std::cout<<cur<<" select "<<endMoves<<std::endl;
+    while (cur < endMoves){
+        if (*cur != ttMove){
+            std::pop_heap(cur,endMoves--);
+            return *endMoves;
+        }
+        else{
+            std::pop_heap(cur,endMoves--);
+        }
+    }
+    return Move::none();
+}
+
+Move MovePicker::select_probcut(){
+    //std::cout<<cur<<" probcut "<<endMoves<<std::endl;
+    while (cur < endMoves){
+        if (*cur != ttMove && pos.see_ge(*cur,threshold)){
+            std::pop_heap(cur,endMoves--);
+            return *endMoves;
+        }
+        else{
+            std::pop_heap(cur,endMoves--);
+        }
+    }
+    return Move::none();
 }
 
 // This is the most important method of the MovePicker class. We emit one
 // new pseudo-legal move on every call until there are no more moves left,
 // picking the move with the highest score from a list of generated moves.
 Move MovePicker::next_move() {
-
-    auto quiet_threshold = [](Depth d) { return -3560 * d; };
 
 top:
     switch (stage)
@@ -252,8 +303,10 @@ top:
         goto top;
 
         */
-        cur = endBadCaptures = moves;
-        endMoves             = generate<CAPTURES>(pos, cur);
+        cur = moves;
+        endMoves = beginGoodQuiets = endBadCaptures =beginBadCaptures = generate<CAPTURES>(pos, cur);
+        --beginBadCaptures;
+        --endBadCaptures;
         score<CAPTURES>();
         std::make_heap(cur,endMoves);
         ++stage;
@@ -261,12 +314,8 @@ top:
 
 
     case GOOD_CAPTURE :
-        if (select([&]() {
-                // Move losing capture to endBadCaptures to be tried later
-                return pos.see_ge(*cur, -cur->value / 18) ? true
-                                                          : (*endBadCaptures++ = *cur, false);
-            }))
-            return *(cur - 1);
+        if (select_capture())
+            return *endMoves;
 
         ++stage;
         [[fallthrough]];
@@ -274,36 +323,36 @@ top:
     case QUIET_INIT :
         if (!skipQuiets)
         {
-            cur      = endBadCaptures;
+            cur      = beginGoodQuiets;
             endMoves = beginBadQuiets = endBadQuiets = generate<QUIETS>(pos, cur);
+            --beginBadQuiets;
+            --endBadQuiets;
 
             score<QUIETS>();
-            partial_insertion_sort(cur, endMoves, quiet_threshold(depth));
+            std::make_heap(cur,endMoves);
         }
 
         ++stage;
         [[fallthrough]];
 
     case GOOD_QUIET :
-        if (!skipQuiets && select([]() { return true; }))
-        {
-            if ((cur - 1)->value > -7998 || (cur - 1)->value <= quiet_threshold(depth))
-                return *(cur - 1);
+        if (!skipQuiets && select_quiet())
+            return *endMoves;
 
-            // Remaining quiets are bad
-            beginBadQuiets = cur - 1;
-        }
+        // Remaining quiets are bad
+
 
         // Prepare the pointers to loop over the bad captures
-        cur      = moves;
+        cur      = beginBadCaptures;
         endMoves = endBadCaptures;
 
         ++stage;
         [[fallthrough]];
 
     case BAD_CAPTURE :
-        if (select([]() { return true; }))
-            return *(cur - 1);
+        if (cur > endBadCaptures){
+            return *(cur--);
+        }
 
         // Prepare the pointers to loop over the bad quiets
         cur      = beginBadQuiets;
@@ -313,8 +362,8 @@ top:
         [[fallthrough]];
 
     case BAD_QUIET :
-        if (!skipQuiets)
-            return select([]() { return true; });
+        if (!skipQuiets && cur > endBadQuiets)
+            return *(cur--);
 
         return Move::none();
 
@@ -323,16 +372,16 @@ top:
         endMoves = generate<EVASIONS>(pos, cur);
 
         score<EVASIONS>();
-        partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
+        std::make_heap(cur,endMoves);
         ++stage;
         [[fallthrough]];
 
     case EVASION :
     case QCAPTURE :
-        return select([]() { return true; });
+        return select();
 
     case PROBCUT :
-        return select([&]() { return pos.see_ge(*cur, threshold); });
+        return select_probcut();
     }
 
     assert(false);
