@@ -195,7 +195,7 @@ Move MovePicker::select(Pred filter) {
             //std::cout<<cur<<std::endl;
             const auto result = *cur;
             std::pop_heap(cur,endMoves--);
-            std::cout<<result.raw()<<std::endl;
+            std::cout<<result.raw()<<" "<<result.value<<std::endl;
             return result;
         }
         else{
