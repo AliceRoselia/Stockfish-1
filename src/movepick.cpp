@@ -57,17 +57,16 @@ enum Stages {
 
 // Sort moves in descending order up to and including a given limit.
 // The order of moves smaller than the limit is left unspecified.
-void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
+void insertion_sort(ExtMove* begin, ExtMove* end) {
 
     for (ExtMove *sortedEnd = begin, *p = begin + 1; p < end; ++p)
-        if (p->value >= limit)
-        {
-            ExtMove tmp = *p, *q;
-            *p          = *++sortedEnd;
-            for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
-                *q = *(q - 1);
-            *q = tmp;
-        }
+    {
+        ExtMove tmp = *p, *q;
+        *p          = *++sortedEnd;
+        for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
+            *q = *(q - 1);
+        *q = tmp;
+    }
 }
 
 }  // namespace
@@ -232,7 +231,7 @@ top:
         endMoves             = generate<CAPTURES>(pos, cur);
 
         score<CAPTURES>();
-        partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
+        insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
         ++stage;
         goto top;
 
@@ -254,7 +253,7 @@ top:
             endMoves = beginBadQuiets = endBadQuiets = generate<QUIETS>(pos, cur);
 
             score<QUIETS>();
-            partial_insertion_sort(cur, endMoves, quiet_threshold(depth));
+            insertion_sort(cur, endMoves);
         }
 
         ++stage;
@@ -299,7 +298,7 @@ top:
         endMoves = generate<EVASIONS>(pos, cur);
 
         score<EVASIONS>();
-        partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
+        insertion_sort(cur, endMoves);
         ++stage;
         [[fallthrough]];
 
