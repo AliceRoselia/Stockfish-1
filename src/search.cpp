@@ -781,10 +781,8 @@ Value Search::Worker::search(
     else if ((priorCapture && type_of(pos.captured_piece()) != PAWN)){
         //NNUE is unreliable for captures anyway, so only update the material.
         ss->staticEval = eval = -PieceValue[pos.captured_piece()] - (ss-1)->staticEval;
-        if (eval >= beta) //Re-evaluate when the eval is still good.
+        if (eval >= beta - 200) //Re-evaluate when the eval is still good.
         {
-
-
             unadjustedStaticEval = evaluate(pos);
             ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
             ttWriter.write(posKey, VALUE_NONE, ss->ttPv, BOUND_NONE, DEPTH_UNSEARCHED, Move::none(),
