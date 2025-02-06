@@ -45,9 +45,9 @@ int Eval::simple_eval(const Position& pos, Color c) {
          + (pos.non_pawn_material(c) - pos.non_pawn_material(~c));
 }
 
-bool Eval::use_smallnet(const Position& pos) {
+bool Eval::use_smallnet(const Position& pos, Value beta) {
     int simpleEval = simple_eval(pos, pos.side_to_move());
-    return std::abs(simpleEval) > 962;
+    return std::abs(simpleEval-beta) > 962;
 }
 
 // Evaluate is the evaluator for the outer world. It returns a static evaluation
@@ -55,18 +55,20 @@ bool Eval::use_smallnet(const Position& pos) {
 Value Eval::evaluate(const Eval::NNUE::Networks&    networks,
                      const Position&                pos,
                      Eval::NNUE::AccumulatorCaches& caches,
-                     int                            optimism) {
+                     int                            optimism,
+                     Value beta
+                     ) {
 
     assert(!pos.checkers());
 
-    bool smallNet           = use_smallnet(pos);
+    bool smallNet           = use_smallnet(pos,beta);
     auto [psqt, positional] = smallNet ? networks.small.evaluate(pos, &caches.small)
                                        : networks.big.evaluate(pos, &caches.big);
 
     Value nnue = (125 * psqt + 131 * positional) / 128;
 
     // Re-evaluate the position when higher eval accuracy is worth the time spent
-    if (smallNet && (std::abs(nnue) < 236))
+    if (smallNet && (std::abs(nnue-beta) < 236))
     {
         std::tie(psqt, positional) = networks.big.evaluate(pos, &caches.big);
         nnue                       = (125 * psqt + 131 * positional) / 128;
@@ -112,7 +114,7 @@ std::string Eval::trace(Position& pos, const Eval::NNUE::Networks& networks) {
     v                       = pos.side_to_move() == WHITE ? v : -v;
     ss << "NNUE evaluation        " << 0.01 * UCIEngine::to_cp(v, pos) << " (white side)\n";
 
-    v = evaluate(networks, pos, *caches, VALUE_ZERO);
+    v = evaluate(networks, pos, *caches, VALUE_ZERO,0);
     v = pos.side_to_move() == WHITE ? v : -v;
     ss << "Final evaluation       " << 0.01 * UCIEngine::to_cp(v, pos) << " (white side)";
     ss << " [with scaled NNUE, ...]";
