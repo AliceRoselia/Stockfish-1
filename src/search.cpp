@@ -778,6 +778,10 @@ Value Search::Worker::search(
             && (ttData.bound & (ttData.value > eval ? BOUND_LOWER : BOUND_UPPER)))
             eval = ttData.value;
     }
+    else if ((priorCapture && type_of(pos.captured_piece()) != PAWN)){
+        //NNUE is unreliable for captures anyway, so only update the material.
+        ss->staticEval = eval = -PieceValue[pos.captured_piece()] - (ss-1)->staticEval;
+    }
     else
     {
         unadjustedStaticEval = evaluate(pos);
