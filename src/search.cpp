@@ -942,7 +942,7 @@ moves_loop:  // When in check, search starts here
     probCutBeta = beta + (ttData.depth >= depth - 4 ? 413 : 40*(depth-ttData.depth)*(depth-ttData.depth));
     if ((ttData.bound & BOUND_LOWER) && ttData.depth >= depth - 10 && ttData.value >= probCutBeta
         && !is_decisive(beta) && is_valid(ttData.value) && !is_decisive(ttData.value))
-        return ttaData.value - (probCutBeta-beta);
+        return ttData.value - (probCutBeta-beta);
 
     const PieceToHistory* contHist[] = {
       (ss - 1)->continuationHistory, (ss - 2)->continuationHistory, (ss - 3)->continuationHistory,
