@@ -176,7 +176,8 @@ void MovePicker::score() {
                                                : 0;
 
             //Minimize NNUE refreshes.
-            m.value -= (pt == KING)*10000;
+
+            m.value -= (pt == KING && (m.type_of() != CASTLING))*10000;
 
             // malus for putting piece en prise
             m.value -= (pt == QUEEN ? bool(to & threatenedByRook) * 49000
