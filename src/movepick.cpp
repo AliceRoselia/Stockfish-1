@@ -150,7 +150,7 @@ void MovePicker::score() {
 
         else if constexpr (Type == QUIETS)
         {
-            Color us = pos.side_to_move();
+            Color     us   = pos.side_to_move();
             Piece     pc   = pos.moved_piece(m);
             PieceType pt   = type_of(pc);
             Square    from = m.from_sq();
@@ -166,7 +166,7 @@ void MovePicker::score() {
             m.value += (*continuationHistory[4])[pc][to] / 3;
             m.value += (*continuationHistory[5])[pc][to];
 
-            m.value += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us, QUEEN) | pos.pieces(~us, ROOK) | pos.pieces(~us, KING))) >= 2) * 12000;
+            m.value += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 6000;
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
