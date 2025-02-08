@@ -165,6 +165,7 @@ void MovePicker::score() {
             m.value += (*continuationHistory[4])[pc][to] / 3;
             m.value += (*continuationHistory[5])[pc][to];
 
+            m.value += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us, QUEEN) | pos.pieces(~us, ROOK) | pos.pieces(~us, KING))) >= 2) * 12000;
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
