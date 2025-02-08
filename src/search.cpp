@@ -782,7 +782,7 @@ Value Search::Worker::search(
         //NNUE is unreliable for captures anyway, so only update the material.
         unadjustedStaticEval = -PieceValue[pos.captured_piece()] - (ss-1)->staticEval;
         ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
-        if (eval >= beta - 500) //Re-evaluate when the eval is still good.
+        if (eval >= beta - 200) //Re-evaluate when the eval is still good.
         {
             unadjustedStaticEval = evaluate(pos);
             ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
