@@ -150,6 +150,7 @@ void MovePicker::score() {
 
         else if constexpr (Type == QUIETS)
         {
+            Color us = pos.side_to_move();
             Piece     pc   = pos.moved_piece(m);
             PieceType pt   = type_of(pc);
             Square    from = m.from_sq();
