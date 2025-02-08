@@ -780,9 +780,9 @@ Value Search::Worker::search(
     }
     else if ((priorCapture && type_of(pos.captured_piece()) != PAWN)){
         //NNUE is unreliable for captures anyway, so only update the material.
+        Eval::NNUE::hint_common_parent_position(pos, networks[numaAccessToken], refreshTable);
         unadjustedStaticEval = -PieceValue[pos.captured_piece()] - (ss-1)->staticEval;
         ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
-        Eval::NNUE::hint_common_parent_position(pos, networks[numaAccessToken], refreshTable);
         if (eval >= beta - 200) //Re-evaluate when the eval is still good.
         {
             unadjustedStaticEval = evaluate(pos);
