@@ -144,20 +144,9 @@ void MovePicker::score() {
 
     for (auto& m : *this)
         if constexpr (Type == CAPTURES)
-        {
-            Color     us   = pos.side_to_move();
-            Piece     pc   = pos.moved_piece(m);
-            PieceType pt   = type_of(pc);
-            //Square    from = m.from_sq();
-            Square    to   = m.to_sq();
-
-            m.value += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
-            m.value += (pt == BISHOP && popcount(attacks_bb<BISHOP>(to,pos.pieces())& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
-
             m.value =
               7 * int(PieceValue[pos.piece_on(m.to_sq())])
               + (*captureHistory)[pos.moved_piece(m)][m.to_sq()][type_of(pos.piece_on(m.to_sq()))];
-        }
         else if constexpr (Type == QUIETS)
         {
             Color     us   = pos.side_to_move();
@@ -176,8 +165,16 @@ void MovePicker::score() {
             m.value += (*continuationHistory[4])[pc][to] / 3;
             m.value += (*continuationHistory[5])[pc][to];
 
-            m.value += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
-            m.value += (pt == BISHOP && popcount(attacks_bb<BISHOP>(to,pos.pieces())& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 2000;
+            int tactical_motifs = 0;
+
+            tactical_motifs += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
+            tactical_motifs += (pt == BISHOP && popcount(attacks_bb<BISHOP>(to,pos.pieces())& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
+
+            if (tactical_motifs)
+            {
+                if (pos.see_ge(m,0))
+                    tactical_motifs *= 8;
+            }
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
