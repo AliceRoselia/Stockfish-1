@@ -541,6 +541,7 @@ void Search::Worker::clear() {
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory[WHITE].fill(0);
     nonPawnCorrectionHistory[BLACK].fill(0);
+    good.fill(Bitboard(0));
 
     for (auto& to : continuationCorrectionHistory)
         for (auto& h : to)
@@ -563,7 +564,6 @@ void Search::Worker::clear() {
 template<NodeType nodeType>
 Value Search::Worker::search(
   Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode) {
-
     constexpr bool PvNode   = nodeType != NonPV;
     constexpr bool rootNode = nodeType == Root;
     const bool     allNode  = !(PvNode || cutNode);
@@ -694,6 +694,7 @@ Value Search::Worker::search(
     }
 
     // Step 5. Tablebases probe
+
     if (!rootNode && !excludedMove && tbConfig.cardinality)
     {
         int piecesCount = pos.count<ALL_PIECES>();
@@ -948,9 +949,8 @@ moves_loop:  // When in check, search starts here
       (ss - 1)->continuationHistory, (ss - 2)->continuationHistory, (ss - 3)->continuationHistory,
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
-
     MovePicker mp(pos, ttData.move, depth, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory,&thisThread->good, ss->ply);
 
     value = bestValue;
 
@@ -1562,6 +1562,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         // Stand pat. Return immediately if static value is at least beta
         if (bestValue >= beta)
         {
+
             if (!is_decisive(bestValue))
                 bestValue = (bestValue + beta) / 2;
             if (!ss->ttHit)
@@ -1586,8 +1587,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
     MovePicker mp(pos, ttData.move, DEPTH_QS, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
-
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory,&thisThread->good, ss->ply);
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
     while ((move = mp.next_move()) != Move::none())
@@ -1807,6 +1807,7 @@ void update_all_stats(const Position&      pos,
     int bonus = stat_bonus(depth) + 298 * isTTMove;
     int malus = stat_malus(depth) - 32 * (moveCount - 1);
 
+    workerThread.good[type_of(pos.piece_on(bestMove.from_sq()))][bestMove.to_sq()] = pos.pieces();
     if (!pos.capture_stage(bestMove))
     {
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1202 / 1024);

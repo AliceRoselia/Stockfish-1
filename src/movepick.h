@@ -46,6 +46,7 @@ class MovePicker {
                const CapturePieceToHistory*,
                const PieceToHistory**,
                const PawnHistory*,
+               const MultiArray<Bitboard,PIECE_TYPE_NB,SQUARE_NB>*,
                int);
     MovePicker(const Position&, Move, int, const CapturePieceToHistory*);
     Move next_move();
@@ -65,6 +66,7 @@ class MovePicker {
     const CapturePieceToHistory* captureHistory;
     const PieceToHistory**       continuationHistory;
     const PawnHistory*           pawnHistory;
+    const MultiArray<Bitboard,PIECE_TYPE_NB,SQUARE_NB>* good;
     Move                         ttMove;
     ExtMove *                    cur, *endMoves, *endBadCaptures, *beginBadQuiets, *endBadQuiets;
     int                          stage;

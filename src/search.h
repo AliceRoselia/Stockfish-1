@@ -292,6 +292,8 @@ class Worker {
     CorrectionHistory<NonPawn>      nonPawnCorrectionHistory[COLOR_NB];
     CorrectionHistory<Continuation> continuationCorrectionHistory;
 
+    MultiArray<Bitboard,PIECE_TYPE_NB,SQUARE_NB>   good;
+
    private:
     void iterative_deepening();
 

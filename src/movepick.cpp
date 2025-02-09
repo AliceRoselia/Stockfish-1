@@ -86,6 +86,7 @@ MovePicker::MovePicker(const Position&              p,
                        const CapturePieceToHistory* cph,
                        const PieceToHistory**       ch,
                        const PawnHistory*           ph,
+                       const MultiArray<Bitboard,PIECE_TYPE_NB,SQUARE_NB>* gd,
                        int                          pl) :
     pos(p),
     mainHistory(mh),
@@ -93,6 +94,7 @@ MovePicker::MovePicker(const Position&              p,
     captureHistory(cph),
     continuationHistory(ch),
     pawnHistory(ph),
+    good(gd),
     ttMove(ttm),
     depth(d),
     ply(pl) {
@@ -154,7 +156,7 @@ void MovePicker::score() {
             PieceType pt   = type_of(pc);
             Square    from = m.from_sq();
             Square    to   = m.to_sq();
-
+            m.value += popcount(pos.pieces()&((*good)[pt][to]))*64;
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
