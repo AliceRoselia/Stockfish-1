@@ -175,6 +175,7 @@ void MovePicker::score() {
                 if (pos.see_ge(m,0))
                     tactical_motifs *= 8;
             }
+            m.value += tactical_motifs;
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
