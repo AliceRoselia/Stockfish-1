@@ -83,7 +83,7 @@ constexpr int futility_move_count(bool improving, Depth depth) {
     return (3 + depth * depth) / (2 - improving);
 }
 
-int correction_value(const Worker& w, const Position& pos, const Stack* const ss) {
+int correction_value(const Worker& w, const Position& pos, const Stack* const ss, Move ttMove) {
     const Color us    = pos.side_to_move();
     const auto  m     = (ss - 1)->currentMove;
     const auto  pcv   = w.pawnCorrectionHistory[pawn_structure_index<Correction>(pos)][us];
@@ -93,8 +93,9 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     const auto  cntcv =
       m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
+    const auto  ttcv = ttMove == Move::none() ? 0 : w.ttMoveCorrectionHistory[ttMove.from_to()][us];
 
-    return 6995 * pcv + 6593 * micv + 7753 * (wnpcv + bnpcv) + 6049 * cntcv;
+    return 6995 * pcv + 6593 * micv + 7753 * (wnpcv + bnpcv) + 6049 * cntcv + 6000*ttcv;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -106,7 +107,8 @@ Value to_corrected_static_eval(const Value v, const int cv) {
 void update_correction_history(const Position& pos,
                                Stack* const    ss,
                                Search::Worker& workerThread,
-                               const int       bonus) {
+                               const int       bonus,
+                               Move            ttMove) {
     const Move  m  = (ss - 1)->currentMove;
     const Color us = pos.side_to_move();
 
@@ -120,6 +122,8 @@ void update_correction_history(const Position& pos,
     workerThread.nonPawnCorrectionHistory[BLACK][non_pawn_index<BLACK>(pos)][us]
       << bonus * nonPawnWeight / 128;
 
+    workerThread.ttMoveCorrectionHistory[ttMove.from_to()][us]
+      << bonus;
     if (m.is_ok())
         (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
           << bonus * 138 / 128;
@@ -748,7 +752,7 @@ Value Search::Worker::search(
 
     // Step 6. Static evaluation of the position
     Value      unadjustedStaticEval = VALUE_NONE;
-    const auto correctionValue      = correction_value(*thisThread, pos, ss);
+    const auto correctionValue      = correction_value(*thisThread, pos, ss,ttData.move);
     if (ss->inCheck)
     {
         // Skip early pruning when in check
@@ -1450,7 +1454,7 @@ moves_loop:  // When in check, search starts here
     {
         auto bonus = std::clamp(int(bestValue - ss->staticEval) * depth / 8,
                                 -CORRECTION_HISTORY_LIMIT / 4, CORRECTION_HISTORY_LIMIT / 4);
-        update_correction_history(pos, ss, *thisThread, bonus);
+        update_correction_history(pos, ss, *thisThread, bonus,ttData.move);
     }
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);
@@ -1531,7 +1535,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
     // Step 4. Static evaluation of the position
     Value      unadjustedStaticEval = VALUE_NONE;
-    const auto correctionValue      = correction_value(*thisThread, pos, ss);
+    const auto correctionValue      = correction_value(*thisThread, pos, ss,ttData.move);
     if (ss->inCheck)
         bestValue = futilityBase = -VALUE_INFINITE;
     else

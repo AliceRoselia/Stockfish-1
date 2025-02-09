@@ -135,6 +135,7 @@ enum CorrHistType {
     Minor,         // By color and positions of minor pieces (Knight, Bishop)
     NonPawn,       // By non-pawn material positions and color
     PieceTo,       // By [piece][to] move
+    TTMove,        // By [ttmove.from_to()]
     Continuation,  // Combined history of move pairs
 };
 
@@ -153,6 +154,11 @@ struct CorrHistTypedef<PieceTo> {
 template<>
 struct CorrHistTypedef<Continuation> {
     using type = MultiArray<CorrHistTypedef<PieceTo>::type, PIECE_NB, SQUARE_NB>;
+};
+
+template<>
+struct CorrHistTypedef<TTMove>{
+    using type = Stats<std::int16_t, CORRECTION_HISTORY_LIMIT, int(SQUARE_NB) * int(SQUARE_NB),COLOR_NB>;
 };
 
 }
