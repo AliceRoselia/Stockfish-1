@@ -167,15 +167,11 @@ void MovePicker::score() {
 
             int tactical_motifs = 0;
 
-            tactical_motifs += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
-            tactical_motifs += (pt == BISHOP && popcount(attacks_bb<BISHOP>(to,pos.pieces())& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
+            m.value += (pt == KNIGHT && popcount(attacks_bb<KNIGHT>(to)& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
+            //tactical_motifs += (pt == BISHOP && popcount(attacks_bb<BISHOP>(to,pos.pieces())& (pos.pieces(~us,ROOK,KING,QUEEN))) >= 2) * 3000;
 
-            if (tactical_motifs)
-            {
-                if (pos.see_ge(m,0))
-                    tactical_motifs *= 8;
-            }
-            m.value += tactical_motifs;
+
+
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
