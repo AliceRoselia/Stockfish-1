@@ -156,7 +156,13 @@ void MovePicker::score() {
             PieceType pt   = type_of(pc);
             Square    from = m.from_sq();
             Square    to   = m.to_sq();
-            m.value += popcount(pos.pieces()&((*good)[pt][to]))*64;
+
+
+
+            m.value += popcount(pos.pieces()&((*good)[pt][to]))*4096;
+
+            //int i;
+            //std::cin>>i;
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];

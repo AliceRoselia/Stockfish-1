@@ -1807,7 +1807,8 @@ void update_all_stats(const Position&      pos,
     int bonus = stat_bonus(depth) + 298 * isTTMove;
     int malus = stat_malus(depth) - 32 * (moveCount - 1);
 
-    workerThread.good[type_of(pos.piece_on(bestMove.from_sq()))][bestMove.to_sq()] = pos.pieces();
+    workerThread.good[type_of(moved_piece)][bestMove.to_sq()] = pos.pieces();
+
     if (!pos.capture_stage(bestMove))
     {
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1202 / 1024);
