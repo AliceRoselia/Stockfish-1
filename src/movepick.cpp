@@ -166,7 +166,7 @@ void MovePicker::score() {
             m.value += (*continuationHistory[5])[pc][to];
 
             //Bonus for castling.
-            m.value += (m.is_castling())*16384;
+            m.value += (m.type_of() == CASTLING)*16384;
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
