@@ -131,6 +131,7 @@ void MovePicker::score() {
       threatenedPieces;
     if constexpr (Type == QUIETS)
     {
+        //std::cout<<"Ranking quiet moves"<<std::endl;
         Color us = pos.side_to_move();
 
         threatenedByPawn = pos.attacks_by<PAWN>(~us);
@@ -158,11 +159,6 @@ void MovePicker::score() {
             Square    to   = m.to_sq();
 
 
-
-            m.value += popcount(pos.pieces()&((*good)[pt][to]))*4096;
-
-            //int i;
-            //std::cin>>i;
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
@@ -172,6 +168,8 @@ void MovePicker::score() {
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[4])[pc][to] / 3;
             m.value += (*continuationHistory[5])[pc][to];
+
+            m.value += popcount(pos.pieces()&((*good)[pt][to]))*1024;
 
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
