@@ -991,7 +991,6 @@ moves_loop:  // When in check, search starts here
         capture    = pos.capture_stage(move);
         movedPiece = pos.moved_piece(move);
         givesCheck = pos.gives_check(move);
-
         // Calculate new depth for this move
         newDepth = depth - 1;
 
@@ -1036,7 +1035,21 @@ moves_loop:  // When in check, search starts here
                 // SEE based pruning for captures and checks
                 int seeHist = std::clamp(captHist / 36, -153 * depth, 134 * depth);
                 if (!pos.see_ge(move, -157 * depth - seeHist))
-                    continue;
+                {
+                    if (depth <= 8)
+                        continue;
+                    else
+                    {
+                        pos.do_move(move, st, givesCheck, &tt);
+                        Value qsearchAlpha = alpha -157 * depth - seeHist;
+                        Value qsearchValue = -qsearch<NonPV>(pos, ss + 1, -qsearchAlpha, -qsearchAlpha + 1);
+                        pos.undo_move(move);
+                        if (qsearchValue <= qsearchAlpha){
+                            continue;
+                        }
+                    }
+                }
+
             }
             else
             {
@@ -1068,7 +1081,20 @@ moves_loop:  // When in check, search starts here
 
                 // Prune moves with negative SEE
                 if (!pos.see_ge(move, -26 * lmrDepth * lmrDepth))
-                    continue;
+                {
+                    if (depth <= 8)
+                        continue;
+                    else
+                    {
+                        pos.do_move(move, st, givesCheck, &tt);
+                        Value qsearchAlpha = alpha -26 * lmrDepth * lmrDepth;
+                        Value qsearchValue = -qsearch<NonPV>(pos, ss + 1, -qsearchAlpha, -qsearchAlpha + 1);
+                        pos.undo_move(move);
+                        if (qsearchValue <= qsearchAlpha){
+                            continue;
+                        }
+                    }
+                }
             }
         }
 
