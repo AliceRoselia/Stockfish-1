@@ -1042,7 +1042,7 @@ moves_loop:  // When in check, search starts here
                     {
                         pos.do_move(move, st, givesCheck, &tt);
                         Value qsearchAlpha = alpha -157 * depth - seeHist;
-                        Value qsearchValue = -qsearch<NonPV>(pos, ss + 1, -qsearchAlpha, -qsearchAlpha + 1);
+                        Value qsearchValue = -qsearch<NonPV>(pos, ss + 1, -qsearchAlpha-1, -qsearchAlpha);
                         pos.undo_move(move);
                         if (qsearchValue <= qsearchAlpha){
                             continue;
@@ -1088,7 +1088,7 @@ moves_loop:  // When in check, search starts here
                     {
                         pos.do_move(move, st, givesCheck, &tt);
                         Value qsearchAlpha = alpha -26 * lmrDepth * lmrDepth;
-                        Value qsearchValue = -qsearch<NonPV>(pos, ss + 1, -qsearchAlpha, -qsearchAlpha + 1);
+                        Value qsearchValue = -qsearch<NonPV>(pos, ss + 1, -qsearchAlpha-1, -qsearchAlpha);
                         pos.undo_move(move);
                         if (qsearchValue <= qsearchAlpha){
                             continue;
