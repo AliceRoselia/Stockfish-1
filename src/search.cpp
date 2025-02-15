@@ -1036,7 +1036,7 @@ moves_loop:  // When in check, search starts here
         // Bigger value is better for long time controls
         if (ss->ttPv)
             r += 1031;
-        r += 2048*cheat_pruned;
+
 
         // Step 14. Pruning at shallow depth.
         // Depth conditions are important for mate finding.
@@ -1056,7 +1056,7 @@ moves_loop:  // When in check, search starts here
                   thisThread->captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)];
 
                 // Futility pruning for captures
-                if (!givesCheck && lmrDepth < 7 && (!ss->inCheck || cheat_pruned))
+                if (!givesCheck && lmrDepth < 7 && !ss->inCheck)
                 {
                     Value futilityValue = ss->staticEval + 242 + 238 * lmrDepth
                                         + PieceValue[capturedPiece] + 95 * captHist / 700;
@@ -1090,7 +1090,7 @@ moves_loop:  // When in check, search starts here
                     futilityValue += 108;
 
                 // Futility pruning: parent node
-                if ((!ss->inCheck || cheat_pruned) && lmrDepth < 12 && futilityValue <= alpha)
+                if (!ss->inCheck && lmrDepth < 12 && futilityValue <= alpha)
                 {
                     if (bestValue <= futilityValue && !is_decisive(bestValue)
                         && !is_win(futilityValue))
@@ -1197,6 +1197,7 @@ moves_loop:  // When in check, search starts here
 
         // These reduction adjustments have no proven non-linear scaling
 
+        r += 2048*cheat_pruned;
         r += 316 - moveCount * 32;
 
         r -= std::abs(correctionValue) / 31568;
