@@ -946,7 +946,7 @@ moves_loop:  // When in check, search starts here
         //Depth R = std::min(int(eval - beta) / 237, 6) + depth / 3 + 5;
 
         Depth R = depth/2 + PieceValue[pos.piece_on(prevSq)]/512; //Depending on how much you cheated, reduce the depth by that amount.
-        //Value cheatAlpha = alpha;// + PieceValue[type_of(pos.piece_on(prevSq))]/2;
+        Value cheatAlpha = alpha-800 + PieceValue[pos.piece_on(prevSq)]/4;
         if (ttData.depth > DEPTH_UNSEARCHED)
         {
             ss->currentMove                   = Move::cheat();
@@ -954,15 +954,15 @@ moves_loop:  // When in check, search starts here
             ss->continuationCorrectionHistory = &thisThread->continuationCorrectionHistory[NO_PIECE][0];
 
             bool cheat_successful = pos.cheat(prevSq,st,tt);
-            Value cheatValue = alpha; // Suppress warning.
+            Value cheatValue = cheatAlpha; // Suppress warning.
             //std::cout<<"Cheat"<<std::endl;
 
             if (cheat_successful){
-                cheatValue = -search<NonPV>(pos, ss + 1, -alpha, -alpha + 1, depth-R, false);
+                cheatValue = -search<NonPV>(pos, ss + 1, -cheatAlpha, -cheatAlpha + 1, depth-R, false);
             }
             pos.undo_cheat_move(prevSq);
             //You cheated and still bad?
-            if (cheatValue < alpha && !is_loss(cheatValue)){ //Implicitly, this only works if cheat successful.
+            if (cheatValue < cheatAlpha && !is_loss(cheatValue)){ //Implicitly, this only works if cheat successful.
                 cheat_pruned = true;
             }
         }
