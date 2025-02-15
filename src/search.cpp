@@ -945,7 +945,7 @@ moves_loop:  // When in check, search starts here
     if (depth > 5 && !PvNode && prevSq != SQ_NONE && (pos.piece_on(prevSq) != NO_PIECE)&& (type_of(pos.piece_on(prevSq)) != KING) && ttData.value < alpha -100 && (ttData.bound &BOUND_UPPER) && !is_decisive(alpha) && is_valid(ttData.value) && !is_decisive(ttData.value)){
         //Depth R = std::min(int(eval - beta) / 237, 6) + depth / 3 + 5;
 
-        Depth R = depth/2 + PieceValue[type_of(pos.piece_on(prevSq))]/512 +2; //Depending on how much you cheated, reduce the depth by that amount.
+        Depth R = depth/2 + PieceValue[pos.piece_on(prevSq)]/512; //Depending on how much you cheated, reduce the depth by that amount.
         //Value cheatAlpha = alpha;// + PieceValue[type_of(pos.piece_on(prevSq))]/2;
         if (ttData.depth > DEPTH_UNSEARCHED)
         {
