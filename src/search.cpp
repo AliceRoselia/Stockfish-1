@@ -120,7 +120,7 @@ int risk_tolerance(Value v, const Position& pos){
     int winning_risk = fastsigmoid2ndderivativeconstant(v-a,b);
     int losing_risk = -fastsigmoid2ndderivativeconstant(-v-a,b);
 
-    return (winning_risk+losing_risk)*16/b;
+    return (winning_risk+losing_risk)*8/b;
 
 
 }
