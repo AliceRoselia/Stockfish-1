@@ -958,7 +958,7 @@ moves_loop:  // When in check, search starts here
             //std::cout<<"Cheat"<<std::endl;
 
             if (cheat_successful){
-                cheatValue = -search<NonPV>(pos, ss + 1, -cheatAlpha, -cheatAlpha + 1, depth-R, false);
+                cheatValue = -search<NonPV>(pos, ss + 1, -cheatAlpha, -cheatAlpha + 1, depth-R, true);
             }
             pos.undo_cheat_move(prevSq);
             //You cheated and still bad?
