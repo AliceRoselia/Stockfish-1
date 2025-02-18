@@ -942,7 +942,7 @@ Value Search::Worker::search(
 moves_loop:  // When in check, search starts here
     //Step 11.5: Cheat move pruning.
     bool cheat_pruned = false;
-    if (depth > 5 && !PvNode && prevSq != SQ_NONE && (pos.piece_on(prevSq) != NO_PIECE)&& (type_of(pos.piece_on(prevSq)) != KING) && ttData.value < alpha -100 && (ttData.bound &BOUND_UPPER) && !is_decisive(alpha) && is_valid(ttData.value) && !is_decisive(ttData.value)){
+    if (depth > 5 && !PvNode && priorCapture && prevSq != SQ_NONE && (pos.piece_on(prevSq) != NO_PIECE)&& (type_of(pos.piece_on(prevSq)) != KING) && ttData.value < alpha -100 && (ttData.bound &BOUND_UPPER) && !is_decisive(alpha) && is_valid(ttData.value) && !is_decisive(ttData.value)){
         //Depth R = std::min(int(eval - beta) / 237, 6) + depth / 3 + 5;
 
         Depth R = depth/2 + PieceValue[pos.piece_on(prevSq)]/512; //Depending on how much you cheated, reduce the depth by that amount.
@@ -1197,7 +1197,8 @@ moves_loop:  // When in check, search starts here
 
         // These reduction adjustments have no proven non-linear scaling
 
-        r += 8192*cheat_pruned;
+        if (cheat_pruned && !capture)
+            r += 1024;
         r += 316 - moveCount * 32;
 
         r -= std::abs(correctionValue) / 31568;
