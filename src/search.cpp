@@ -960,7 +960,9 @@ Value Search::Worker::search(
 moves_loop:  // When in check, search starts here
     //Step 11.5: Cheat move pruning.
     bool cheat_pruned = false;
-    if (depth > 5 && !PvNode && priorCapture && prevSq != SQ_NONE && (pos.piece_on(prevSq) != NO_PIECE)&& (type_of(pos.piece_on(prevSq)) != KING) && ttData.value < alpha -100 && (ttData.bound &BOUND_UPPER) && !is_decisive(alpha) && is_valid(ttData.value) && !is_decisive(ttData.value)){
+    if (depth > 5 && !PvNode && priorCapture && prevSq != SQ_NONE && (pos.piece_on(prevSq) != NO_PIECE)&&
+        (type_of(pos.piece_on(prevSq)) != KING) && ttData.value < alpha -100 && (ttData.bound &BOUND_UPPER)
+        && !is_decisive(alpha) && is_valid(ttData.value) && !is_decisive(ttData.value)){
         //Depth R = std::min(int(eval - beta) / 237, 6) + depth / 3 + 5;
 
         Depth R = depth/2 + PieceValue[pos.piece_on(prevSq)]/512 + 2; //Depending on how much you cheated, reduce the depth by that amount.
@@ -970,10 +972,8 @@ moves_loop:  // When in check, search starts here
             ss->currentMove                   = Move::cheat();
             ss->continuationHistory           = &thisThread->continuationHistory[0][0][NO_PIECE][0];
             ss->continuationCorrectionHistory = &thisThread->continuationCorrectionHistory[NO_PIECE][0];
-
             bool cheat_successful = pos.cheat(prevSq,st,tt);
             Value cheatValue = cheatAlpha; // Suppress warning.
-            //std::cout<<"Cheat"<<std::endl;
 
             if (cheat_successful){
                 cheatValue = -search<NonPV>(pos, ss + 1, -cheatAlpha, -cheatAlpha + 1, depth-R, true);
