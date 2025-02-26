@@ -976,7 +976,7 @@ moves_loop:  // When in check, search starts here
             Value cheatValue = cheatAlpha; // Suppress warning.
 
             if (cheat_successful){
-                cheatValue = -search<NonPV>(pos, ss + 1, -cheatAlpha, -cheatAlpha + 1, depth-R, true);
+                cheatValue = -search<NonPV>(pos, ss + 1, -cheatAlpha, -cheatAlpha + 1, depth-R, false);
             }
             pos.undo_cheat_move(prevSq);
             //You cheated and still bad?
@@ -1218,7 +1218,7 @@ moves_loop:  // When in check, search starts here
         // These reduction adjustments have no proven non-linear scaling
 
         if (cheat_pruned && !capture)
-            r += 8192;
+            r += 2048;
         r += 316 - moveCount * 32;
 
         r -= std::abs(correctionValue) / 31568;
