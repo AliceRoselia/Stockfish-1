@@ -965,7 +965,7 @@ moves_loop:  // When in check, search starts here
         && !is_decisive(alpha) && is_valid(ttData.value) && !is_decisive(ttData.value)){
         //Depth R = std::min(int(eval - beta) / 237, 6) + depth / 3 + 5;
 
-        Depth R = depth/2 + PieceValue[pos.piece_on(prevSq)]/512 + 2; //Depending on how much you cheated, reduce the depth by that amount.
+        Depth R = depth/2 + PieceValue[pos.piece_on(prevSq)]/512; //Depending on how much you cheated, reduce the depth by that amount.
         if (ttData.depth > DEPTH_UNSEARCHED)
         {
             ss->currentMove                   = Move::cheat();
