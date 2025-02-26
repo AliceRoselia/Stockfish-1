@@ -513,6 +513,8 @@ class FeatureTransformer {
         }
         else if (removed.size() == 1 && added.size() == 0)
         {
+            assert(Forward);
+            //std::cout<<"Loop here"<<std::endl;
 #ifdef VECTOR
             auto* accIn =
               reinterpret_cast<const vec_t*>(&(computed->*accPtr).accumulation[Perspective][0]);
@@ -552,6 +554,46 @@ class FeatureTransformer {
             }
 
 #endif // VECTOR
+        }
+        else if (added.size() == 1 && removed.size() == 0){
+            assert(Backwards);
+            #ifdef VECTOR
+            auto* accIn =
+              reinterpret_cast<const vec_t*>(&(computed->*accPtr).accumulation[Perspective][0]);
+            auto* accOut = reinterpret_cast<vec_t*>(&(next->*accPtr).accumulation[Perspective][0]);
+            const IndexType offsetA0 = HalfDimensions * added[0];
+            auto*           columnA0 = reinterpret_cast<const vec_t*>(&weights[offsetA0]);
+            for (IndexType i = 0; i < HalfDimensions * sizeof(WeightType) / sizeof(vec_t); ++i)
+                    accOut[i] = vec_add_16(accIn[i], columnA0[i]);
+            auto* accPsqtIn = reinterpret_cast<const psqt_vec_t*>(
+              &(computed->*accPtr).psqtAccumulation[Perspective][0]);
+            auto* accPsqtOut =
+              reinterpret_cast<psqt_vec_t*>(&(next->*accPtr).psqtAccumulation[Perspective][0]);
+
+            const IndexType offsetPsqtA0 = PSQTBuckets * added[0];
+            auto* columnPsqtA0 = reinterpret_cast<const psqt_vec_t*>(&psqtWeights[offsetPsqtA0]);
+            for (std::size_t i = 0;
+                     i < PSQTBuckets * sizeof(PSQTWeightType) / sizeof(psqt_vec_t); ++i)
+                    accPsqtOut[i] = vec_add_psqt_32(accPsqtIn[i], columnPsqtA0[i]);
+            #else
+            std::memcpy((next->*accPtr).accumulation[Perspective],
+                        (computed->*accPtr).accumulation[Perspective],
+                        HalfDimensions * sizeof(BiasType));
+            std::memcpy((next->*accPtr).psqtAccumulation[Perspective],
+                        (computed->*accPtr).psqtAccumulation[Perspective],
+                        PSQTBuckets * sizeof(PSQTWeightType));
+
+            for (const auto index : added)
+            {
+                const IndexType offset = HalfDimensions * index;
+                for (IndexType i = 0; i < HalfDimensions; ++i)
+                    (next->*accPtr).accumulation[Perspective][i] += weights[offset + i];
+
+                for (std::size_t i = 0; i < PSQTBuckets; ++i)
+                    (next->*accPtr).psqtAccumulation[Perspective][i] +=
+                      psqtWeights[index * PSQTBuckets + i];
+            }
+            #endif // VECTOR
         }
 
         else
