@@ -1365,6 +1365,14 @@ moves_loop:  // When in check, search starts here
 
             if (value + inc > alpha)
             {
+                assert(bestMove != move);
+                if (bestMove != Move::none() && moveCount <= 32)
+                {
+                    if (pos.capture_stage(bestMove))
+                        capturesSearched.push_back(bestMove);
+                    else
+                        quietsSearched.push_back(bestMove);
+                }
                 bestMove = move;
 
                 if (PvNode && !rootNode)  // Update pv even in fail-high case
