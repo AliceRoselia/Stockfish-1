@@ -1842,11 +1842,6 @@ void update_all_stats(const Position&      pos,
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1129 / 1024);
         int threats_on_square = pos.threats_on_square(bestMove);
         int threats_from_square = pos.threats_from_square(bestMove);
-        //std::cout<<threats_on_square<<std::endl;
-        assert(threats_from_square >= 0);
-        //std::cout<<threats_from_square<<std::endl;
-        assert(moved_piece < PIECE_NB);
-        assert(bestMove.to_sq()<SQUARE_NB);
         threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
         // Decrease stats for all non-best quiet moves
         for (Move move : quietsSearched)
@@ -1854,11 +1849,6 @@ void update_all_stats(const Position&      pos,
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1246 / 1024);
             threats_on_square = pos.threats_on_square(move);
             threats_from_square = pos.threats_from_square(move);
-            //std::cout<<threats_on_square<<std::endl;
-            assert(threats_from_square >= 0);
-            //std::cout<<threats_from_square<<std::endl;
-            assert(pos.moved_piece(move) <= 16);
-            assert(move.to_sq()<=63);
             threatHistory[pos.moved_piece(move)][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
         }
     }
@@ -1869,11 +1859,6 @@ void update_all_stats(const Position&      pos,
         captureHistory[moved_piece][bestMove.to_sq()][captured] << bonus * 1187 / 1024;
         int threats_on_square = pos.threats_on_square(bestMove);
         int threats_from_square = pos.threats_from_square(bestMove);
-        //std::cout<<threats_on_square<<std::endl;
-        assert(threats_from_square >= 0);
-        //std::cout<<threats_from_square<<std::endl;
-        assert(moved_piece <= 16);
-        assert(bestMove.to_sq()<=63);
         threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
     }
 
@@ -1890,11 +1875,6 @@ void update_all_stats(const Position&      pos,
         captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1377 / 1024;
         int threats_on_square = pos.threats_on_square(move);
         int threats_from_square = pos.threats_from_square(move);
-        //std::cout<<threats_on_square<<std::endl;
-        assert(threats_from_square >= 0);
-        //std::cout<<threats_from_square<<std::endl;
-        assert(moved_piece <= 16);
-        assert(move.to_sq()<=63);
         threatHistory[moved_piece][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
     }
 }

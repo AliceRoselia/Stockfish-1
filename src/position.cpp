@@ -680,8 +680,12 @@ bool Position::gives_check(Move m) const {
 }
 
 int Position::threats_on_square(Move m) const{
-    //std::cout<<"threats on square called"<<std::endl;
-    if (m.type_of() == EN_PASSANT || m.type_of() == CASTLING){
+    if (m.type_of() == EN_PASSANT){
+        Bitboard attackers = attackers_to(m.to_sq(),pieces()&~square_bb(m.from_sq())&~square_bb(m.to_sq()-pawn_push(sideToMove)));
+        return popcount(attackers&pieces(~sideToMove)) - popcount(attackers&pieces(sideToMove)) - 1;
+    }
+
+    if (m.type_of() == CASTLING){
         return 0;
     }
 
@@ -690,20 +694,16 @@ int Position::threats_on_square(Move m) const{
 }
 
 int Position::threats_from_square(Move m) const {
-    //std::cout<<"threats from square called"<<std::endl;
-    //std::cout<<m.type_of()<<std::endl;
-    //std::cout<<type_of(moved_piece(m))<<std::endl;
+    if (type_of(moved_piece(m)) == KING)
+        return 0;
+
     if (type_of(moved_piece(m)) == PAWN)
     {
         if (m.type_of() == PROMOTION)
             return popcount(attacks_bb(m.promotion_type(),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
         return popcount(pawn_attacks_bb(sideToMove,m.to_sq()) & pieces(~sideToMove));
     }
-    Bitboard Temp = attacks_bb(type_of(moved_piece(m)),m.to_sq(),pieces()&~square_bb(m.from_sq()));
 
-    //std::cout<<Bitboards::pretty(Temp)<<std::endl;
-    //std::cout<<Bitboards::pretty(pieces(~sideToMove))<<std::endl;
-    //std::cout<<"reached here"<<std::endl;
     return popcount(attacks_bb(type_of(moved_piece(m)),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
 }
 
