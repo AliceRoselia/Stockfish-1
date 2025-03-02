@@ -679,6 +679,34 @@ bool Position::gives_check(Move m) const {
     }
 }
 
+int Position::threats_on_square(Move m) const{
+    //std::cout<<"threats on square called"<<std::endl;
+    if (m.type_of() == EN_PASSANT || m.type_of() == CASTLING){
+        return 0;
+    }
+
+    Bitboard attackers = attackers_to(m.to_sq(),pieces()&~square_bb(m.from_sq()));
+    return popcount(attackers&pieces(~sideToMove)) - popcount(attackers&pieces(sideToMove)) - bool(type_of(moved_piece(m)) != PAWN || piece_on(m.to_sq()));
+}
+
+int Position::threats_from_square(Move m) const {
+    //std::cout<<"threats from square called"<<std::endl;
+    //std::cout<<m.type_of()<<std::endl;
+    //std::cout<<type_of(moved_piece(m))<<std::endl;
+    if (type_of(moved_piece(m)) == PAWN)
+    {
+        if (m.type_of() == PROMOTION)
+            return popcount(attacks_bb(m.promotion_type(),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
+        return popcount(pawn_attacks_bb(sideToMove,m.to_sq()) & pieces(~sideToMove));
+    }
+    Bitboard Temp = attacks_bb(type_of(moved_piece(m)),m.to_sq(),pieces()&~square_bb(m.from_sq()));
+
+    //std::cout<<Bitboards::pretty(Temp)<<std::endl;
+    //std::cout<<Bitboards::pretty(pieces(~sideToMove))<<std::endl;
+    //std::cout<<"reached here"<<std::endl;
+    return popcount(attacks_bb(type_of(moved_piece(m)),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
+}
+
 
 // Makes a move, and saves all information necessary
 // to a StateInfo object. The move is assumed to be legal. Pseudo-legal

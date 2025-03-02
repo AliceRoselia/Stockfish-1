@@ -136,6 +136,8 @@ class Position {
     bool  capture(Move m) const;
     bool  capture_stage(Move m) const;
     bool  gives_check(Move m) const;
+    int   threats_on_square(Move m) const;
+    int   threats_from_square(Move m) const;
     Piece moved_piece(Move m) const;
     Piece captured_piece() const;
 

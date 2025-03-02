@@ -84,6 +84,7 @@ class StatsEntry {
     operator const T&() const { return entry; }
 
     void operator<<(int bonus) {
+        assert(std::abs(entry) <= D);
         // Make sure that bonus is in range [-D, D]
         int clampedBonus = std::clamp(bonus, -D, D);
         entry += clampedBonus - entry * std::abs(clampedBonus) / D;
@@ -113,6 +114,8 @@ using LowPlyHistory =
 
 // CapturePieceToHistory is addressed by a move's [piece][to][captured piece type]
 using CapturePieceToHistory = Stats<std::int16_t, 10692, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
+// Threat history is addressed bu a move's [piece][to][attack squares][attacker-defender (shifted by 2)]
+using ThreatPieceToHistory = Stats<std::int16_t, 10000, PIECE_NB, SQUARE_NB, 3, 5>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
 using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;
