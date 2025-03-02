@@ -136,6 +136,7 @@ class Position {
     bool  capture(Move m) const;
     bool  capture_stage(Move m) const;
     bool  gives_check(Move m) const;
+    template<bool isCapture>
     int   threats_on_square(Move m) const;
     int   threats_from_square(Move m) const;
     Piece moved_piece(Move m) const;
@@ -285,6 +286,22 @@ inline Bitboard Position::attacks_by(Color c) const {
         return threats;
     }
 }
+
+template<bool isCapture>
+inline int Position::threats_on_square(Move m) const{
+
+    Square from = m.from_sq();
+    Square to = m.to_sq();
+    Bitboard enemyPieces =pieces(~sideToMove);
+    Bitboard friendlyPieces = pieces(sideToMove);
+    Bitboard allPieces = enemyPieces|friendlyPieces;
+    //Deliberately leave the answer wrong for castling and en_passant in very rare cases.
+    Bitboard attackers = attackers_to(to,allPieces&~square_bb(from));
+    return popcount(attackers&enemyPieces) - popcount(attackers&friendlyPieces) - bool(isCapture || type_of(moved_piece(m)) != PAWN);
+}
+
+
+
 
 inline Bitboard Position::checkers() const { return st->checkersBB; }
 

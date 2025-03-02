@@ -1840,14 +1840,14 @@ void update_all_stats(const Position&      pos,
     if (!pos.capture_stage(bestMove))
     {
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1129 / 1024);
-        int threats_on_square = pos.threats_on_square(bestMove);
+        int threats_on_square = pos.threats_on_square<false>(bestMove);
         int threats_from_square = pos.threats_from_square(bestMove);
         threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
         // Decrease stats for all non-best quiet moves
         for (Move move : quietsSearched)
         {
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1246 / 1024);
-            threats_on_square = pos.threats_on_square(move);
+            threats_on_square = pos.threats_on_square<false>(move);
             threats_from_square = pos.threats_from_square(move);
             threatHistory[pos.moved_piece(move)][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
         }
@@ -1857,7 +1857,7 @@ void update_all_stats(const Position&      pos,
         // Increase stats for the best move in case it was a capture move
         captured = type_of(pos.piece_on(bestMove.to_sq()));
         captureHistory[moved_piece][bestMove.to_sq()][captured] << bonus * 1187 / 1024;
-        int threats_on_square = pos.threats_on_square(bestMove);
+        int threats_on_square = pos.threats_on_square<true>(bestMove);
         int threats_from_square = pos.threats_from_square(bestMove);
         threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
     }
@@ -1873,7 +1873,7 @@ void update_all_stats(const Position&      pos,
         moved_piece = pos.moved_piece(move);
         captured    = type_of(pos.piece_on(move.to_sq()));
         captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1377 / 1024;
-        int threats_on_square = pos.threats_on_square(move);
+        int threats_on_square = pos.threats_on_square<true>(move);
         int threats_from_square = pos.threats_from_square(move);
         threatHistory[moved_piece][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
     }

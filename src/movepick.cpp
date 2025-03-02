@@ -147,7 +147,7 @@ void MovePicker::score() {
     for (auto& m : *this)
         if constexpr (Type == CAPTURES)
         {
-            int threats_on_square = pos.threats_on_square(m);
+            int threats_on_square = pos.threats_on_square<true>(m);
             int threats_from_square = pos.threats_from_square(m);
             assert(threats_from_square >= 0);
             m.value =
@@ -166,7 +166,7 @@ void MovePicker::score() {
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
-            int threats_on_square = pos.threats_on_square(m);
+            int threats_on_square = pos.threats_on_square<false>(m);
             int threats_from_square = pos.threats_from_square(m);
             m.value += (*threatHistory)[pc][to][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2];
             m.value += (*continuationHistory[0])[pc][to];
@@ -201,7 +201,7 @@ void MovePicker::score() {
                 m.value = PieceValue[pos.piece_on(m.to_sq())] + (1 << 28);
             else
             {
-                int threats_on_square = pos.threats_on_square(m);
+                int threats_on_square = pos.threats_on_square<false>(m);
                 int threats_from_square = pos.threats_from_square(m);
                 m.value = (*mainHistory)[pos.side_to_move()][m.from_to()]
                         + (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2

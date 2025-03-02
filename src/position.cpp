@@ -679,33 +679,19 @@ bool Position::gives_check(Move m) const {
     }
 }
 
-int Position::threats_on_square(Move m) const{
-    if (m.type_of() == EN_PASSANT){
-        Bitboard attackers = attackers_to(m.to_sq(),pieces()&~square_bb(m.from_sq())&~square_bb(m.to_sq()-pawn_push(sideToMove)));
-        return popcount(attackers&pieces(~sideToMove)) - popcount(attackers&pieces(sideToMove)) - 1;
-    }
 
-    if (m.type_of() == CASTLING){
-        return 0;
-    }
-
-    Bitboard attackers = attackers_to(m.to_sq(),pieces()&~square_bb(m.from_sq()));
-    return popcount(attackers&pieces(~sideToMove)) - popcount(attackers&pieces(sideToMove)) - bool(type_of(moved_piece(m)) != PAWN || piece_on(m.to_sq()));
-}
 
 int Position::threats_from_square(Move m) const {
-    if (type_of(moved_piece(m)) == KING)
-        return 0;
-
     if (type_of(moved_piece(m)) == PAWN)
     {
-        if (m.type_of() == PROMOTION)
-            return popcount(attacks_bb(m.promotion_type(),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
-        return popcount(pawn_attacks_bb(sideToMove,m.to_sq()) & pieces(~sideToMove));
+    if (m.type_of() == PROMOTION)
+        return popcount(attacks_bb(m.promotion_type(),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
+    return popcount(pawn_attacks_bb(sideToMove,m.to_sq()) & pieces(~sideToMove));
     }
-
     return popcount(attacks_bb(type_of(moved_piece(m)),m.to_sq(),pieces()&~square_bb(m.from_sq())) & pieces(~sideToMove));
 }
+
+
 
 
 // Makes a move, and saves all information necessary
