@@ -168,7 +168,7 @@ void MovePicker::score() {
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
             int threats_on_square = pos.threats_on_square(m);
             int threats_from_square = pos.threats_from_square(m);
-            m.value += 2 * (*threatHistory)[pc][to][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2];
+            m.value += (*threatHistory)[pc][to][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
