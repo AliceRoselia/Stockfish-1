@@ -200,10 +200,14 @@ void MovePicker::score() {
             if (pos.capture_stage(m))
                 m.value = PieceValue[pos.piece_on(m.to_sq())] + (1 << 28);
             else
+            {
+                int threats_on_square = pos.threats_on_square(m);
+                int threats_from_square = pos.threats_from_square(m);
                 m.value = (*mainHistory)[pos.side_to_move()][m.from_to()]
                         + (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2;
                         + (*continuationHistory[0])[pos.moved_piece(m)][m.to_sq()]
                         + (*pawnHistory)[pawn_structure_index(pos)][pos.moved_piece(m)][m.to_sq()];
+            }
         }
 }
 
