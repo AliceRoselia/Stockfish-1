@@ -152,7 +152,7 @@ void MovePicker::score() {
             assert(threats_from_square >= 0);
             m.value =
               7 * int(PieceValue[pos.piece_on(m.to_sq())])
-              + (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]
+              + (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
               + (*captureHistory)[pos.moved_piece(m)][m.to_sq()][type_of(pos.piece_on(m.to_sq()))];
         }
 
