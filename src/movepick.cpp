@@ -107,12 +107,13 @@ MovePicker::MovePicker(const Position&              p,
 
 // MovePicker constructor for ProbCut: we generate captures with Static Exchange
 // Evaluation (SEE) greater than or equal to the given threshold.
-MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceToHistory* cph, const ThreatPieceToHistory* thh) :
+MovePicker::MovePicker(const Position& p,Depth d, Move ttm, int th, const CapturePieceToHistory* cph, const ThreatPieceToHistory* thh) :
     pos(p),
     captureHistory(cph),
     threatHistory(thh),
     ttMove(ttm),
-    threshold(th) {
+    threshold(th),
+    depth(d) {
     assert(!pos.checkers());
 
     stage = PROBCUT_TT
@@ -147,13 +148,16 @@ void MovePicker::score() {
     for (auto& m : *this)
         if constexpr (Type == CAPTURES)
         {
-            int threats_on_square = pos.threats_on_square<true>(m);
-            int threats_from_square = pos.threats_from_square(m);
-            assert(threats_from_square >= 0);
             m.value =
               7 * int(PieceValue[pos.piece_on(m.to_sq())])
-              + (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
+              //+ (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
               + (*captureHistory)[pos.moved_piece(m)][m.to_sq()][type_of(pos.piece_on(m.to_sq()))];
+            if (depth >= 12)
+            {
+                int threats_on_square = pos.threats_on_square<true>(m);
+                int threats_from_square = pos.threats_from_square(m);
+                m.value += (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2;
+            }
         }
 
         else if constexpr (Type == QUIETS)
@@ -166,9 +170,12 @@ void MovePicker::score() {
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
-            int threats_on_square = pos.threats_on_square<false>(m);
-            int threats_from_square = pos.threats_from_square(m);
-            m.value += (*threatHistory)[pc][to][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2];
+            if (depth >= 12)
+            {
+                int threats_on_square = pos.threats_on_square<false>(m);
+                int threats_from_square = pos.threats_from_square(m);
+                m.value += (*threatHistory)[pc][to][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2];
+            }
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
@@ -201,12 +208,16 @@ void MovePicker::score() {
                 m.value = PieceValue[pos.piece_on(m.to_sq())] + (1 << 28);
             else
             {
-                int threats_on_square = pos.threats_on_square<false>(m);
-                int threats_from_square = pos.threats_from_square(m);
                 m.value = (*mainHistory)[pos.side_to_move()][m.from_to()]
-                        + (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
+                        //+ (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
                         + (*continuationHistory[0])[pos.moved_piece(m)][m.to_sq()]
                         + (*pawnHistory)[pawn_structure_index(pos)][pos.moved_piece(m)][m.to_sq()];
+                if (depth >= 12)
+                {
+                    int threats_on_square = pos.threats_on_square<true>(m);
+                    int threats_from_square = pos.threats_from_square(m);
+                    m.value += (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2;
+                }
             }
         }
 }

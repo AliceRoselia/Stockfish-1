@@ -48,7 +48,7 @@ class MovePicker {
                const PawnHistory*,
                const ThreatPieceToHistory*,
                int);
-    MovePicker(const Position&, Move, int, const CapturePieceToHistory*, const ThreatPieceToHistory*);
+    MovePicker(const Position&,Depth, Move, int, const CapturePieceToHistory*, const ThreatPieceToHistory*);
     Move next_move();
     void skip_quiet_moves();
 

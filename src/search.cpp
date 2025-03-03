@@ -908,8 +908,8 @@ Value Search::Worker::search(
     {
         assert(probCutBeta < VALUE_INFINITE && probCutBeta > beta);
 
-        MovePicker mp(pos, ttData.move, probCutBeta - ss->staticEval, &thisThread->captureHistory,&thisThread->threatHistory);
         Depth      probCutDepth = std::max(depth - 4, 0);
+        MovePicker mp(pos, probCutDepth, ttData.move, probCutBeta - ss->staticEval, &thisThread->captureHistory,&thisThread->threatHistory);
 
         while ((move = mp.next_move()) != Move::none())
         {
@@ -1840,16 +1840,22 @@ void update_all_stats(const Position&      pos,
     if (!pos.capture_stage(bestMove))
     {
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1129 / 1024);
-        int threats_on_square = pos.threats_on_square<false>(bestMove);
-        int threats_from_square = pos.threats_from_square(bestMove);
-        threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
+        if (depth >= 12)
+        {
+            int threats_on_square = pos.threats_on_square<false>(bestMove);
+            int threats_from_square = pos.threats_from_square(bestMove);
+            threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
+        }
         // Decrease stats for all non-best quiet moves
         for (Move move : quietsSearched)
         {
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1246 / 1024);
-            threats_on_square = pos.threats_on_square<false>(move);
-            threats_from_square = pos.threats_from_square(move);
-            threatHistory[pos.moved_piece(move)][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
+            if (depth >= 12)
+            {
+                int threats_on_square = pos.threats_on_square<false>(move);
+                int threats_from_square = pos.threats_from_square(move);
+                threatHistory[pos.moved_piece(move)][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
+            }
         }
     }
     else
@@ -1857,9 +1863,12 @@ void update_all_stats(const Position&      pos,
         // Increase stats for the best move in case it was a capture move
         captured = type_of(pos.piece_on(bestMove.to_sq()));
         captureHistory[moved_piece][bestMove.to_sq()][captured] << bonus * 1187 / 1024;
-        int threats_on_square = pos.threats_on_square<true>(bestMove);
-        int threats_from_square = pos.threats_from_square(bestMove);
-        threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
+        if (depth >= 12)
+        {
+            int threats_on_square = pos.threats_on_square<true>(bestMove);
+            int threats_from_square = pos.threats_from_square(bestMove);
+            threatHistory[moved_piece][bestMove.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< bonus;
+        }
     }
 
     // Extra penalty for a quiet early move that was not a TT move in
@@ -1873,9 +1882,13 @@ void update_all_stats(const Position&      pos,
         moved_piece = pos.moved_piece(move);
         captured    = type_of(pos.piece_on(move.to_sq()));
         captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1377 / 1024;
-        int threats_on_square = pos.threats_on_square<true>(move);
-        int threats_from_square = pos.threats_from_square(move);
-        threatHistory[moved_piece][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
+
+        if (depth >= 12)
+        {
+            int threats_on_square = pos.threats_on_square<true>(move);
+            int threats_from_square = pos.threats_from_square(move);
+            threatHistory[moved_piece][move.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]<< -malus;
+        }
     }
 }
 
