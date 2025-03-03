@@ -1840,7 +1840,7 @@ void update_all_stats(const Position&      pos,
     if (!pos.capture_stage(bestMove))
     {
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1129 / 1024);
-        if (depth >= 10)
+        if (depth >= 14)
         {
             int threats_on_square = pos.threats_on_square<false>(bestMove);
             int threats_from_square = pos.threats_from_square(bestMove);
@@ -1850,7 +1850,7 @@ void update_all_stats(const Position&      pos,
         for (Move move : quietsSearched)
         {
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1246 / 1024);
-            if (depth >= 10)
+            if (depth >= 14)
             {
                 int threats_on_square = pos.threats_on_square<false>(move);
                 int threats_from_square = pos.threats_from_square(move);
@@ -1863,7 +1863,7 @@ void update_all_stats(const Position&      pos,
         // Increase stats for the best move in case it was a capture move
         captured = type_of(pos.piece_on(bestMove.to_sq()));
         captureHistory[moved_piece][bestMove.to_sq()][captured] << bonus * 1187 / 1024;
-        if (depth >= 10)
+        if (depth >= 14)
         {
             int threats_on_square = pos.threats_on_square<true>(bestMove);
             int threats_from_square = pos.threats_from_square(bestMove);
@@ -1883,7 +1883,7 @@ void update_all_stats(const Position&      pos,
         captured    = type_of(pos.piece_on(move.to_sq()));
         captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1377 / 1024;
 
-        if (depth >= 10)
+        if (depth >= 14)
         {
             int threats_on_square = pos.threats_on_square<true>(move);
             int threats_from_square = pos.threats_from_square(move);

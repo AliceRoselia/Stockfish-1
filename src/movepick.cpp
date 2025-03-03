@@ -152,7 +152,7 @@ void MovePicker::score() {
               7 * int(PieceValue[pos.piece_on(m.to_sq())])
               //+ (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
               + (*captureHistory)[pos.moved_piece(m)][m.to_sq()][type_of(pos.piece_on(m.to_sq()))];
-            if (depth >= 10)
+            if (depth >= 14)
             {
                 int threats_on_square = pos.threats_on_square<true>(m);
                 int threats_from_square = pos.threats_from_square(m);
@@ -170,7 +170,7 @@ void MovePicker::score() {
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
-            if (depth >= 10)
+            if (depth >= 14)
             {
                 int threats_on_square = pos.threats_on_square<false>(m);
                 int threats_from_square = pos.threats_from_square(m);
@@ -212,7 +212,7 @@ void MovePicker::score() {
                         //+ (*threatHistory)[pos.moved_piece(m)][m.to_sq()][std::min(threats_from_square,2)][std::clamp(threats_on_square,-2,2)+2]/2
                         + (*continuationHistory[0])[pos.moved_piece(m)][m.to_sq()]
                         + (*pawnHistory)[pawn_structure_index(pos)][pos.moved_piece(m)][m.to_sq()];
-                if (depth >= 10)
+                if (depth >= 14)
                 {
                     int threats_on_square = pos.threats_on_square<true>(m);
                     int threats_from_square = pos.threats_from_square(m);
