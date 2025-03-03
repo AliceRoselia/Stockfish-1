@@ -682,6 +682,9 @@ bool Position::gives_check(Move m) const {
 
 
 int Position::threats_from_square(Move m) const {
+    if (type_of(moved_piece(m)) == KING)
+        return 0;
+
     if (type_of(moved_piece(m)) == PAWN)
     {
     if (m.type_of() == PROMOTION)

@@ -290,14 +290,24 @@ inline Bitboard Position::attacks_by(Color c) const {
 template<bool isCapture>
 inline int Position::threats_on_square(Move m) const{
 
+    assert(capture_stage(m) == isCapture);
     Square from = m.from_sq();
     Square to = m.to_sq();
     Bitboard enemyPieces =pieces(~sideToMove);
     Bitboard friendlyPieces = pieces(sideToMove);
     Bitboard allPieces = enemyPieces|friendlyPieces;
+
+    if (isCapture && m.type_of() == EN_PASSANT){
+        Bitboard attackers = attackers_to(to,allPieces&~square_bb(from)&~square_bb(to-pawn_push(sideToMove)));
+        return popcount(attackers&enemyPieces) - popcount(attackers&friendlyPieces) - 1;
+    }
+
+    if (m.type_of() == CASTLING){
+        return 0;
+    }
     //Deliberately leave the answer wrong for castling and en_passant in very rare cases.
     Bitboard attackers = attackers_to(to,allPieces&~square_bb(from));
-    return popcount(attackers&enemyPieces) - popcount(attackers&friendlyPieces) - bool(isCapture || type_of(moved_piece(m)) != PAWN);
+    return popcount(attackers&enemyPieces) - popcount(attackers&friendlyPieces) - bool((isCapture && piece_on(m.to_sq())) || type_of(moved_piece(m)) != PAWN);
 }
 
 
