@@ -45,9 +45,9 @@ int Eval::simple_eval(const Position& pos, Color c) {
          + (pos.non_pawn_material(c) - pos.non_pawn_material(~c));
 }
 
-bool Eval::use_smallnet(const Position& pos) {
+bool Eval::use_smallnet(const Position& pos, int optimism) {
     int simpleEval = simple_eval(pos, pos.side_to_move());
-    return std::abs(simpleEval) > 962;
+    return std::abs(simpleEval)-8*std::abs(optimism) > 162;
 }
 
 // Evaluate is the evaluator for the outer world. It returns a static evaluation
@@ -59,7 +59,8 @@ Value Eval::evaluate(const Eval::NNUE::Networks&    networks,
 
     assert(!pos.checkers());
 
-    bool smallNet           = use_smallnet(pos);
+    bool smallNet           = use_smallnet(pos,optimism);
+
     auto [psqt, positional] = smallNet ? networks.small.evaluate(pos, &caches.small)
                                        : networks.big.evaluate(pos, &caches.big);
 
