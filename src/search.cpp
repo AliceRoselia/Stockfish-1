@@ -1644,7 +1644,8 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
                 // If static eval + value of piece we are going to capture is
                 // much lower than alpha, we can prune this move.
-                if (futilityValue <= alpha)
+                int corrAdj = std::abs(correctionValue) / 131072;
+                if (futilityValue <= alpha + corrAdj*2)
                 {
                     bestValue = std::max(bestValue, futilityValue);
                     continue;
@@ -1652,7 +1653,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
                 // If static exchange evaluation is low enough
                 // we can prune this move.
-                if (!pos.see_ge(move, alpha - futilityBase))
+                if (!pos.see_ge(move, alpha - futilityBase - corrAdj))
                 {
                     bestValue = std::min(alpha, futilityBase);
                     continue;
