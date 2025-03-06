@@ -37,7 +37,7 @@ constexpr int PAWN_HISTORY_SIZE        = 512;    // has to be a power of 2
 constexpr int CORRECTION_HISTORY_SIZE  = 32768;  // has to be a power of 2
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 4;
-constexpr int MOVE_PERMUTATION_HISTORY_SIZE = 65536; // Has to be 65536 for 16-bit key.
+constexpr int MOVE_PERMUTATION_HISTORY_SIZE = 4096; // Has to be a power of 2.
 
 static_assert((PAWN_HISTORY_SIZE & (PAWN_HISTORY_SIZE - 1)) == 0,
               "PAWN_HISTORY_SIZE has to be a power of 2");
@@ -49,6 +49,10 @@ enum PawnHistoryType {
     Normal,
     Correction
 };
+
+inline uint16_t move_permutation_index(const Move& m){
+    return uint16_t(Move::MoveHash()(m))&(MOVE_PERMUTATION_HISTORY_SIZE-1);
+}
 
 template<PawnHistoryType T = Normal>
 inline int pawn_structure_index(const Position& pos) {

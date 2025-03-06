@@ -639,7 +639,7 @@ Value Search::Worker::search(
     ss->moveCount      = 0;
     bestValue          = -VALUE_INFINITE;
     maxValue           = VALUE_INFINITE;
-    ss->movePermutationKey = ((ss-2)->movePermutationKey) ^ uint16_t(Move::MoveHash()((ss-2)->currentMove));
+    ss->movePermutationKey = ((ss-2)->movePermutationKey) ^ move_permutation_index((ss-2)->currentMove);
 
     // Check for the available remaining time
     if (is_mainthread())
@@ -1540,7 +1540,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     bestMove           = Move::none();
     ss->inCheck        = pos.checkers();
     moveCount          = 0;
-    ss->movePermutationKey = ((ss-2)->movePermutationKey) ^ uint16_t(Move::MoveHash()((ss-2)->currentMove));
+    ss->movePermutationKey = ((ss-2)->movePermutationKey) ^ move_permutation_index((ss-2)->currentMove);
 
     // Used to send selDepth info to GUI (selDepth counts from 1, ply from 0)
     if (PvNode && thisThread->selDepth < ss->ply + 1)
@@ -1876,7 +1876,7 @@ void update_all_stats(const Position&      pos,
     }
 
     //Update permutation history for the best move.
-    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ uint16_t(Move::MoveHash()(bestMove))] << bonus;
+    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ move_permutation_index(bestMove)] << bonus;
 }
 
 
