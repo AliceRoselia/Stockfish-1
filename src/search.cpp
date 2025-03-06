@@ -555,6 +555,7 @@ void Search::Worker::iterative_deepening() {
 
 // Reset histories, usually before a new game
 void Search::Worker::clear() {
+    permutationHistory.fill(0);
     mainHistory.fill(66);
     lowPlyHistory.fill(105);
     captureHistory.fill(-646);
