@@ -81,19 +81,23 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 MovePicker::MovePicker(const Position&              p,
                        Move                         ttm,
                        Depth                        d,
+                       const MovePermutationHistory* perh,
                        const ButterflyHistory*      mh,
                        const LowPlyHistory*         lph,
                        const CapturePieceToHistory* cph,
                        const PieceToHistory**       ch,
                        const PawnHistory*           ph,
+                       uint16_t                     peh,
                        int                          pl) :
     pos(p),
+    permutationHistory(perh),
     mainHistory(mh),
     lowPlyHistory(lph),
     captureHistory(cph),
     continuationHistory(ch),
     pawnHistory(ph),
     ttMove(ttm),
+    permutationHash(peh),
     depth(d),
     ply(pl) {
 
@@ -158,6 +162,7 @@ void MovePicker::score() {
             // histories
             m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
+            m.value += (*permutationHistory)[pos.side_to_move()][permutationHash ^ uint16_t(Move::MoveHash()(m))];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];

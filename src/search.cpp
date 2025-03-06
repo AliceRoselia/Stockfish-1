@@ -297,12 +297,14 @@ void Search::Worker::iterative_deepening() {
         (ss - i)->continuationCorrectionHistory = &this->continuationCorrectionHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
         (ss - i)->reduction                     = 0;
+        (ss - i)->movePermutationKey            = 0;
     }
 
     for (int i = 0; i <= MAX_PLY + 2; ++i)
     {
         (ss + i)->ply       = i;
         (ss + i)->reduction = 0;
+        (ss + i)->movePermutationKey = 0;
     }
 
     ss->pv = pv;
@@ -636,6 +638,7 @@ Value Search::Worker::search(
     ss->moveCount      = 0;
     bestValue          = -VALUE_INFINITE;
     maxValue           = VALUE_INFINITE;
+    ss->movePermutationKey = ((ss-2)->movePermutationKey) ^ uint16_t(Move::MoveHash()((ss-2)->currentMove));
 
     // Check for the available remaining time
     if (is_mainthread())
@@ -969,8 +972,8 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+    MovePicker mp(pos, ttData.move, depth,&thisThread->permutationHistory, &thisThread->mainHistory, &thisThread->lowPlyHistory,
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory,ss->movePermutationKey, ss->ply);
 
     value = bestValue;
 
@@ -1422,36 +1425,41 @@ moves_loop:  // When in check, search starts here
                          bestMove == ttData.move, moveCount);
 
     // Bonus for prior countermove that caused the fail low
-    else if (!priorCapture && prevSq != SQ_NONE)
+    else if (prevSq != SQ_NONE)
     {
-        int bonusScale = (112 * (depth > 5) + 34 * !allNode + 164 * ((ss - 1)->moveCount > 8)
-                          + 141 * (!ss->inCheck && bestValue <= ss->staticEval - 100)
-                          + 121 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval - 75)
-                          + 86 * ((ss - 1)->isTTMove) + 86 * (ss->cutoffCnt <= 3)
-                          + std::min(-(ss - 1)->statScore / 112, 303));
+        //Penalty to the move permutation for failing low.
+        permutationHistory[pos.side_to_move()][ss->movePermutationKey] << -(std::min(695 * depth - 215, 2808) - 31 * (moveCount - 1));
+        if (priorCapture)
+        {
+            // bonus for prior countermoves that caused the fail low
+            Piece capturedPiece = pos.captured_piece();
+            assert(capturedPiece != NO_PIECE);
+            thisThread->captureHistory[pos.piece_on(prevSq)][prevSq][type_of(capturedPiece)]
+              << std::min(300 * depth - 182, 2995);
+        }
+        else
+        {
+            int bonusScale = (112 * (depth > 5) + 34 * !allNode + 164 * ((ss - 1)->moveCount > 8)
+                              + 141 * (!ss->inCheck && bestValue <= ss->staticEval - 100)
+                              + 121 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval - 75)
+                              + 86 * ((ss - 1)->isTTMove) + 86 * (ss->cutoffCnt <= 3)
+                              + std::min(-(ss - 1)->statScore / 112, 303));
 
-        bonusScale = std::max(bonusScale, 0);
+            bonusScale = std::max(bonusScale, 0);
 
-        const int scaledBonus = std::min(160 * depth - 99, 1492) * bonusScale;
+            const int scaledBonus = std::min(160 * depth - 99, 1492) * bonusScale;
 
-        update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
-                                      scaledBonus * 388 / 32768);
+            update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
+                                          scaledBonus * 388 / 32768);
 
-        thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()]
-          << scaledBonus * 212 / 32768;
+            thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()]
+              << scaledBonus * 212 / 32768;
 
-        if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
-            thisThread->pawnHistory[pawn_structure_index(pos)][pos.piece_on(prevSq)][prevSq]
-              << scaledBonus * 1055 / 32768;
-    }
+            if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
+                thisThread->pawnHistory[pawn_structure_index(pos)][pos.piece_on(prevSq)][prevSq]
+                  << scaledBonus * 1055 / 32768;
+        }
 
-    else if (priorCapture && prevSq != SQ_NONE)
-    {
-        // bonus for prior countermoves that caused the fail low
-        Piece capturedPiece = pos.captured_piece();
-        assert(capturedPiece != NO_PIECE);
-        thisThread->captureHistory[pos.piece_on(prevSq)][prevSq][type_of(capturedPiece)]
-          << std::min(300 * depth - 182, 2995);
     }
 
     if (PvNode)
@@ -1531,6 +1539,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     bestMove           = Move::none();
     ss->inCheck        = pos.checkers();
     moveCount          = 0;
+    ss->movePermutationKey = ((ss-2)->movePermutationKey) ^ uint16_t(Move::MoveHash()((ss-2)->currentMove));
 
     // Used to send selDepth info to GUI (selDepth counts from 1, ply from 0)
     if (PvNode && thisThread->selDepth < ss->ply + 1)
@@ -1613,8 +1622,8 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // Initialize a MovePicker object for the current position, and prepare to search
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
-    MovePicker mp(pos, ttData.move, DEPTH_QS, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+    MovePicker mp(pos, ttData.move, DEPTH_QS,&thisThread->permutationHistory, &thisThread->mainHistory, &thisThread->lowPlyHistory,
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory,ss->movePermutationKey, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
@@ -1672,6 +1681,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
             if (!pos.see_ge(move, -75))
                 continue;
         }
+
 
         // Step 7. Make and search the move
         Piece movedPiece = pos.moved_piece(move);
@@ -1829,6 +1839,7 @@ void update_all_stats(const Position&      pos,
                       int                  moveCount) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
+    MovePermutationHistory& permutationHistory = workerThread.permutationHistory;
     Piece                  moved_piece    = pos.moved_piece(bestMove);
     PieceType              captured;
 
@@ -1862,6 +1873,9 @@ void update_all_stats(const Position&      pos,
         captured    = type_of(pos.piece_on(move.to_sq()));
         captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1377 / 1024;
     }
+
+    //Update permutation history for the best move.
+    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ uint16_t(Move::MoveHash()(bestMove))] << bonus;
 }
 
 

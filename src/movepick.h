@@ -41,11 +41,13 @@ class MovePicker {
     MovePicker(const Position&,
                Move,
                Depth,
+               const MovePermutationHistory*,
                const ButterflyHistory*,
                const LowPlyHistory*,
                const CapturePieceToHistory*,
                const PieceToHistory**,
                const PawnHistory*,
+               uint16_t,
                int);
     MovePicker(const Position&, Move, int, const CapturePieceToHistory*);
     Move next_move();
@@ -60,6 +62,7 @@ class MovePicker {
     ExtMove* end() { return endMoves; }
 
     const Position&              pos;
+    const MovePermutationHistory* permutationHistory;
     const ButterflyHistory*      mainHistory;
     const LowPlyHistory*         lowPlyHistory;
     const CapturePieceToHistory* captureHistory;
@@ -69,6 +72,7 @@ class MovePicker {
     ExtMove *                    cur, *endMoves, *endBadCaptures, *beginBadQuiets, *endBadQuiets;
     int                          stage;
     int                          threshold;
+    uint16_t                     permutationHash;
     Depth                        depth;
     int                          ply;
     bool                         skipQuiets = false;

@@ -76,6 +76,7 @@ struct Stack {
     int                         cutoffCnt;
     int                         reduction;
     bool                        isTTMove;
+    uint16_t                    movePermutationKey;
 };
 
 
@@ -280,6 +281,7 @@ class Worker {
     void ensure_network_replicated();
 
     // Public because they need to be updatable by the stats
+    MovePermutationHistory permutationHistory;
     ButterflyHistory mainHistory;
     LowPlyHistory    lowPlyHistory;
 
