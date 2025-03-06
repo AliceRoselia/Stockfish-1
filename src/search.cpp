@@ -1850,7 +1850,7 @@ void update_all_stats(const Position&      pos,
         for (Move move : quietsSearched)
         {
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1246 / 1024);
-            if (depth >= 13)
+            if (depth >= 14)
             {
                 int threats_on_square = pos.threats_on_square<false>(move);
                 int threats_from_square = pos.threats_from_square(move);
@@ -1883,7 +1883,7 @@ void update_all_stats(const Position&      pos,
         captured    = type_of(pos.piece_on(move.to_sq()));
         captureHistory[moved_piece][move.to_sq()][captured] << -malus * 1377 / 1024;
 
-        if (depth >= 13)
+        if (depth >= 14)
         {
             int threats_on_square = pos.threats_on_square<true>(move);
             int threats_from_square = pos.threats_from_square(move);
