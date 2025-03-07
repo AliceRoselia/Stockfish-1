@@ -1878,7 +1878,7 @@ void update_all_stats(const Position&      pos,
     }
 
     //Update permutation history for the best move.
-    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ move_permutation_index(bestMove)] << bonus * 1490 / 1024;
+    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ move_permutation_index(bestMove)] << bonus;
 }
 
 
