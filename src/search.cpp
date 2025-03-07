@@ -1379,6 +1379,8 @@ moves_loop:  // When in check, search starts here
                     // (* Scaler) Especially if they make cutoffCnt increment more often.
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
+
+
                     break;
                 }
                 else
@@ -1429,7 +1431,7 @@ moves_loop:  // When in check, search starts here
     else if (prevSq != SQ_NONE)
     {
         //Penalty to the move permutation for failing low.
-        permutationHistory[pos.side_to_move()][ss->movePermutationKey] << -(std::min(695 * depth - 215, 2808) - 31 * (moveCount - 1));
+        permutationHistory[pos.side_to_move()][ss->movePermutationKey] << -(std::min(695 * depth - 215, 2808));
         if (priorCapture)
         {
             // bonus for prior countermoves that caused the fail low
@@ -1876,7 +1878,7 @@ void update_all_stats(const Position&      pos,
     }
 
     //Update permutation history for the best move.
-    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ move_permutation_index(bestMove)] << bonus;
+    permutationHistory[pos.side_to_move()][ss->movePermutationKey ^ move_permutation_index(bestMove)] << bonus * 1490 / 1024;
 }
 
 
