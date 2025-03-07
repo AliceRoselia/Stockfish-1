@@ -1429,7 +1429,7 @@ moves_loop:  // When in check, search starts here
     else if (prevSq != SQ_NONE)
     {
         //Penalty to the move permutation for failing low.
-        permutationHistory[pos.side_to_move()][ss->movePermutationKey] << -(std::min(695 * (depth+2) - 215, 2808) - 31 * (moveCount - 1));
+        permutationHistory[pos.side_to_move()][ss->movePermutationKey] << -(std::min(695 * depth - 215, 2808) - 31 * (moveCount - 1));
         if (priorCapture)
         {
             // bonus for prior countermoves that caused the fail low
