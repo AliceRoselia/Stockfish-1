@@ -51,6 +51,21 @@
 
 namespace Stockfish {
 
+int ss1 = 138;
+TUNE(SetRange(128,148),ss1);
+int ss2 = 135;
+TUNE(SetRange(125,145),ss2);
+int ss3 = 154;
+TUNE(SetRange(144,164),ss3);
+int ss4 = 27;
+TUNE(SetRange(22,32),ss4);
+int ss5 = 359;
+TUNE(SetRange(309,409),ss5);
+int ss6 = 75;
+TUNE(SetRange(65,85),ss6);
+
+
+
 namespace TB = Tablebases;
 
 void syzygy_extend_pv(const OptionsMap&            options,
@@ -1055,7 +1070,7 @@ moves_loop:  // When in check, search starts here
 
                 // SEE based pruning for captures and checks
                 int seeHist = std::clamp(captHist / 32, -138 * depth, 135 * depth);
-                if (!pos.see_ge(move, -154 * depth - seeHist))
+                if (!pos.see_ge(move, -ss3 * depth - seeHist))
                     continue;
             }
             else
@@ -1092,7 +1107,7 @@ moves_loop:  // When in check, search starts here
                 lmrDepth = std::max(lmrDepth, 0);
 
                 // Prune moves with negative SEE
-                if (!pos.see_ge(move, -27 * lmrDepth * lmrDepth))
+                if (!pos.see_ge(move, -ss4 * lmrDepth * lmrDepth))
                     continue;
             }
         }
@@ -1602,7 +1617,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         if (bestValue > alpha)
             alpha = bestValue;
 
-        futilityBase = ss->staticEval + 359;
+        futilityBase = ss->staticEval + ss5;
     }
 
     const PieceToHistory* contHist[] = {(ss - 1)->continuationHistory,
@@ -1669,7 +1684,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
                 continue;
 
             // Do not search moves with bad enough SEE values
-            if (!pos.see_ge(move, -75))
+            if (!pos.see_ge(move, -ss6))
                 continue;
         }
 

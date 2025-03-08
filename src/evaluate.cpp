@@ -44,10 +44,14 @@ int Eval::simple_eval(const Position& pos, Color c) {
     return PawnValue * (pos.count<PAWN>(c) - pos.count<PAWN>(~c))
          + (pos.non_pawn_material(c) - pos.non_pawn_material(~c));
 }
+int smallnet_threshold = 962;
+TUNE(SetRange(862,1062),smallnet_threshold);
+int pawn_eval_value = 535;
+TUNE(SetRange(435,635),pawn_eval_value);
 
 bool Eval::use_smallnet(const Position& pos) {
     int simpleEval = simple_eval(pos, pos.side_to_move());
-    return std::abs(simpleEval) > 962;
+    return std::abs(simpleEval) > smallnet_threshold;
 }
 
 // Evaluate is the evaluator for the outer world. It returns a static evaluation
@@ -78,7 +82,7 @@ Value Eval::evaluate(const Eval::NNUE::Networks&    networks,
     optimism += optimism * nnueComplexity / 468;
     nnue -= nnue * nnueComplexity / 18000;
 
-    int material = 535 * pos.count<PAWN>() + pos.non_pawn_material();
+    int material = pawn_eval_value * pos.count<PAWN>() + pos.non_pawn_material();
     int v        = (nnue * (77777 + material) + optimism * (7777 + material)) / 77777;
 
     // Damp down the evaluation linearly when shuffling
