@@ -197,7 +197,15 @@ extern Value BishopValue;
 extern Value RookValue;
 extern Value QueenValue;
 
-extern Value PieceValue[PIECE_NB];
+struct Piece_Value_Getter{
+    inline Value operator[](int index) const{
+        const Value a[16] = {VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO,
+  VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO};
+        return a[index];
+    }
+};
+
+extern Piece_Value_Getter PieceValue;
 
 
 

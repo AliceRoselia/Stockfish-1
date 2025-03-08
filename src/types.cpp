@@ -34,9 +34,7 @@ TUNE(SetRange(725,925),BishopValue);
 TUNE(SetRange(1176,1376),RookValue);
 TUNE(SetRange(2438,2638),QueenValue);
 
-Value PieceValue[PIECE_NB] = {
-  VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO,
-  VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO};
+Piece_Value_Getter PieceValue;
 
 
 };
