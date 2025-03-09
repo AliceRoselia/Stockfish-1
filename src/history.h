@@ -35,7 +35,9 @@ namespace Stockfish {
 
 constexpr int PAWN_HISTORY_SIZE        = 512;    // has to be a power of 2
 constexpr int CORRECTION_HISTORY_SIZE  = 32768;  // has to be a power of 2
+constexpr int REDUCTION_HISTORY_SIZE   = 8192;   // has to be a power of 2
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
+constexpr int REDUCTION_HISTORY_LIMIT  = 16384;
 constexpr int LOW_PLY_HISTORY_SIZE     = 4;
 
 static_assert((PAWN_HISTORY_SIZE & (PAWN_HISTORY_SIZE - 1)) == 0,
@@ -46,12 +48,15 @@ static_assert((CORRECTION_HISTORY_SIZE & (CORRECTION_HISTORY_SIZE - 1)) == 0,
 
 enum PawnHistoryType {
     Normal,
-    Correction
+    Correction,
+    Reduction
 };
+
+constexpr int PAWN_HISTORY_SIZES[] = {PAWN_HISTORY_SIZE,CORRECTION_HISTORY_SIZE,REDUCTION_HISTORY_SIZE};
 
 template<PawnHistoryType T = Normal>
 inline int pawn_structure_index(const Position& pos) {
-    return pos.pawn_key() & ((T == Normal ? PAWN_HISTORY_SIZE : CORRECTION_HISTORY_SIZE) - 1);
+    return pos.pawn_key() & (PAWN_HISTORY_SIZES[T]-1);
 }
 
 inline int minor_piece_index(const Position& pos) {
@@ -160,6 +165,11 @@ struct CorrHistTypedef<Continuation> {
 template<CorrHistType T>
 using CorrectionHistory = typename Detail::CorrHistTypedef<T>::type;
 
+//I'll have the 2 main history types as a proof-of-concept for reduction history, the piece-to reduction history and the pawn reduction history.
+using PawnReductionHistory = Stats<std::int16_t, REDUCTION_HISTORY_LIMIT, REDUCTION_HISTORY_SIZE, COLOR_NB>;
+using PieceToReductionHistory = Stats<std::int16_t, REDUCTION_HISTORY_LIMIT, PIECE_NB,SQUARE_NB>;
+
 }  // namespace Stockfish
+
 
 #endif  // #ifndef HISTORY_H_INCLUDED

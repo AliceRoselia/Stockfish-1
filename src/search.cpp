@@ -151,6 +151,22 @@ void update_correction_history(const Position& pos,
           << bonus * 143 / 128;
 }
 
+int reduction_history_value(const Position& pos,Move m, Search::Worker& workerThread){
+    Color them = pos.side_to_move(); // This happens between move and undo-move.
+    Square to = m.to_sq();
+    const auto ptrv = workerThread.pieceToReductionHistory[pos.piece_on(to)][to];
+    const auto prv = workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them];
+
+    return (ptrv + prv)/32;
+}
+
+void update_reduction_history(const Position& pos,Move m, Search::Worker& workerThread, const int bonus){
+    Color them = pos.side_to_move(); // This happens between move and undo-move.
+    Square to = m.to_sq();
+    workerThread.pieceToReductionHistory[pos.piece_on(to)][to]<< bonus;
+    workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them]<<bonus;
+}
+
 // Add a small random component to draw evaluations to avoid 3-fold blindness
 Value value_draw(size_t nodes) { return VALUE_DRAW - 1 + Value(nodes & 0x2); }
 Value value_to_tt(Value v, int ply);
@@ -561,6 +577,9 @@ void Search::Worker::clear() {
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory[WHITE].fill(0);
     nonPawnCorrectionHistory[BLACK].fill(0);
+
+    pawnReductionHistory.fill(0);
+    pieceToReductionHistory.fill(0);
 
     for (auto& to : continuationCorrectionHistory)
         for (auto& h : to)
@@ -1223,6 +1242,7 @@ moves_loop:  // When in check, search starts here
 
         // Decrease/increase reduction for moves with a good/bad history
         r -= ss->statScore * 1582 / 16384;
+        r += reduction_history_value(pos,move,*thisThread);
 
         // Step 17. Late moves reduction / extension (LMR)
         if (depth >= 2 && moveCount > 1)
@@ -1259,9 +1279,18 @@ moves_loop:  // When in check, search starts here
                 // Post LMR continuation history updates
                 int bonus = (value >= beta) * 1800;
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
+
+
+                int reduction_malus = std::min(newDepth*300,1200);
+                update_reduction_history(pos,move,*thisThread,-reduction_malus);
             }
-            else if (value > alpha && value < bestValue + 9)
-                newDepth--;
+            else
+            {
+                if (value > alpha && value < bestValue + 9)
+                    newDepth--;
+                int reduction_bonus = std::min(newDepth*100,1200);
+                update_reduction_history(pos,move,*thisThread,reduction_bonus);
+            }
         }
 
         // Step 18. Full-depth search when LMR is skipped
