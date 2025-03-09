@@ -157,7 +157,7 @@ int reduction_history_value(const Position& pos,Move m, Search::Worker& workerTh
     const auto ptrv = workerThread.pieceToReductionHistory[pos.piece_on(to)][to];
     const auto prv = workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them];
 
-    return (ptrv + prv)/16;
+    return (ptrv + prv)/32;
 }
 
 void update_reduction_history(const Position& pos,Move m, Search::Worker& workerThread, const int bonus){
