@@ -1280,7 +1280,7 @@ moves_loop:  // When in check, search starts here
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
 
 
-                int reduction_malus = std::min(d*375,2400);
+                int reduction_malus = std::min(d*700,4800);
                 update_reduction_history(pos,move,*thisThread,-reduction_malus);
             }
             else
