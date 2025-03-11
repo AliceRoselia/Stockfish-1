@@ -1299,7 +1299,7 @@ moves_loop:  // When in check, search starts here
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
 
 
-                int reduction_malus = std::min(d*375,1200);
+                int reduction_malus = std::min(d*malus_multiplier,malus_cap);
                 update_reduction_history(pos,move,*thisThread,-reduction_malus);
             }
             else
@@ -1308,7 +1308,7 @@ moves_loop:  // When in check, search starts here
                     newDepth--;
                 if (value <= alpha)
                 {
-                    int reduction_bonus = std::min(d*100,1680);
+                    int reduction_bonus = std::min(d*bonus_multiplier,bonus_cap);
                     update_reduction_history(pos,move,*thisThread,reduction_bonus);
                 }
             }
