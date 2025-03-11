@@ -51,6 +51,25 @@
 
 namespace Stockfish {
 
+int malus_multiplier = 375;
+int malus_cap = 1200;
+TUNE(SetRange(300,450),malus_multiplier);
+TUNE(SetRange(600,1800),malus_cap);
+int bonus_multiplier = 100;
+int bonus_cap = 1680;
+TUNE(SetRange(75,125),bonus_multiplier);
+TUNE(SetRange(1000,2500),bonus_cap);
+
+int ptrv_multiplier = 4096;
+TUNE(SetRange(3000,5120),ptrv_multiplier);
+int prv_multiplier = 4096;
+TUNE(SetRange(3000,5120),prv_multiplier);
+int pieceto_reduction_multiplier = 128;
+int pawn_reduction_multiplier = 128;
+
+TUNE(SetRange(96,160),pieceto_reduction_multiplier);
+TUNE(SetRange(96,160),pawn_reduction_multiplier);
+
 namespace TB = Tablebases;
 
 void syzygy_extend_pv(const OptionsMap&            options,
@@ -157,14 +176,14 @@ int reduction_history_value(const Position& pos,Move m, Search::Worker& workerTh
     const auto ptrv = workerThread.pieceToReductionHistory[pos.piece_on(to)][to];
     const auto prv = workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them];
 
-    return (ptrv + prv)/32;
+    return (ptrv*ptrv_multiplier + prv*prv_multiplier)/131072;
 }
 
 void update_reduction_history(const Position& pos,Move m, Search::Worker& workerThread, const int bonus){
     Color them = pos.side_to_move(); // This happens between move and undo-move.
     Square to = m.to_sq();
-    workerThread.pieceToReductionHistory[pos.piece_on(to)][to]<< bonus;
-    workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them]<<bonus;
+    workerThread.pieceToReductionHistory[pos.piece_on(to)][to]<< bonus*pieceto_reduction_multiplier/128;
+    workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them]<< bonus*pawn_reduction_multiplier/128;
 }
 
 // Add a small random component to draw evaluations to avoid 3-fold blindness
