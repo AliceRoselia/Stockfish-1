@@ -1279,11 +1279,9 @@ moves_loop:  // When in check, search starts here
                 int bonus = (value >= beta) * 1800;
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
 
-                if (value > alpha)
-                {
-                    int reduction_malus = std::min(d*375,1200);
-                    update_reduction_history(pos,move,*thisThread,-reduction_malus);
-                }
+
+                int reduction_malus = std::min(d*375,1200);
+                update_reduction_history(pos,move,*thisThread,-reduction_malus);
             }
             else
             {
