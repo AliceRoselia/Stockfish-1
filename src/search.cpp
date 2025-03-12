@@ -1272,6 +1272,8 @@ moves_loop:  // When in check, search starts here
 
                 newDepth += doDeeperSearch - doShallowerSearch;
 
+                int reduction_malus = std::min(d*375,1200);
+                update_reduction_history(pos,move,*thisThread,-reduction_malus);
                 if (newDepth > d)
                     value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
 
@@ -1280,8 +1282,6 @@ moves_loop:  // When in check, search starts here
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
 
 
-                int reduction_malus = std::min(d*375,1200);
-                update_reduction_history(pos,move,*thisThread,-reduction_malus);
             }
             else
             {
