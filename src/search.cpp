@@ -153,20 +153,18 @@ void update_correction_history(const Position& pos,
 
 int reduction_history_value(const Position& pos,Move m, Search::Worker& workerThread){
     Color them = pos.side_to_move(); // This happens between move and undo-move.
-    Square from = m.from_sq();
     Square to = m.to_sq();
-    const auto mrv = workerThread.mainReductionHistory[from][to][them];
+    const auto ptrv = workerThread.pieceToReductionHistory[pos.piece_on(to)][to];
     const auto prv = workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them];
 
-    return (mrv + prv)/32;
+    return (ptrv*4062 + prv*4093)/131072;
 }
 
 void update_reduction_history(const Position& pos,Move m, Search::Worker& workerThread, const int bonus){
     Color them = pos.side_to_move(); // This happens between move and undo-move.
-    Square from = m.from_sq();
     Square to = m.to_sq();
-    workerThread.mainReductionHistory[from][to][them]<< bonus;
-    workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them]<<bonus;
+    workerThread.pieceToReductionHistory[pos.piece_on(to)][to]<< bonus*130/128;
+    workerThread.pawnReductionHistory[pawn_structure_index<Reduction>(pos)][them]<<bonus*128/128;
 }
 
 // Add a small random component to draw evaluations to avoid 3-fold blindness
@@ -581,7 +579,7 @@ void Search::Worker::clear() {
     nonPawnCorrectionHistory[BLACK].fill(0);
 
     pawnReductionHistory.fill(0);
-    mainReductionHistory.fill(0);
+    pieceToReductionHistory.fill(0);
 
     for (auto& to : continuationCorrectionHistory)
         for (auto& h : to)
@@ -1282,7 +1280,7 @@ moves_loop:  // When in check, search starts here
                 update_continuation_histories(ss, movedPiece, move.to_sq(), bonus);
 
 
-                int reduction_malus = std::min(d*375,1200);
+                int reduction_malus = std::min(d*375,1178);
                 update_reduction_history(pos,move,*thisThread,-reduction_malus);
             }
             else
@@ -1291,7 +1289,7 @@ moves_loop:  // When in check, search starts here
                     newDepth--;
                 if (value <= alpha)
                 {
-                    int reduction_bonus = std::min(d*100,1680);
+                    int reduction_bonus = std::min(d*100,1678);
                     update_reduction_history(pos,move,*thisThread,reduction_bonus);
                 }
             }

@@ -167,7 +167,7 @@ using CorrectionHistory = typename Detail::CorrHistTypedef<T>::type;
 
 //I'll have the 2 main history types as a proof-of-concept for reduction history, the piece-to reduction history and the pawn reduction history.
 using PawnReductionHistory = Stats<std::int16_t, REDUCTION_HISTORY_LIMIT, REDUCTION_HISTORY_SIZE, COLOR_NB>;
-using ButterflyReductionHistory = Stats<std::int16_t, REDUCTION_HISTORY_LIMIT, SQUARE_NB,SQUARE_NB,COLOR_NB>;
+using PieceToReductionHistory = Stats<std::int16_t, REDUCTION_HISTORY_LIMIT, PIECE_NB,SQUARE_NB>;
 
 }  // namespace Stockfish
 
