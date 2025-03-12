@@ -293,7 +293,7 @@ class Worker {
     CorrectionHistory<Continuation> continuationCorrectionHistory;
 
     PawnReductionHistory            pawnReductionHistory;
-    PieceToReductionHistory         pieceToReductionHistory;
+    ButterflyReductionHistory       mainReductionHistory;
 
    private:
     void iterative_deepening();
