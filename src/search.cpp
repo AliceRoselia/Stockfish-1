@@ -578,8 +578,8 @@ void Search::Worker::clear() {
     nonPawnCorrectionHistory[WHITE].fill(0);
     nonPawnCorrectionHistory[BLACK].fill(0);
 
-    pawnReductionHistory.fill(0);
-    pieceToReductionHistory.fill(0);
+    pawnReductionHistory.fill(2500);
+    pieceToReductionHistory.fill(2500);
 
     for (auto& to : continuationCorrectionHistory)
         for (auto& h : to)
@@ -1289,7 +1289,7 @@ moves_loop:  // When in check, search starts here
                     newDepth--;
                 if (value <= alpha)
                 {
-                    int reduction_bonus = std::min(d*100,1680);
+                    int reduction_bonus = std::min(d*10,168);
                     update_reduction_history(pos,move,*thisThread,reduction_bonus);
                 }
             }
