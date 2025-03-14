@@ -1305,6 +1305,11 @@ moves_loop:  // When in check, search starts here
             // Note that if expected reduction is high, we reduce search depth here
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
                                    newDepth - (r > 3495) - (r > 5510 && newDepth > 2), !cutNode);
+            if (value > alpha)
+            {
+                int reduction_malus = std::min((newDepth - (r > 3495) - (r > 5510 && newDepth > 2))*375,1200);
+                update_reduction_history(pos,move,*thisThread,-reduction_malus);
+            }
         }
 
         // For PV nodes only, do a full PV search on the first move or after a fail high,
@@ -1319,6 +1324,11 @@ moves_loop:  // When in check, search starts here
                 newDepth = std::max(newDepth, 1);
 
             value = -search<PV>(pos, ss + 1, -beta, -alpha, newDepth, false);
+            if (value > alpha)
+            {
+                int reduction_malus = std::min(newDepth*375,1200);
+                update_reduction_history(pos,move,*thisThread,-reduction_malus);
+            }
         }
 
         // Step 19. Undo move
