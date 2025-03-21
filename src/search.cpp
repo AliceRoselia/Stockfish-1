@@ -998,6 +998,7 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+    bool null_reduction = false;
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1040,6 +1041,29 @@ moves_loop:  // When in check, search starts here
         Depth r = reduction(improving, depth, moveCount, delta);
 
         r -= 32 * moveCount;
+
+        //What's wrong with other moves? Answer: They probably waste time.
+        //Therefore, we populate the history with null move and, at the same time, add reduction.
+        if (!PvNode && !(ss->inCheck) && moveCount == 4 && (ss - 1)->currentMove != Move::null() && ss->ply >= thisThread->nmpMinPly && !excludedMove && pos.non_pawn_material(us))
+        {
+            Depth R = depth / 2 + 5;
+
+            ss->currentMove                   = Move::null();
+            ss->continuationHistory           = &thisThread->continuationHistory[0][0][NO_PIECE][0];
+            ss->continuationCorrectionHistory = &thisThread->continuationCorrectionHistory[NO_PIECE][0];
+
+            do_null_move(pos, st);
+
+            Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -alpha, depth - R, true);
+
+            undo_null_move(pos);
+
+            if (nullValue <= alpha)
+                null_reduction = true;
+
+        }
+        if (null_reduction)
+            r += 1024;
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
