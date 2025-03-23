@@ -248,7 +248,7 @@ top:
         [[fallthrough]];
 
     case QUIET_INIT :
-        if (!skipQuiets)
+        if (!skipQuietsAndBadCaptures)
         {
             cur      = endBadCaptures;
             endMoves = beginBadQuiets = endBadQuiets = generate<QUIETS>(pos, cur);
@@ -261,7 +261,7 @@ top:
         [[fallthrough]];
 
     case GOOD_QUIET :
-        if (!skipQuiets && select([]() { return true; }))
+        if (!skipQuietsAndBadCaptures && select([]() { return true; }))
         {
             if ((cur - 1)->value > -7998 || (cur - 1)->value <= quiet_threshold(depth))
                 return *(cur - 1);
@@ -278,7 +278,7 @@ top:
         [[fallthrough]];
 
     case BAD_CAPTURE :
-        if (select([]() { return true; }))
+        if (!skipQuietsAndBadCaptures && select([]() { return true; }))
             return *(cur - 1);
 
         // Prepare the pointers to loop over the bad quiets
@@ -289,7 +289,7 @@ top:
         [[fallthrough]];
 
     case BAD_QUIET :
-        if (!skipQuiets)
+        if (!skipQuietsAndBadCaptures)
             return select([]() { return true; });
 
         return Move::none();
@@ -315,6 +315,6 @@ top:
     return Move::none();  // Silence warning
 }
 
-void MovePicker::skip_quiet_moves() { skipQuiets = true; }
+void MovePicker::skip_quiet_moves_and_bad_captures() { skipQuietsAndBadCaptures = true; }
 
 }  // namespace Stockfish
