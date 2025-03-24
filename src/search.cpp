@@ -1006,6 +1006,8 @@ moves_loop:  // When in check, search starts here
             continue;
 
         // Check for legality
+
+        ss->moveCount = ++moveCount;
         if (!pos.legal(move))
             continue;
 
@@ -1017,7 +1019,6 @@ moves_loop:  // When in check, search starts here
                            thisThread->rootMoves.begin() + thisThread->pvLast, move))
             continue;
 
-        ss->moveCount = ++moveCount;
 
         if (rootNode && is_mainthread() && nodes > 10000000)
         {
