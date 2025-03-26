@@ -1056,7 +1056,7 @@ moves_loop:  // When in check, search starts here
                 mp.skip_quiet_moves();
 
             // Reduced depth of the next LMR search
-            int lmrDepth_32 = newDepth_32 - r / 32;
+            int lmrDepth_32 = newDepth_32 - r/32;
 
             if (capture || givesCheck)
             {
@@ -1256,7 +1256,7 @@ moves_loop:  // When in check, search starts here
 
 
             Depth d = std::max(
-              32, std::min(newDepth_32 - r / 32, newDepth_32 + (!allNode + (PvNode && !bestMove))*32));
+              32, std::min(newDepth_32 - r/32, newDepth_32 + (!allNode + (PvNode && !bestMove))*32));
 
             ss->reduction = (newDepth_32 - d)/32;
 
@@ -1265,6 +1265,7 @@ moves_loop:  // When in check, search starts here
 
 
             // Do a full-depth search when reduced LMR search fails high
+            dbg_hit_on(value > alpha);
             if (value > alpha && d < newDepth_32)
             {
                 // Adjust full-depth search based on LMR results - if the result was
@@ -1394,7 +1395,7 @@ moves_loop:  // When in check, search starts here
                 if (value >= beta)
                 {
                     // (* Scaler) Especially if they make cutoffCnt increment more often.
-                    ss->cutoffCnt += (extension < 2) || PvNode;
+                    ss->cutoffCnt += (extension < 64) || PvNode;
                     assert(value >= beta);  // Fail high
                     break;
                 }
