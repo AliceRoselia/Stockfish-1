@@ -710,7 +710,7 @@ Value Search::Worker::search(
     // to save indentation, we list the condition in all code between here and there.
 
     // At non-PV nodes we check for an early TT cutoff
-    if (!PvNode && !excludedMove && ttData.depth > depth_32/32 - (ttData.value <= beta)
+    if (!PvNode && !excludedMove && ttData.depth * 32 > depth_32 - (ttData.value <= beta)*32
         && is_valid(ttData.value)  // Can happen when !ttHit or when access race in probe()
         && (ttData.bound & (ttData.value >= beta ? BOUND_LOWER : BOUND_UPPER))
         && (cutNode == (ttData.value >= beta) || depth_32 > 5120))
@@ -980,7 +980,7 @@ moves_loop:  // When in check, search starts here
 
     // Step 12. A small Probcut idea
     probCutBeta = beta + 415;
-    if ((ttData.bound & BOUND_LOWER) && ttData.depth >= depth_32/32 - 4 && ttData.value >= probCutBeta
+    if ((ttData.bound & BOUND_LOWER) && ttData.depth*32 >= depth_32 - 128 && ttData.value >= probCutBeta
         && !is_decisive(beta) && is_valid(ttData.value) && !is_decisive(ttData.value))
         return probCutBeta;
 
@@ -1132,7 +1132,7 @@ moves_loop:  // When in check, search starts here
             if (!rootNode && move == ttData.move && !excludedMove
                 && depth_32/32 >= 6 - (thisThread->completedDepth > 29) + ss->ttPv
                 && is_valid(ttData.value) && !is_decisive(ttData.value)
-                && (ttData.bound & BOUND_LOWER) && ttData.depth >= depth_32/32 - 3)
+                && (ttData.bound & BOUND_LOWER) && ttData.depth * 32 >= depth_32 - 96)
             {
                 Value singularBeta  = ttData.value - (59 + 77 * (ss->ttPv && !PvNode)) * depth_32 / 1728;
                 Depth singularDepth_32 = newDepth_32 / 2;
@@ -1202,7 +1202,7 @@ moves_loop:  // When in check, search starts here
         // Decrease reduction for PvNodes (*Scaler)
         if (ss->ttPv)
             r -= 2381 + PvNode * 1008 + (ttData.value > alpha) * 880
-               + (ttData.depth >= depth_32/32) * (1022 + cutNode * 1140);
+               + (ttData.depth*32 >= depth_32) * (1022 + cutNode * 1140);
 
         // These reduction adjustments have no proven non-linear scaling
 
@@ -1256,7 +1256,7 @@ moves_loop:  // When in check, search starts here
 
 
             Depth d = std::max(
-              32, std::min(newDepth_32 - r/32, newDepth_32 + (!allNode + (PvNode && !bestMove))*32));
+              1, std::min(newDepth_32 - r/32, newDepth_32 + (!allNode + (PvNode && !bestMove))*32));
 
             ss->reduction = (newDepth_32 - d)/32;
 
@@ -1306,7 +1306,7 @@ moves_loop:  // When in check, search starts here
 
             // Extend move from transposition table if we are about to dive into qsearch.
             if (move == ttData.move && thisThread->rootDepth > 8)
-                newDepth_32 = std::max(newDepth_32, 32);
+                newDepth_32 = std::max(newDepth_32, 1);
 
             value = -search<PV>(pos, ss + 1, -beta, -alpha, newDepth_32, false);
         }
