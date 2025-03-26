@@ -616,6 +616,7 @@ Value Search::Worker::search(
         return qsearch<nt>(pos, ss, alpha, beta);
     }
 
+
     // Limit the depth if extensions made it too large
     depth_32 = std::min(depth_32, (MAX_PLY - 1)*32);
 
@@ -810,7 +811,6 @@ Value Search::Worker::search(
             unadjustedStaticEval = evaluate(pos);
 
         ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
-
         // ttValue can be used as a better position evaluation
         if (is_valid(ttData.value)
             && (ttData.bound & (ttData.value > eval ? BOUND_LOWER : BOUND_UPPER)))
@@ -1294,7 +1294,7 @@ moves_loop:  // When in check, search starts here
 
             // Note that if expected reduction is high, we reduce search depth here
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
-                                   newDepth_32 - ((r > 3495) - (r > 5510 && newDepth_32 > 64))*32, !cutNode);
+                                   newDepth_32 - ((r > 3495) + (r > 5510 && newDepth_32 > 64))*32, !cutNode);
         }
 
         // For PV nodes only, do a full PV search on the first move or after a fail high,
