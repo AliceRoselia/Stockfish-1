@@ -1265,7 +1265,6 @@ moves_loop:  // When in check, search starts here
 
 
             // Do a full-depth search when reduced LMR search fails high
-            dbg_hit_on(value > alpha);
             if (value > alpha && d < newDepth_32)
             {
                 // Adjust full-depth search based on LMR results - if the result was
