@@ -1727,6 +1727,10 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
                     break;  // Fail high
             }
         }
+        //Save legality and logic checks by only searching 3 moves.
+        if (moveCount >= 3){
+            break;
+        }
     }
 
     // Step 9. Check for mate
