@@ -641,7 +641,7 @@ Value Search::Worker::search(
     Move  move, excludedMove, bestMove;
     Depth extension, newDepth;
     Value bestValue, value, eval, maxValue, probCutBeta;
-    bool  givesCheck, improving, priorCapture, opponentWorsening, EMATrendingUp;
+    bool  givesCheck, improving, priorCapture, opponentWorsening;
     bool  capture, ttCapture;
     int   priorReduction = (ss - 1)->reduction;
     (ss - 1)->reduction  = 0;
@@ -799,7 +799,6 @@ Value Search::Worker::search(
         ss->fastEMA = (ss-2)->fastEMA;
         ss->slowEMA = (ss-2)->slowEMA;
         improving             = false;
-        EMATrendingUp         = false;
         goto moves_loop;
     }
     else if (excludedMove)
@@ -845,13 +844,12 @@ Value Search::Worker::search(
     // bigger than the previous static evaluation at our turn (if we were in
     // check at our previous move we go back until we weren't in check) and is
     // false otherwise. The improving flag is used in various pruning heuristics.
-    improving = ss->staticEval > (ss - 2)->staticEval;
 
     opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
 
     ss->fastEMA = ((ss-2)->fastEMA * 3 + ss->staticEval)/4;
     ss->slowEMA = ((ss-2)->slowEMA * 7 + ss->staticEval)/8;
-    EMATrendingUp = (ss->fastEMA > ss->slowEMA);
+    improving = (ss->fastEMA > ss->slowEMA);
 
     if (priorReduction >= 3 && !opponentWorsening)
         depth++;
@@ -1050,7 +1048,6 @@ moves_loop:  // When in check, search starts here
 
         r -= 32 * moveCount;
 
-        r -= 1024*EMATrendingUp;
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
