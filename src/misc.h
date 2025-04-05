@@ -38,7 +38,11 @@
 #ifdef __clang__
 #define assume(x) __builtin_assume(x)
 #elif __GNUC__
+#if __GNUC__ >= 13
 #define assume(x) __attribute__((assume(x)))
+#else
+#define assume(x)
+#endif // __GNUC__
 #elif _MSC_VER
 #define assume(x) __assume(x)
 #else
