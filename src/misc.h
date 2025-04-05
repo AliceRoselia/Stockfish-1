@@ -35,6 +35,17 @@
 #define stringify2(x) #x
 #define stringify(x) stringify2(x)
 
+#ifdef __clang__
+#define assume(x) __builtin_assume(x)
+#elif __GNUC__
+#define assume(x) __attribute__((assume(x)))
+#elif _MSC_VER
+#define assume(x) __assume(x)
+#else
+#define assume(x)
+#endif
+
+
 namespace Stockfish {
 
 std::string engine_version_info();
