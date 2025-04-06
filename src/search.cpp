@@ -849,8 +849,8 @@ Value Search::Worker::search(
     opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
 
     // The two terms must add to 1024.
-    ss->fastEMA = (246*(ss-2)->fastEMA + 778 * ss->staticEval)/1024;
-    ss->slowEMA = (132*(ss-2)->slowEMA * 892 + ss->staticEval)/1024;
+    ss->fastEMA = (248*(ss-2)->fastEMA + 780 * ss->staticEval)/1024;
+    ss->slowEMA = (135*(ss-2)->slowEMA * 889 + ss->staticEval)/1024;
     EMATrendingUp = (ss->fastEMA > ss->slowEMA);
 
     if (priorReduction >= 3 && !opponentWorsening)
@@ -1047,7 +1047,7 @@ moves_loop:  // When in check, search starts here
 
         r -= 32 * moveCount;
 
-        r -= 525*EMATrendingUp;
+        r -= 529*EMATrendingUp;
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
@@ -1770,7 +1770,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
 Depth Search::Worker::reduction(bool i, Depth d, int mn, int delta) const {
     int reductionScale = reductions[d] * reductions[mn];
-    return reductionScale - delta * 764 / rootDelta + !i * reductionScale * 191 / 512 + 1349;
+    return reductionScale - delta * 764 / rootDelta + !i * reductionScale * 191 / 512 + 1346;
 }
 
 // elapsed() returns the time elapsed since the search started. If the
