@@ -849,8 +849,8 @@ Value Search::Worker::search(
     opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
 
     // The two terms must add to 1024.
-    ss->fastEMA = (248*(ss-2)->fastEMA + 780 * ss->staticEval)/1024;
-    ss->slowEMA = (135*(ss-2)->slowEMA * 889 + ss->staticEval)/1024;
+    ss->fastEMA = (780*(ss-2)->fastEMA + 248 * ss->staticEval)/1024;
+    ss->slowEMA = (889*(ss-2)->slowEMA * 135 + ss->staticEval)/1024;
     EMATrendingUp = (ss->fastEMA > ss->slowEMA);
 
     if (priorReduction >= 3 && !opponentWorsening)
