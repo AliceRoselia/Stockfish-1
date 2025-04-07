@@ -61,6 +61,16 @@ void syzygy_extend_pv(const OptionsMap&            options,
 
 using namespace Search;
 
+int reduction_constant = 1343;
+TUNE(SetRange(1000,1690),reduction_constant);
+int EMA_malus = 512;
+TUNE(SetRange(256,768),EMA_malus);
+int fastEMA_beta = 256;
+int slowEMA_beta = 128;
+TUNE(SetRange(128,512),fastEMA_beta);
+TUNE(SetRange(64,256),slowEMA_beta);
+
+
 namespace {
 
 // (*Scalers):
@@ -298,6 +308,10 @@ void Search::Worker::iterative_deepening() {
           &this->continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
         (ss - i)->continuationCorrectionHistory = &this->continuationCorrectionHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
+        (ss - i)->reduction                     = 0;
+        (ss - i)->fastEMA                      = 0;
+        (ss - i)->slowEMA                      = 0;
+
     }
 
     for (int i = 0; i <= MAX_PLY + 2; ++i)
@@ -638,7 +652,7 @@ Value Search::Worker::search(
     Move  move, excludedMove, bestMove;
     Depth extension, newDepth;
     Value bestValue, value, eval, maxValue, probCutBeta;
-    bool  givesCheck, improving, priorCapture, opponentWorsening;
+    bool  givesCheck, improving, priorCapture, opponentWorsening, EMATrendingUp;
     bool  capture, ttCapture;
     int   priorReduction = (ss - 1)->reduction;
     (ss - 1)->reduction  = 0;
@@ -792,7 +806,10 @@ Value Search::Worker::search(
     {
         // Skip early pruning when in check
         ss->staticEval = eval = (ss - 2)->staticEval;
+        ss->fastEMA = (ss-2)->fastEMA;
+        ss->slowEMA = (ss-2)->slowEMA;
         improving             = false;
+        EMATrendingUp         = false;
         goto moves_loop;
     }
     else if (excludedMove)
@@ -841,6 +858,10 @@ Value Search::Worker::search(
     improving = ss->staticEval > (ss - 2)->staticEval;
 
     opponentWorsening = ss->staticEval > -(ss - 1)->staticEval;
+
+    ss->fastEMA = (((1024-fastEMA_beta)*(ss-2)->fastEMA) + (fastEMA_beta * ss->staticEval))/1024;
+    ss->slowEMA = (((1024-slowEMA_beta)*(ss-2)->slowEMA) + (slowEMA_beta * ss->staticEval))/1024;
+    EMATrendingUp = (ss->fastEMA > ss->slowEMA);
 
     if (priorReduction >= 3 && !opponentWorsening)
         depth++;
@@ -1035,6 +1056,8 @@ moves_loop:  // When in check, search starts here
         Depth r = reduction(improving, depth, moveCount, delta);
 
         r -= 32 * moveCount;
+
+        r -= EMA_malus*EMATrendingUp;
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
@@ -1757,7 +1780,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
 Depth Search::Worker::reduction(bool i, Depth d, int mn, int delta) const {
     int reductionScale = reductions[d] * reductions[mn];
-    return reductionScale - delta * 764 / rootDelta + !i * reductionScale * 191 / 512 + 1087;
+    return reductionScale - delta * 764 / rootDelta + !i * reductionScale * 191 / 512 + reduction_constant;
 }
 
 // elapsed() returns the time elapsed since the search started. If the
