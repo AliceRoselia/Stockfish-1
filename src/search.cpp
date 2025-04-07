@@ -61,14 +61,14 @@ void syzygy_extend_pv(const OptionsMap&            options,
 
 using namespace Search;
 
-int reduction_constant = 1343;
-TUNE(SetRange(1000,1690),reduction_constant);
-int EMA_malus = 512;
-TUNE(SetRange(256,768),EMA_malus);
-int fastEMA_beta = 256;
-int slowEMA_beta = 128;
-TUNE(SetRange(128,512),fastEMA_beta);
-TUNE(SetRange(64,256),slowEMA_beta);
+int reduction_constant = 1346;
+TUNE(SetRange(1300,1400),reduction_constant);
+int EMA_malus = 529;
+TUNE(SetRange(450,600),EMA_malus);
+int fastEMA_beta = 248;
+int slowEMA_beta = 135;
+TUNE(SetRange(200,300),fastEMA_beta);
+TUNE(SetRange(100,170),slowEMA_beta);
 
 
 namespace {
