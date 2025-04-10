@@ -86,7 +86,8 @@ MovePicker::MovePicker(const Position&              p,
                        const CapturePieceToHistory* cph,
                        const PieceToHistory**       ch,
                        const PawnHistory*           ph,
-                       int                          pl) :
+                       int                          pl,
+                       bool skipnnup) :
     pos(p),
     mainHistory(mh),
     lowPlyHistory(lph),
@@ -95,7 +96,9 @@ MovePicker::MovePicker(const Position&              p,
     pawnHistory(ph),
     ttMove(ttm),
     depth(d),
-    ply(pl) {
+    ply(pl),
+    skipNonKnightUnderPromotion(skipnnup)
+    {
 
     if (pos.checkers())
         stage = EVASION_TT + !(ttm && pos.pseudo_legal(ttm));
@@ -110,7 +113,8 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     pos(p),
     captureHistory(cph),
     ttMove(ttm),
-    threshold(th) {
+    threshold(th)
+    {
     assert(!pos.checkers());
 
     stage = PROBCUT_TT
@@ -229,7 +233,7 @@ top:
     case PROBCUT_INIT :
     case QCAPTURE_INIT :
         cur = endBadCaptures = moves;
-        endMoves             = generate<CAPTURES>(pos, cur);
+        endMoves             = generate<CAPTURES>(pos, cur, skipNonKnightUnderPromotion);
 
         score<CAPTURES>();
         partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
@@ -251,7 +255,7 @@ top:
         if (!skipQuiets)
         {
             cur      = endBadCaptures;
-            endMoves = beginBadQuiets = endBadQuiets = generate<QUIETS>(pos, cur);
+            endMoves = beginBadQuiets = endBadQuiets = generate<QUIETS>(pos, cur, skipNonKnightUnderPromotion);
 
             score<QUIETS>();
             partial_insertion_sort(cur, endMoves, quiet_threshold(depth));
@@ -296,7 +300,7 @@ top:
 
     case EVASION_INIT :
         cur      = moves;
-        endMoves = generate<EVASIONS>(pos, cur);
+        endMoves = generate<EVASIONS>(pos, cur, skipNonKnightUnderPromotion);
 
         score<EVASIONS>();
         partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
