@@ -173,7 +173,7 @@ void MovePicker::score() {
                                                   : pt == ROOK && !(to & threatenedByMinor) ? 25600
                                                   : !(to & threatenedByPawn)                ? 14450
                                                                                             : 0)
-                                               : 0)*(4-more_than_one(threatenedPieces))/4;
+                                               : 0)*(8-more_than_one(threatenedPieces))/8;
 
 
             // malus for putting piece en prise
