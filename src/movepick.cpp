@@ -169,9 +169,20 @@ void MovePicker::score() {
             m.value += bool(pos.check_squares(pt) & to) * 16384;
 
             // bonus for escaping from capture
-            m.value += (threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 51700
-                                                  : pt == ROOK && !(to & threatenedByMinor) ? 25600
-                                                  : !(to & threatenedByPawn)                ? 14450
+            /*
+            if (threatenedPieces & from){
+                if (pt==QUEEN)
+                    dbg_hit_on(more_than_one(threatenedPieces),0); // 10%
+                else if (pt==ROOK)
+                    dbg_hit_on(more_than_one(threatenedPieces),1); //14%
+                else
+                    dbg_hit_on(more_than_one(threatenedPieces),2); //14.5%
+            }
+            */
+
+            m.value += (threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 52354
+                                                  : pt == ROOK && !(to & threatenedByMinor) ? 26056
+                                                  : !(to & threatenedByPawn)                ? 14717
                                                                                             : 0)
                                                : 0)*(8-more_than_one(threatenedPieces))/8;
 
