@@ -180,11 +180,11 @@ void MovePicker::score() {
             }
             */
 
-            m.value += (threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 52354
-                                                  : pt == ROOK && !(to & threatenedByMinor) ? 26056
-                                                  : !(to & threatenedByPawn)                ? 14717
+            m.value += (threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 53026
+                                                  : pt == ROOK && !(to & threatenedByMinor) ? 26528
+                                                  : !(to & threatenedByPawn)                ? 14450
                                                                                             : 0)
-                                               : 0)*(8-more_than_one(threatenedPieces))/8;
+                                               : 0)*(4-more_than_one(threatenedPieces))/4;
 
 
             // malus for putting piece en prise
