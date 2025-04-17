@@ -182,7 +182,7 @@ void MovePicker::score() {
 
             m.value += (threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 53026
                                                   : pt == ROOK && !(to & threatenedByMinor) ? 26528
-                                                  : !(to & threatenedByPawn)                ? 14450
+                                                  : !(to & threatenedByPawn)                ? 14994
                                                                                             : 0)
                                                : 0)*(4-more_than_one(threatenedPieces))/4;
 
