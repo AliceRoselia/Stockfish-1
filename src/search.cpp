@@ -1652,49 +1652,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
         moveCount++;
 
-        // Step 6. Pruning
-        if (!is_loss(bestValue))
-        {
-            // Futility pruning and moveCount pruning
-            if (!givesCheck && move.to_sq() != prevSq && !is_loss(futilityBase)
-                && move.type_of() != PROMOTION)
-            {
-                if (moveCount > 2)
-                    continue;
-
-                Value futilityValue = futilityBase + PieceValue[pos.piece_on(move.to_sq())];
-
-                // If static eval + value of piece we are going to capture is
-                // much lower than alpha, we can prune this move.
-                if (futilityValue <= alpha)
-                {
-                    bestValue = std::max(bestValue, futilityValue);
-                    continue;
-                }
-
-                // If static exchange evaluation is low enough
-                // we can prune this move.
-                if (!pos.see_ge(move, alpha - futilityBase))
-                {
-                    bestValue = std::min(alpha, futilityBase);
-                    continue;
-                }
-            }
-
-            // Continuation history based pruning
-            if (!capture
-                && (*contHist[0])[pos.moved_piece(move)][move.to_sq()]
-                       + thisThread->pawnHistory[pawn_structure_index(pos)][pos.moved_piece(move)]
-                                                [move.to_sq()]
-                     <= 6290)
-                continue;
-
-            // Do not search moves with bad enough SEE values
-            if (!pos.see_ge(move, -75))
-                continue;
-        }
-
-        // Step 7. Make and search the move
+        // Step 6. Make and search the move
         Piece movedPiece = pos.moved_piece(move);
 
         do_move(pos, move, st, givesCheck);
@@ -1712,7 +1670,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
         assert(value > -VALUE_INFINITE && value < VALUE_INFINITE);
 
-        // Step 8. Check for a new best move
+        // Step 7. Check for a new best move
         if (value > bestValue)
         {
             bestValue = value;
@@ -1729,6 +1687,9 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
                 else
                     break;  // Fail high
             }
+        }
+        if (moveCount >= 3){
+            break;
         }
     }
 
