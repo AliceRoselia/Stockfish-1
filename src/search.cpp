@@ -1686,7 +1686,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
                     break;  // Fail high
             }
         }
-        if (moveCount >= 3){
+        if (moveCount >= 2){
             break;
         }
     }
