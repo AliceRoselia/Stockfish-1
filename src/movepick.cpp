@@ -167,7 +167,7 @@ void MovePicker::score() {
 
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
-
+            m.value += ((pos.blockers_for_king(~pos.side_to_move()) & from) && !(line_bb(from, to) & pos.pieces(~pos.side_to_move(), KING))) * 16384;
             // bonus for escaping from capture
             m.value += threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 51700
                                                   : pt == ROOK && !(to & threatenedByMinor) ? 25600
