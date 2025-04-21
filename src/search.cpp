@@ -128,6 +128,16 @@ Value to_corrected_static_eval(const Value v, const int cv) {
     return std::clamp(v + cv / 131072, VALUE_TB_LOSS_IN_MAX_PLY + 1, VALUE_TB_WIN_IN_MAX_PLY - 1);
 }
 
+constexpr int adaptiveProbCutMargin[32] =
+{
+    180, 180, 218, 240, 256, 269, 279, 287,
+    294, 301, 307, 312, 317, 321, 325, 329,
+    332, 341, 349, 357, 365, 372, 380, 387,
+    395, 402, 409, 416, 423, 430, 437, 444
+}; //precomputed from terminator's idea, but log is exact.
+//The formula is 180 + log(max(depth,1))*55 + max(0,5*(depth-16))
+//However, this table could be tuned later to a more precise value.
+
 void update_correction_history(const Position& pos,
                                Stack* const    ss,
                                Search::Worker& workerThread,
@@ -974,7 +984,7 @@ Value Search::Worker::search(
 moves_loop:  // When in check, search starts here
 
     // Step 12. A small Probcut idea
-    probCutBeta = beta + 415;
+    probCutBeta = beta + adaptiveProbCutMargin[std::min(depth,31)];
     if ((ttData.bound & BOUND_LOWER) && ttData.depth >= depth - 4 && ttData.value >= probCutBeta
         && !is_decisive(beta) && is_valid(ttData.value) && !is_decisive(ttData.value))
         return probCutBeta;
