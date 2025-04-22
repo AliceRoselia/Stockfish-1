@@ -155,9 +155,10 @@ void MovePicker::score() {
             PieceType pt   = type_of(pc);
             Square    from = m.from_sq();
             Square    to   = m.to_sq();
+            Color     us   = pos.side_to_move();
 
             // histories
-            m.value = 2 * (*mainHistory)[pos.side_to_move()][m.from_to()];
+            m.value = 2 * (*mainHistory)[us][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
@@ -174,6 +175,9 @@ void MovePicker::score() {
                                                   : !(to & threatenedByPawn)                ? 14450
                                                                                             : 0)
                                                : 0;
+            Piece theirPawn = make_piece(~pos.side_to_move(),PAWN);
+            m.value += bool(from & threatenedByPawn) * (*captureHistory)[theirPawn][from][pt];
+            m.value -= bool(to & threatenedByPawn) * (*captureHistory)[theirPawn][from][pt];
 
             // malus for putting piece en prise
             m.value -= (pt == QUEEN && bool(to & threatenedByRook)   ? 49000
