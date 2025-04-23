@@ -27,6 +27,10 @@
 #include "position.h"
 
 namespace Stockfish {
+int discoveredCheckbonusProb = 2048;
+TUNE(SetRange(0,4096),discoveredCheckbonusProb);
+int sqmm1RProb = 2048;
+TUNE(SetRange(0,4096),sqmm1RProb);
 
 namespace {
 
@@ -87,7 +91,8 @@ MovePicker::MovePicker(const Position&              p,
                        const CapturePieceToHistory* cph,
                        const PieceToHistory**       ch,
                        const PawnHistory*           ph,
-                       int                          pl) :
+                       int                          pl,
+                       int                          n) :
     pos(p),
     mainHistory(mh),
     lowPlyHistory(lph),
@@ -96,7 +101,8 @@ MovePicker::MovePicker(const Position&              p,
     pawnHistory(ph),
     ttMove(ttm),
     depth(d),
-    ply(pl) {
+    ply(pl),
+    nodes(n) {
 
     if (pos.checkers())
         stage = EVASION_TT + !(ttm && pos.pseudo_legal(ttm));
@@ -161,12 +167,23 @@ void MovePicker::score() {
             m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
-            m.value += (*continuationHistory[2])[pc][to];
             m.value += (*continuationHistory[3])[pc][to];
-            m.value += (*continuationHistory[5])[pc][to];
+            if (!((nodes&4095) <= sqmm1RProb) || depth > 3){
+                m.value += (*continuationHistory[2])[pc][to];
+                m.value += (*continuationHistory[5])[pc][to];
+            }
 
             // bonus for checks
-            m.value += bool(pos.check_squares(pt) & to) * 16384;
+            if ((nodes&4095) <= discoveredCheckbonusProb)
+            {
+                m.value += pos.check_squares(pt) & to
+                       ? 16384
+                       : (pos.blockers_for_king(~pos.side_to_move()) & from
+                          && !aligned(from, to, pos.square<KING>(~pos.side_to_move())))
+                           * 32768;
+            }
+            else
+                m.value += bool(pos.check_squares(pt) & to) * 16384;
 
             // bonus for escaping from capture
             m.value += threatenedPieces & from ? (pt == QUEEN && !(to & threatenedByRook)   ? 51700

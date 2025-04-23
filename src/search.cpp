@@ -62,6 +62,17 @@ void syzygy_extend_pv(const OptionsMap&            options,
 
 using namespace Search;
 
+int ttpvPcAg3prob = 2048;
+TUNE(SetRange(0,4096),ttpvPcAg3prob);
+int reductionCutNodeProb = 2048;
+TUNE(SetRange(0,4096),reductionCutNodeProb);
+int pcmapr2prob = 2048;
+TUNE(SetRange(0,4096),pcmapr2prob);
+int pvNodeBonusProb = 2048;
+TUNE(SetRange(0,4096),pvNodeBonusProb);
+
+
+
 namespace {
 
 // (*Scalers):
@@ -167,6 +178,8 @@ void update_all_stats(const Position&      pos,
                       ValueList<Move, 32>& capturesSearched,
                       Depth                depth,
                       bool                 isTTMove,
+                      bool                 PvNode,
+                      bool                 nodeRandNum,
                       int                  moveCount);
 
 }  // namespace
@@ -915,7 +928,7 @@ Value Search::Worker::search(
     // Step 11. ProbCut
     // If we have a good enough capture (or queen promotion) and a reduced search
     // returns a value much above beta, we can (almost) safely prune the previous move.
-    probCutBeta = beta + 185 - 58 * improving;
+    probCutBeta = beta + 185 - 58 * improving + ((int(nodes)&4095) <= ttpvPcAg3prob) * 101 * ss->ttPv;
     if (depth >= 3
         && !is_decisive(beta)
         // If value from transposition table is lower than probCutBeta, don't attempt
@@ -985,7 +998,7 @@ moves_loop:  // When in check, search starts here
 
 
     MovePicker mp(pos, ttData.move, depth, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply, int(nodes));
 
     value = bestValue;
 
@@ -1296,7 +1309,13 @@ moves_loop:  // When in check, search starts here
         {
             // Increase reduction if ttMove is not present
             if (!ttData.move)
-                r += 1156;
+            {
+                if ((int(nodes)&4095) <= reductionCutNodeProb){
+                    r += 1100 + 550 * cutNode;
+                }
+                else
+                    r += 1156;
+            }
 
             // Note that if expected reduction is high, we reduce search depth here
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
@@ -1446,7 +1465,7 @@ moves_loop:  // When in check, search starts here
     else if (bestMove)
     {
         update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
-                         bestMove == ttData.move, moveCount);
+                         bestMove == ttData.move,PvNode,(int(nodes)&4095) <= pvNodeBonusProb, moveCount);
         if (!PvNode)
         {
             int bonus = (ttData.move == move) ? 800 : -870;
@@ -1458,7 +1477,7 @@ moves_loop:  // When in check, search starts here
     else if (!priorCapture && prevSq != SQ_NONE)
     {
         int bonusScale =
-          (std::min(78 * depth - 312, 194) + 34 * !allNode + 164 * ((ss - 1)->moveCount > 8)
+          (std::min(78 * depth - 312, 194) + 34 * !allNode + (((int(nodes)&4095) <= pcmapr2prob) ? std::min((ss - 1)->moveCount, 20) * 8 : 164 * ((ss - 1)->moveCount > 8))
            + 141 * (!ss->inCheck && bestValue <= ss->staticEval - 100)
            + 121 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval - 75)
            + 86 * ((ss - 1)->isTTMove) + 86 * (ss->cutoffCnt <= 3)
@@ -1648,7 +1667,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
     MovePicker mp(pos, ttData.move, DEPTH_QS, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply, int(nodes));
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
@@ -1874,6 +1893,8 @@ void update_all_stats(const Position&      pos,
                       ValueList<Move, 32>& capturesSearched,
                       Depth                depth,
                       bool                 isTTMove,
+                      bool                 PvNode,
+                      bool                 nodeRandNum,
                       int                  moveCount) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
@@ -1881,7 +1902,7 @@ void update_all_stats(const Position&      pos,
     PieceType              captured;
 
     int bonus = std::min(141 * depth - 89, 1613) + 311 * isTTMove;
-    int malus = std::min(695 * depth - 215, 2808) - 31 * (moveCount - 1);
+    int malus = std::min(695 * depth - 215, 2808) - 31 * (moveCount - 1) - 40 * PvNode * nodeRandNum;
 
     if (!pos.capture_stage(bestMove))
     {
