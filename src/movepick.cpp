@@ -165,7 +165,7 @@ void MovePicker::score() {
             contvalue += (*continuationHistory[0])[pc][to];
             contvalue += (*continuationHistory[1])[pc][to];
 
-            if (contvalue >= -12000 || nonCutNode)
+            if (contvalue >= -12000 || nonCutNode || depth>3)
             {
                 contvalue += (*continuationHistory[2])[pc][to];
                 contvalue += (*continuationHistory[3])[pc][to];
