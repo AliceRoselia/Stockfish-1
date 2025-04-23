@@ -175,7 +175,7 @@ void MovePicker::score() {
                                                   : !(to & threatenedByPawn)                ? 14450
                                                                                             : 0)
                                                : 0;
-            Piece theirPawn = make_piece(~pos.side_to_move(),PAWN);
+            Piece theirPawn = make_piece(~us,PAWN);
             m.value += bool(from & threatenedByPawn) * (*captureHistory)[theirPawn][from][pt];
             m.value -= bool(to & threatenedByPawn) * (*captureHistory)[theirPawn][from][pt];
 
