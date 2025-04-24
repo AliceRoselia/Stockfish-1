@@ -62,13 +62,13 @@ void syzygy_extend_pv(const OptionsMap&            options,
 
 using namespace Search;
 
-int ttpvPcAg3prob = 2048;
+int ttpvPcAg3prob = 2044;
 TUNE(SetRange(0,4096),ttpvPcAg3prob);
-int reductionCutNodeProb = 2048;
+int reductionCutNodeProb = 2041;
 TUNE(SetRange(0,4096),reductionCutNodeProb);
-int pcmapr2prob = 2048;
+int pcmapr2prob = 2055;
 TUNE(SetRange(0,4096),pcmapr2prob);
-int pvNodeBonusProb = 2048;
+int pvNodeBonusProb = 2049;
 TUNE(SetRange(0,4096),pvNodeBonusProb);
 
 

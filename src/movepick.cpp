@@ -27,9 +27,9 @@
 #include "position.h"
 
 namespace Stockfish {
-int discoveredCheckbonusProb = 2048;
+int discoveredCheckbonusProb = 2040;
 TUNE(SetRange(0,4096),discoveredCheckbonusProb);
-int sqmm1RProb = 2048;
+int sqmm1RProb = 2058;
 TUNE(SetRange(0,4096),sqmm1RProb);
 
 namespace {
