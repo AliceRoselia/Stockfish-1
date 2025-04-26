@@ -1400,10 +1400,10 @@ moves_loop:  // When in check, search starts here
                 if (value >= beta)
                 {
                     // (* Scaler) Especially if they make cutoffCnt increment more often.
-                    //dbg_hit_on(moveCount <= 1,0);
-                    //dbg_hit_on(moveCount <= 2,1);
-                    //dbg_hit_on(moveCount <= 3,2);
-                    //dbg_hit_on(moveCount <= 4,3);
+                    dbg_hit_on(moveCount <= 1,0);
+                    dbg_hit_on(moveCount <= 2,1);
+                    dbg_hit_on(moveCount <= 3,2);
+                    dbg_hit_on(moveCount <= 4,3);
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
                     break;

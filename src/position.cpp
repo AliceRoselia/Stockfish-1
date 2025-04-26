@@ -194,7 +194,9 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si) {
    6) Fullmove number. The number of the full move. It starts at 1, and is
       incremented after Black's move.
 */
-
+    for (int i=0; i<16; ++i){
+        boardRepresentation[0][i] = boardRepresentation[1][i] = piece_square_bias[i];
+    }
     unsigned char      col, row, token;
     size_t             idx;
     Square             sq = SQ_A8;
