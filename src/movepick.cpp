@@ -192,9 +192,22 @@ void MovePicker::score() {
 
     for (auto& m : *this)
         if constexpr (Type == CAPTURES)
+        {
+
+
             m.value =
               7 * int(PieceValue[pos.piece_on(m.to_sq())])
               + (*captureHistory)[pos.moved_piece(m)][m.to_sq()][type_of(pos.piece_on(m.to_sq()))];
+            if (pos.side_to_move() == WHITE){
+                //dbg_mean_of(std::abs(compute_neural_score_WHITE(pos, m)));
+                m.value += compute_neural_score_WHITE(pos, m);
+            }
+            else
+            {
+                //dbg_mean_of(std::abs(compute_neural_score_BLACK(pos, m)));
+                m.value += compute_neural_score_BLACK(pos,m);
+            }
+        }
 
         else if constexpr (Type == QUIETS)
         {
