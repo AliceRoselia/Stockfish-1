@@ -82,17 +82,17 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 int compute_neural_score_WHITE(const Position& pos, const Move& m) {
     int p = int(type_of(pos.moved_piece(m)))-1;
     Square s = m.to_sq();
-    int32_t Temp[8];
-    for (int i=0; i<8; ++i){
+    int32_t Temp[16];
+    for (int i=0; i<16; ++i){
         Temp[i] = bias2[p][s][i];
     }
-    for (int i=0; i<16; ++i){
-        for (int j=0; j<8; ++j){
+    for (int i=0; i<32; ++i){
+        for (int j=0; j<16; ++j){
             Temp[j] += pos.boardRepresentation[WHITE][i]*move_vectors[p][s][i][j];
         }
     }
     int final_accumulator = output_bias[p][s];
-    for (int i=0; i<8; ++i){
+    for (int i=0; i<16; ++i){
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
@@ -103,18 +103,18 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
     int p = int(type_of(pos.moved_piece(m)))-1;
     Square s = m.to_sq();
     s = Square((int(s)&7)|(56-(56&int(s))));
-    int32_t Temp[8];
-    for (int i=0; i<8; ++i){
+    int32_t Temp[16];
+    for (int i=0; i<16; ++i){
         Temp[i] = bias2[p][s][i];
     }
 
-    for (int i=0; i<16; ++i){
-        for (int j=0; j<8; ++j){
+    for (int i=0; i<32; ++i){
+        for (int j=0; j<16; ++j){
             Temp[j] += pos.boardRepresentation[BLACK][i]*move_vectors[p][s][i][j];
         }
     }
     int final_accumulator = output_bias[p][s];
-    for (int i=0; i<8; ++i){
+    for (int i=0; i<16; ++i){
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
@@ -214,19 +214,19 @@ void MovePicker::score() {
 
             //dbg_mean_of(std::abs(compute_neural_score(pos, m)),5);
 
-            if (depth >= 12)
-            {
 
-                if (pos.side_to_move() == WHITE){
-                //dbg_mean_of(std::abs(compute_neural_score_WHITE(pos, m)));
-                    m.value += 2*compute_neural_score_WHITE(pos, m);
-                }
-                else
-                {
-                    //dbg_mean_of(std::abs(compute_neural_score_BLACK(pos, m)));
-                    m.value += 2*compute_neural_score_BLACK(pos,m);
-                }
+
+            if (pos.side_to_move() == WHITE){
+            //dbg_mean_of(std::abs(compute_neural_score_WHITE(pos, m)));
+                m.value += 3*compute_neural_score_WHITE(pos, m);
             }
+            else
+            {
+                //dbg_mean_of(std::abs(compute_neural_score_BLACK(pos, m)));
+                m.value += 3*compute_neural_score_BLACK(pos,m);
+            }
+
+
 
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;

@@ -174,7 +174,7 @@ class Position {
     void put_piece(Piece pc, Square s);
     void remove_piece(Square s);
 
-    int32_t boardRepresentation[2][16];
+    int32_t boardRepresentation[2][32];
    private:
     // Initialization helpers (used while setting up a position)
     void set_castling_right(Color c, Square rfrom);
@@ -344,7 +344,7 @@ inline void Position::put_piece(Piece pc, Square s) {
     pieceCount[pc]++;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
     int flipped_s = (int(s)&7)|(56-(56&int(s)));
-    for (int i=0; i<16; ++i){
+    for (int i=0; i<32; ++i){
         boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
         boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
@@ -360,7 +360,7 @@ inline void Position::remove_piece(Square s) {
     pieceCount[pc]--;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
     int flipped_s = (int(s)&7)|(56-(56&int(s)));
-    for (int i=0; i<16; ++i){
+    for (int i=0; i<32; ++i){
         boardRepresentation[WHITE][i] -= piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
         boardRepresentation[BLACK][i] -= piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
@@ -378,7 +378,7 @@ inline void Position::move_piece(Square from, Square to) {
 
     int flipped_from = (int(from)&7)|(56-(56&int(from)));
     int flipped_to = (int(to)&7)|(56-(56&int(to)));
-    for (int i=0; i<16; ++i){
+    for (int i=0; i<32; ++i){
         boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][to][i] - piece_square_vectors[type_of(pc)+6*color_of(pc)-1][from][i];
         boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_to][i] - piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_from][i];
     }

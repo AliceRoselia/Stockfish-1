@@ -196,7 +196,7 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si) {
 
 */
 
-    for (int i=0; i<16; ++i){
+    for (int i=0; i<32; ++i){
         boardRepresentation[0][i] = piece_square_bias[i];
         boardRepresentation[1][i] = piece_square_bias[i];
     }
