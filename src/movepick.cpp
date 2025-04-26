@@ -217,12 +217,12 @@ void MovePicker::score() {
 
             if (pos.side_to_move() == WHITE){
                 //dbg_mean_of(std::abs(compute_neural_score_WHITE(pos, m)));
-                m.value += 4*compute_neural_score_WHITE(pos, m);
+                m.value += compute_neural_score_WHITE(pos, m);
             }
             else
             {
                 //dbg_mean_of(std::abs(compute_neural_score_BLACK(pos, m)));
-                m.value += 4*compute_neural_score_BLACK(pos,m);
+                m.value += compute_neural_score_BLACK(pos,m);
             }
 
             // bonus for checks
