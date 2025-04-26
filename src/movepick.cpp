@@ -74,6 +74,77 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 }  // namespace
 
 
+// Include the quantized weights
+#include "weights_quantized.h"
+
+// Compute neural score for a move using integer arithmetic
+int compute_neural_score(const Position& pos, Move m) {
+    // Constants from model
+    constexpr int vector_size = 16;
+    constexpr int vector_size_2 = 8;
+
+    // Quantization factors
+    constexpr int32_t Q_b = 32767;
+    constexpr int32_t Q_hidden = 3276;
+    constexpr int32_t output_scale = 1000;
+
+    // Board representation
+    int32_t b[vector_size] = {0};
+    for (int i = 0; i < vector_size; ++i) {
+        b[i] = static_cast<int32_t>(piece_square_bias[i]);
+    }
+    for (Square s = SQ_A1; s <= SQ_H8; ++s) {
+        Piece pc = pos.piece_on(s);
+        if (pc != NO_PIECE) {
+            int piece_idx = (type_of(pc) - 1) + (color_of(pc) == BLACK ? 6 : 0);
+            for (int i = 0; i < vector_size; ++i) {
+                b[i] += static_cast<int32_t>(piece_square_vectors[piece_idx][s][i]);
+            }
+        }
+    }
+
+    // Normalize b
+    int64_t norm_b_sq = 0;
+    for (int i = 0; i < vector_size; ++i) {
+        norm_b_sq += static_cast<int64_t>(b[i]) * b[i];
+    }
+    int32_t norm_b = 16;
+    if (norm_b_sq > 1000) norm_b = 8;
+    int16_t b_norm[vector_size];
+    for (int i = 0; i < vector_size; ++i) {
+        b_norm[i] = static_cast<int16_t>((b[i] * Q_b) / norm_b);
+    }
+
+    // Move scoring
+    Piece pc = pos.moved_piece(m);
+    int piece_idx = type_of(pc) - 1;
+    Square to_sq = m.to_sq();
+
+    // Matrix multiplication
+    int16_t hidden[vector_size_2] = {0};
+    for (int j = 0; j < vector_size_2; ++j) {
+        int32_t sum = 0;
+        for (int i = 0; i < vector_size; ++i) {
+            int vec_idx = i * vector_size_2 + j;
+            sum += static_cast<int32_t>(b_norm[i]) * static_cast<int32_t>(move_vectors[piece_idx][to_sq][vec_idx]);
+        }
+        sum += static_cast<int32_t>(bias2[piece_idx][to_sq][j]) * (Q_b / 32767);
+        sum = sum > 0 ? sum : 0;
+        hidden[j] = static_cast<int16_t>(std::min(sum / (32767 / Q_hidden), static_cast<int32_t>(32767)));
+    }
+
+    // Output layer
+    int32_t score = 0;
+    for (int j = 0; j < vector_size_2; ++j) {
+        score += static_cast<int32_t>(hidden[j]) * static_cast<int32_t>(output_layer[piece_idx][to_sq][j]);
+    }
+    score += static_cast<int32_t>(output_bias[piece_idx][to_sq]) * (Q_hidden / 32767);
+
+    score = (score * output_scale) / (32767 * 32767 / Q_hidden);
+
+    return static_cast<int>(score);
+}
+
 // Constructors of the MovePicker class. As arguments, we pass information
 // to decide which class of moves to emit, to help sorting the (presumably)
 // good moves first, and how important move ordering is at the current node.
@@ -164,6 +235,10 @@ void MovePicker::score() {
             m.value += (*continuationHistory[2])[pc][to];
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[5])[pc][to];
+
+            //dbg_mean_of(std::abs(compute_neural_score(pos, m)),5);
+            if (depth <= 2)
+                m.value += compute_neural_score(pos, m)*2;
 
             // bonus for checks
             m.value += bool(pos.check_squares(pt) & to) * 16384;
