@@ -21,6 +21,7 @@
 #include <cassert>
 #include <cstddef>
 #include <limits>
+#include <iostream>
 
 #include "bitboard.h"
 #include "misc.h"
@@ -79,7 +80,7 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 
 // Compute neural score for a move using integer arithmetic
 int compute_neural_score_WHITE(const Position& pos, const Move& m) {
-    PieceType p = type_of(pos.moved_piece(m));
+    int p = int(type_of(pos.moved_piece(m)))-1;
     Square s = m.to_sq();
     int32_t Temp[8];
     for (int i=0; i<8; ++i){
@@ -99,7 +100,7 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m) {
 }
 
 int compute_neural_score_BLACK(const Position& pos, const Move& m){
-    PieceType p = type_of(pos.moved_piece(m));
+    int p = int(type_of(pos.moved_piece(m)))-1;
     Square s = m.to_sq();
     s = Square((int(s)&7)|(56-(56&int(s))));
     int32_t Temp[8];

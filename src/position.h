@@ -24,10 +24,12 @@
 #include <iosfwd>
 #include <memory>
 #include <string>
+#include <iostream>
 
 #include "bitboard.h"
 #include "types.h"
 #include "weights_quantized.h"
+#include "misc.h"
 
 namespace Stockfish {
 
@@ -341,10 +343,10 @@ inline void Position::put_piece(Piece pc, Square s) {
     byColorBB[color_of(pc)] |= s;
     pieceCount[pc]++;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
-
+    int flipped_s = (int(s)&7)|(56-(56&int(s)));
     for (int i=0; i<16; ++i){
-        boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)][s][i];
-        boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))][(int(s)&7)|(56-(56&int(s)))][i];
+        boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
+        boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
 }
 
@@ -357,10 +359,10 @@ inline void Position::remove_piece(Square s) {
     board[s] = NO_PIECE;
     pieceCount[pc]--;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
-
+    int flipped_s = (int(s)&7)|(56-(56&int(s)));
     for (int i=0; i<16; ++i){
-        boardRepresentation[WHITE][i] -= piece_square_vectors[type_of(pc)+6*color_of(pc)][s][i];
-        boardRepresentation[BLACK][i] -= piece_square_vectors[type_of(pc)+6*(!color_of(pc))][(int(s)&7)|(56-(56&int(s)))][i];
+        boardRepresentation[WHITE][i] -= piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
+        boardRepresentation[BLACK][i] -= piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
 }
 
@@ -374,9 +376,11 @@ inline void Position::move_piece(Square from, Square to) {
     board[from] = NO_PIECE;
     board[to]   = pc;
 
+    int flipped_from = (int(from)&7)|(56-(56&int(from)));
+    int flipped_to = (int(to)&7)|(56-(56&int(to)));
     for (int i=0; i<16; ++i){
-        boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)][to][i] - piece_square_vectors[type_of(pc)+6*color_of(pc)][from][i];
-        boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))][(int(to)&7)|(56-(56&int(to)))][i] - piece_square_vectors[type_of(pc)+6*(!color_of(pc))][from][i];
+        boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][to][i] - piece_square_vectors[type_of(pc)+6*color_of(pc)-1][from][i];
+        boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_to][i] - piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_from][i];
     }
 }
 
