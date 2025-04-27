@@ -1043,6 +1043,7 @@ moves_loop:  // When in check, search starts here
         if (PvNode)
             (ss + 1)->pv = nullptr;
 
+        ss->singular = false; //reset singular.
         extension  = 0;
         capture    = pos.capture_stage(move);
         movedPiece = pos.moved_piece(move);
