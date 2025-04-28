@@ -1452,7 +1452,8 @@ moves_loop:  // When in check, search starts here
     // Adjust best value for fail high cases
     if (bestValue >= beta && !is_decisive(bestValue) && !is_decisive(beta) && !is_decisive(alpha))
         bestValue = (bestValue * depth + beta) / (depth + 1);
-    thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()] << -200*lmrReSearch;
+    if (!priorCapture && prevSq != SQ_NONE)
+        thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()] << -200*lmrReSearch;
     if (!moveCount)
         bestValue = excludedMove ? alpha : ss->inCheck ? mated_in(ss->ply) : VALUE_DRAW;
 
