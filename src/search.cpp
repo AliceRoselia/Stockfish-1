@@ -1453,7 +1453,16 @@ moves_loop:  // When in check, search starts here
     if (bestValue >= beta && !is_decisive(bestValue) && !is_decisive(beta) && !is_decisive(alpha))
         bestValue = (bestValue * depth + beta) / (depth + 1);
     if (!priorCapture && prevSq != SQ_NONE)
-        thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()] << -100*lmrReSearch;
+    {
+        //Update main history, one continuation history, and pawn history.
+        thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()] << -75*lmrReSearch;
+        if ((ss-1)->currentMove.is_ok())
+            (*(ss-1)->continuationHistory)[pos.piece_on(prevSq)][prevSq] << -50*lmrReSearch;
+
+        if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
+            thisThread->pawnHistory[pawn_structure_index(pos)][pos.piece_on(prevSq)][prevSq]
+              << -50*lmrReSearch;
+    }
     if (!moveCount)
         bestValue = excludedMove ? alpha : ss->inCheck ? mated_in(ss->ply) : VALUE_DRAW;
 
