@@ -410,7 +410,7 @@ void update_accumulator_refresh_cache(const FeatureTransformer<Dimensions>& feat
     int cost_0 = popcount(addedbb)+popcount(removedbb);
     int cost_1 = popcount(addedbb2) + popcount(removedbb2);
     //int cost_2 = popcount(addedbb3) + popcount(removedbb3);
-    if (cost_1 < cost_0+1)
+    if (cost_1 < cost_0)
     {
         entry = entry2;
         //cost_0 = cost_1;
