@@ -112,7 +112,6 @@ void AccumulatorStack::evaluate_side(const Position&                       pos,
 
     if ((accumulators[last_usable_accum].template acc<Dimensions>()).computed[Perspective])
         forward_update_incremental<Perspective>(pos, featureTransformer, last_usable_accum);
-
     else
     {
         update_accumulator_refresh_cache<Perspective>(featureTransformer, pos, mut_latest(), cache);
@@ -380,7 +379,44 @@ void update_accumulator_refresh_cache(const FeatureTransformer<Dimensions>& feat
     using Tiling [[maybe_unused]] = SIMDTiling<Dimensions, Dimensions>;
 
     const Square          ksq   = pos.square<KING>(Perspective);
-    auto&                 entry = cache[ksq][pos.pawn_key()&(pawn_buckets-1)][Perspective];
+    auto&                 entry = cache[ksq][0][Perspective];
+    auto&                 entry2 = cache[ksq][1][Perspective];
+    //auto&                 entry3 = cache[ksq][2][Perspective];
+
+
+    Bitboard removedbb = 0;
+    Bitboard removedbb2 = 0;
+    Bitboard addedbb = 0;
+    Bitboard addedbb2 = 0;
+    //Bitboard removedbb3 = 0;
+    //Bitboard addedbb3 = 0;
+    for (Color c : {WHITE, BLACK})
+    {
+        for (PieceType pt = PAWN; pt <= KING; ++pt)
+        {
+            const Bitboard oldBB    = entry.byColorBB[c] & entry.byTypeBB[pt];
+            const Bitboard newBB    = pos.pieces(c, pt);
+            const Bitboard newBB2 = entry2.byColorBB[c] & entry2.byTypeBB[pt];
+            //const Bitboard newBB3 = entry3.byColorBB[c] & entry3.byTypeBB[pt];
+            removedbb |= oldBB & ~newBB;
+            removedbb2 |= oldBB & ~newBB2;
+            //removedbb3 |= oldBB & ~newBB3;
+
+            addedbb |= newBB & ~oldBB;
+            addedbb2 |= newBB2 & ~oldBB;
+            //addedbb3 |= newBB3 & ~oldBB;
+        }
+    }
+    int cost_0 = popcount(addedbb)+popcount(removedbb);
+    int cost_1 = popcount(addedbb2) + popcount(removedbb2);
+    //int cost_2 = popcount(addedbb3) + popcount(removedbb3);
+    if (cost_1 < cost_0+1)
+    {
+        entry = entry2;
+        //cost_0 = cost_1;
+    }
+
+
     FeatureSet::IndexList removed, added;
 
     for (Color c : {WHITE, BLACK})
@@ -403,6 +439,7 @@ void update_accumulator_refresh_cache(const FeatureTransformer<Dimensions>& feat
                 Square sq = pop_lsb(toAdd);
                 added.push_back(FeatureSet::make_index<Perspective>(sq, piece, ksq));
             }
+            //dbg_mean_of(removed.size()+added.size());
         }
     }
 
@@ -529,10 +566,14 @@ void update_accumulator_refresh_cache(const FeatureTransformer<Dimensions>& feat
 #endif
 
     for (Color c : {WHITE, BLACK})
-        entry.byColorBB[c] = pos.pieces(c);
+        {
+            entry.byColorBB[c] = pos.pieces(c);
+        }
 
     for (PieceType pt = PAWN; pt <= KING; ++pt)
+    {
         entry.byTypeBB[pt] = pos.pieces(pt);
+    }
 }
 
 }
