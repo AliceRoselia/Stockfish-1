@@ -168,6 +168,8 @@ void MovePicker::score() {
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[5])[pc][to];
 
+            m.value -= (pos.side_to_move() == WHITE ? rank_of(to) < rank_of(from) : rank_of(to) > rank_of(from))*4096; //Malus for retreating!
+
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
 
