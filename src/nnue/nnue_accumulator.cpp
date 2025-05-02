@@ -380,7 +380,7 @@ void update_accumulator_refresh_cache(const FeatureTransformer<Dimensions>& feat
     using Tiling [[maybe_unused]] = SIMDTiling<Dimensions, Dimensions>;
 
     const Square          ksq   = pos.square<KING>(Perspective);
-    auto&                 entry = cache[ksq][Perspective];
+    auto&                 entry = cache[ksq][pos.pawn_key()&(pawn_buckets-1)][Perspective];
     FeatureSet::IndexList removed, added;
 
     for (Color c : {WHITE, BLACK})

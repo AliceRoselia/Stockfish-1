@@ -44,6 +44,8 @@ using IndexType      = std::uint32_t;
 template<IndexType Size>
 struct alignas(CacheLineSize) Accumulator;
 
+constexpr int pawn_buckets = 16;
+
 template<IndexType TransformedFeatureDimensions>
 class FeatureTransformer;
 
@@ -91,13 +93,14 @@ struct AccumulatorCaches {
         template<typename Network>
         void clear(const Network& network) {
             for (auto& entries1D : entries)
-                for (auto& entry : entries1D)
-                    entry.clear(network.featureTransformer->biases);
+                for (auto& bucket : entries1D)
+                    for (auto& entry : bucket)
+                        entry.clear(network.featureTransformer->biases);
         }
 
-        std::array<Entry, COLOR_NB>& operator[](Square sq) { return entries[sq]; }
+        std::array<std::array<Entry, COLOR_NB>,pawn_buckets>& operator[](Square sq) { return entries[sq]; }
 
-        std::array<std::array<Entry, COLOR_NB>, SQUARE_NB> entries;
+        std::array<std::array<std::array<Entry, COLOR_NB>,pawn_buckets>, SQUARE_NB> entries;
     };
 
     template<typename Networks>
