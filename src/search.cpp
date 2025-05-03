@@ -873,7 +873,7 @@ Value Search::Worker::search(
         return beta + (eval - beta) / 3;
 
     // Step 9. Null move search with verification search
-    if (depth <= 4 && eval >= beta)
+    if (cutNode && depth <= 4 && eval >= beta)
     {
         ss->currentMove                   = Move::null();
         ss->continuationHistory           = &thisThread->continuationHistory[0][0][NO_PIECE][0];
