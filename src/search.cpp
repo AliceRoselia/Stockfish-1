@@ -386,7 +386,7 @@ void Search::Worker::iterative_deepening() {
                 Depth adjustedDepth =
                   std::max(1, rootDepth - failedHighCnt - 3 * (searchAgainCounter + 1) / 4);
                 rootDelta = beta - alpha;
-                bestValue = search<Root>(rootPos, ss, alpha, beta, adjustedDepth, false);
+                bestValue = search<Root,false>(rootPos, ss, alpha, beta, adjustedDepth);
 
                 // Bring the best move to the front. It is critical that sorting
                 // is done with a stable algorithm because all the values but the
@@ -606,9 +606,9 @@ void Search::Worker::clear() {
 
 
 // Main search function for both PV and non-PV nodes
-template<NodeType nodeType>
+template<NodeType nodeType, bool cutNode>
 Value Search::Worker::search(
-  Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode) {
+  Position& pos, Stack* ss, Value alpha, Value beta, Depth depth) {
 
     constexpr bool PvNode   = nodeType != NonPV;
     constexpr bool rootNode = nodeType == Root;
@@ -888,7 +888,7 @@ Value Search::Worker::search(
 
         do_null_move(pos, st);
 
-        Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -beta + 1, depth - R, false);
+        Value nullValue = -search<NonPV,false>(pos, ss + 1, -beta, -beta + 1, depth - R);
 
         undo_null_move(pos);
 
@@ -904,7 +904,7 @@ Value Search::Worker::search(
             // until ply exceeds nmpMinPly.
             thisThread->nmpMinPly = ss->ply + 3 * (depth - R) / 4;
 
-            Value v = search<NonPV>(pos, ss, beta - 1, beta, depth - R, false);
+            Value v = search<NonPV, false>(pos, ss, beta - 1, beta, depth - R);
 
             thisThread->nmpMinPly = 0;
 
@@ -963,8 +963,7 @@ Value Search::Worker::search(
 
             // If the qsearch held, perform the regular search
             if (value >= probCutBeta && probCutDepth > 0)
-                value = -search<NonPV>(pos, ss + 1, -probCutBeta, -probCutBeta + 1, probCutDepth,
-                                       !cutNode);
+                value = -search<NonPV, !cutNode>(pos, ss + 1, -probCutBeta, -probCutBeta + 1, probCutDepth);
 
             undo_move(pos, move);
 
@@ -1154,7 +1153,7 @@ moves_loop:  // When in check, search starts here
 
                 ss->excludedMove = move;
                 value =
-                  search<NonPV>(pos, ss, singularBeta - 1, singularBeta, singularDepth, cutNode);
+                  search<NonPV, cutNode>(pos, ss, singularBeta - 1, singularBeta, singularDepth);
                 ss->excludedMove = Move::none();
 
                 if (value < singularBeta)
@@ -1229,7 +1228,7 @@ moves_loop:  // When in check, search starts here
             r -= risk_tolerance(bestValue);
 
         // Increase reduction for cut nodes
-        if (cutNode)
+        if constexpr (cutNode)
             r += 2864 + 966 * !ttData.move;
 
         // Increase reduction if ttMove is a capture but the current move is not a capture
@@ -1273,7 +1272,7 @@ moves_loop:  // When in check, search starts here
                     + (!cutNode && (ss - 1)->isPvNode && moveCount < 8);
 
             ss->reduction = newDepth - d;
-            value         = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true);
+            value         = -search<NonPV, true>(pos, ss + 1, -(alpha + 1), -alpha, d);
             ss->reduction = 0;
 
             // Do a full-depth search when reduced LMR search fails high
@@ -1287,7 +1286,7 @@ moves_loop:  // When in check, search starts here
                 newDepth += doDeeperSearch - doShallowerSearch;
 
                 if (newDepth > d)
-                    value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
+                    value = -search<NonPV, !cutNode>(pos, ss + 1, -(alpha + 1), -alpha, newDepth);
 
                 // Post LMR continuation history updates
                 update_continuation_histories(ss, movedPiece, move.to_sq(), 1508);
@@ -1309,12 +1308,12 @@ moves_loop:  // When in check, search starts here
 
             r -= ttMoveHistory / 8;
 
-            if (cutNode)
+            if constexpr (cutNode)
                 r += 520;
 
             // Note that if expected reduction is high, we reduce search depth here
-            value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
-                                   newDepth - (r > 3564) - (r > 4969 && newDepth > 2), !cutNode);
+            value = -search<NonPV, !cutNode>(pos, ss + 1, -(alpha + 1), -alpha,
+                                   newDepth - (r > 3564) - (r > 4969 && newDepth > 2));
         }
 
         // For PV nodes only, do a full PV search on the first move or after a fail high,
@@ -1328,7 +1327,7 @@ moves_loop:  // When in check, search starts here
             if (ss->isTTMove && thisThread->rootDepth > 8)
                 newDepth = std::max(newDepth, 1);
 
-            value = -search<PV>(pos, ss + 1, -beta, -alpha, newDepth, false);
+            value = -search<PV, false>(pos, ss + 1, -beta, -alpha, newDepth);
         }
 
         // Step 19. Undo move
