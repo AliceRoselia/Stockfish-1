@@ -873,7 +873,23 @@ Value Search::Worker::search(
         return beta + (eval - beta) / 3;
 
     // Step 9. Null move search with verification search
-    if (cutNode && (ss - 1)->currentMove != Move::null() && eval >= beta
+    if (depth <= 4 && eval >= beta)
+    {
+        ss->currentMove                   = Move::null();
+        ss->continuationHistory           = &thisThread->continuationHistory[0][0][NO_PIECE][0];
+        ss->continuationCorrectionHistory = &thisThread->continuationCorrectionHistory[NO_PIECE][0];
+
+        do_null_move(pos, st);
+
+        Value nullValue = -qsearch<NonPV>(pos, ss + 1, -beta, -beta + 1);
+
+        undo_null_move(pos);
+
+        if (nullValue >= beta && !is_win(nullValue))
+            // Stand pat. Return immediately if null value of qsearch >= beta.
+            return nullValue;
+    }
+    else if (cutNode && (ss - 1)->currentMove != Move::null() && eval >= beta
         && ss->staticEval >= beta - 19 * depth + 389 && !excludedMove && pos.non_pawn_material(us)
         && ss->ply >= thisThread->nmpMinPly && !is_loss(beta))
     {
