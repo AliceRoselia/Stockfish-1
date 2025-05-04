@@ -295,6 +295,8 @@ class Worker {
 
     TTMoveHistory ttMoveHistory;
 
+    AlternateMoveHistory altMoveHistory;
+
    private:
     void iterative_deepening();
 
