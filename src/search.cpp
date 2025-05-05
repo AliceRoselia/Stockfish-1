@@ -91,6 +91,7 @@ constexpr int futility_move_count(bool improving, Depth depth) {
     return (3 + depth * depth) / (2 - improving);
 }
 
+template<bool PvNode>
 int correction_value(const Worker& w, const Position& pos, const Stack* const ss) {
     const Color us    = pos.side_to_move();
     const auto  m     = (ss - 1)->currentMove;
@@ -101,8 +102,10 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     const auto  cntcv =
       m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
-
-    return 7696 * pcv + 7689 * micv + 9708 * (wnpcv + bnpcv) + 6978 * cntcv;
+    if (PvNode)
+        return 7696 * pcv + 7689 * micv + 9708 * (wnpcv + bnpcv) + 6978 * cntcv + 8000*w.PVCorrectionHistory;
+    else
+        return 7696 * pcv + 7689 * micv + 9708 * (wnpcv + bnpcv) + 6978 * cntcv;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -795,7 +798,7 @@ Value Search::Worker::search(
 
     // Step 6. Static evaluation of the position
     Value      unadjustedStaticEval = VALUE_NONE;
-    const auto correctionValue      = correction_value(*thisThread, pos, ss);
+    const auto correctionValue      = correction_value<PvNode>(*thisThread, pos, ss);
     if (ss->inCheck)
     {
         // Skip early pruning when in check
@@ -1529,6 +1532,8 @@ moves_loop:  // When in check, search starts here
         auto bonus = std::clamp(int(bestValue - ss->staticEval) * depth / 8,
                                 -CORRECTION_HISTORY_LIMIT / 4, CORRECTION_HISTORY_LIMIT / 4);
         update_correction_history(pos, ss, *thisThread, bonus);
+        if (PvNode)
+            thisThread->PVCorrectionHistory<<bonus;
     }
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);
@@ -1612,7 +1617,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         bestValue = futilityBase = -VALUE_INFINITE;
     else
     {
-        const auto correctionValue = correction_value(*thisThread, pos, ss);
+        const auto correctionValue = correction_value<PvNode>(*thisThread, pos, ss);
 
         if (ss->ttHit)
         {
