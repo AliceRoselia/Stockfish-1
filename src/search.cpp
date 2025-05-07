@@ -172,6 +172,7 @@ void update_all_stats(const Position&      pos,
                       ValueList<Move, 32>& quietsSearched,
                       ValueList<Move, 32>& capturesSearched,
                       Depth                depth,
+                      Depth                rootDepth,
                       Move                 TTMove,
                       int                  moveCount);
 
@@ -1459,7 +1460,7 @@ moves_loop:  // When in check, search starts here
     // we update the stats of searched moves.
     else if (bestMove)
     {
-        update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
+        update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth, thisThread->rootDepth,
                          ttData.move, moveCount);
         if (!PvNode)
         {
@@ -1889,6 +1890,7 @@ void update_all_stats(const Position&      pos,
                       ValueList<Move, 32>& quietsSearched,
                       ValueList<Move, 32>& capturesSearched,
                       Depth                depth,
+                      Depth                rootDepth,
                       Move                 ttMove,
                       int                  moveCount) {
 
@@ -1897,7 +1899,7 @@ void update_all_stats(const Position&      pos,
     PieceType              captured;
 
     int bonus = std::min(143 * depth - 89, 1496) + 302 * (bestMove == ttMove);
-    int malus = std::min(737 * depth - 179, 3141) - 30 * moveCount;
+    int malus = std::min(737 * depth + 50*rootDepth - 179, 3141) - 30 * moveCount;
 
     if (!pos.capture_stage(bestMove))
     {
