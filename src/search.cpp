@@ -1453,11 +1453,11 @@ moves_loop:  // When in check, search starts here
 
     //Try searching the cutnode again if no lmr failed high.
 
-    if (cutNode && !bestMove &&firstMove != Move::none() && !lmrfailedhigh && firstDepth < depth-1)
+    if (cutNode && !bestMove &&firstMove != Move::none() && !lmrfailedhigh && firstDepth < depth)
     {
         givesCheck = pos.gives_check(firstMove);
         do_move(pos, firstMove, st, givesCheck);
-        newDepth = depth-1;
+        newDepth = depth;
         value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
                                    newDepth, false);
         undo_move(pos,firstMove);
