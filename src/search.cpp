@@ -1002,6 +1002,10 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+    Move firstMove = Move::none();
+    Depth firstDepth = MAX_PLY;
+    bool lmrfailedhigh = false;
+
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1022,6 +1026,8 @@ moves_loop:  // When in check, search starts here
             continue;
 
         ss->moveCount = ++moveCount;
+        if (moveCount == 1)
+            firstMove = move;
 
         if (rootNode && is_mainthread() && nodes > 10000000)
         {
@@ -1279,6 +1285,7 @@ moves_loop:  // When in check, search starts here
             // Do a full-depth search when reduced LMR search fails high
             if (value > alpha && d < newDepth)
             {
+                lmrfailedhigh = true;
                 // Adjust full-depth search based on LMR results - if the result was
                 // good enough search deeper, if it was bad enough search shallower.
                 const bool doDeeperSearch    = value > (bestValue + 42 + 2 * newDepth);
@@ -1313,8 +1320,9 @@ moves_loop:  // When in check, search starts here
                 r += 520;
 
             // Note that if expected reduction is high, we reduce search depth here
+            newDepth = newDepth - (r > 3564) - (r > 4969 && newDepth > 2);
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
-                                   newDepth - (r > 3564) - (r > 4969 && newDepth > 2), !cutNode);
+                                   newDepth, !cutNode);
         }
 
         // For PV nodes only, do a full PV search on the first move or after a fail high,
@@ -1330,6 +1338,8 @@ moves_loop:  // When in check, search starts here
 
             value = -search<PV>(pos, ss + 1, -beta, -alpha, newDepth, false);
         }
+        if (moveCount == 1)
+            firstDepth = newDepth;
 
         // Step 19. Undo move
         undo_move(pos, move);
@@ -1440,6 +1450,32 @@ moves_loop:  // When in check, search starts here
                 quietsSearched.push_back(move);
         }
     }
+
+    //Try searching the cutnode again if no lmr failed high.
+
+    if (cutNode && !bestMove &&firstMove != Move::none() && !lmrfailedhigh && firstDepth < depth-1)
+    {
+        givesCheck = pos.gives_check(firstMove);
+        do_move(pos, firstMove, st, givesCheck);
+        newDepth = depth-1;
+        value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
+                                   newDepth, false);
+        undo_move(pos,firstMove);
+        if (value > bestValue)
+        {
+            bestValue = value;
+
+            if (value > alpha)
+            {
+                bestMove = firstMove;
+                ++ss->cutoffCnt;
+                // (* Scaler) Especially if they make cutoffCnt increment more often.
+                assert(value >= beta);  // Fail high
+            }
+        }
+        //dbg_hit_on(!bestMove);
+    }
+
 
     // Step 21. Check for mate and stalemate
     // All legal moves have been searched and if there are no legal moves, it
