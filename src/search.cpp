@@ -303,6 +303,7 @@ void Search::Worker::iterative_deepening() {
           &this->continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
         (ss - i)->continuationCorrectionHistory = &this->continuationCorrectionHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
+        (ss - i)->ttMove                        = Move::none();
     }
 
     for (int i = 0; i <= MAX_PLY + 2; ++i)
@@ -708,6 +709,7 @@ Value Search::Worker::search(
     ttData.move  = rootNode ? thisThread->rootMoves[thisThread->pvIdx].pv[0]
                  : ttHit    ? ttData.move
                             : Move::none();
+    ss->ttMove = ttData.move;
     ttData.value = ttHit ? value_from_tt(ttData.value, ss->ply, pos.rule50_count()) : VALUE_NONE;
     ss->ttPv     = excludedMove ? ss->ttPv : PvNode || (ttHit && ttData.is_pv);
     ttCapture    = ttData.move && pos.capture_stage(ttData.move);
@@ -887,11 +889,11 @@ Value Search::Worker::search(
         ss->continuationCorrectionHistory = &thisThread->continuationCorrectionHistory[NO_PIECE][0];
 
         do_null_move(pos, st);
-
+        (ss+1)->excludedMove = (ss-1)->ttMove;
         Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -beta + 1, depth - R, false);
-
+        (ss+1)->excludedMove = Move::none();
         undo_null_move(pos);
-
+        //dbg_hit_on(nullValue >= beta);
         // Do not return unproven mate or TB scores
         if (nullValue >= beta && !is_win(nullValue))
         {
