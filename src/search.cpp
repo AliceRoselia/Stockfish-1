@@ -604,7 +604,7 @@ Value Search::Worker::search(
     Depth extension, newDepth;
     Value bestValue, value, eval, maxValue, probCutBeta;
     bool  givesCheck, improving, priorCapture, opponentWorsening;
-    bool  capture, ttCapture;
+    bool  capture, ttCapture, ttGivesCheck;
     int   priorReduction;
     Piece movedPiece;
 
@@ -670,7 +670,7 @@ Value Search::Worker::search(
     ttData.value = ttHit ? value_from_tt(ttData.value, ss->ply, pos.rule50_count()) : VALUE_NONE;
     ss->ttPv     = excludedMove ? ss->ttPv : PvNode || (ttHit && ttData.is_pv);
     ttCapture    = ttData.move && pos.capture_stage(ttData.move);
-
+    ttGivesCheck = ttData.move && (pos.check_squares(type_of(pos.moved_piece(ttData.move))) & ttData.move.to_sq());
     // At this point, if excluded, skip straight to step 6, static eval. However,
     // to save indentation, we list the condition in all code between here and there.
 
@@ -849,6 +849,7 @@ Value Search::Worker::search(
         assert(eval - beta >= 0);
 
         // Null move dynamic reduction based on depth and eval
+        Value nullBeta = beta - 100 - 300*ttCapture - 300*ttGivesCheck;
         Depth R = std::min(int(eval - beta) / 213, 6) + depth / 3 + 5;
 
         ss->currentMove                   = Move::null();
@@ -857,15 +858,15 @@ Value Search::Worker::search(
 
         do_null_move(pos, st);
 
-        Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -beta + 1, depth - R, false);
+        Value nullValue = -search<NonPV>(pos, ss + 1, -nullBeta, -nullBeta + 1, depth - R, false);
 
         undo_null_move(pos);
 
         // Do not return unproven mate or TB scores
-        if (nullValue >= beta && !is_win(nullValue))
+        if (nullValue >= nullBeta && !is_win(nullValue))
         {
             if (thisThread->nmpMinPly || depth < 16)
-                return nullValue;
+                return std::max(nullValue,beta); //Since null value can now be lower than beta and still fail high, we need this std::max.
 
             assert(!thisThread->nmpMinPly);  // Recursive verification is not allowed
 
@@ -878,7 +879,7 @@ Value Search::Worker::search(
             thisThread->nmpMinPly = 0;
 
             if (v >= beta)
-                return nullValue;
+                return std::max(nullValue,beta);
         }
     }
 
