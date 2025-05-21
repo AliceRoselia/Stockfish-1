@@ -545,6 +545,9 @@ void Search::Worker::clear() {
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
 
+    for (auto& to : altMoveHistory)
+        for (auto& h: to)
+            h.fill(0);
     ttMoveHistory = 0;
 
     for (auto& to : continuationCorrectionHistory)
@@ -985,7 +988,7 @@ moves_loop:  // When in check, search starts here
 
 
     MovePicker mp(pos, ttData.move, depth, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, &thisThread->altMoveHistory, ss->ply);
 
     value = bestValue;
 
@@ -1396,6 +1399,10 @@ moves_loop:  // When in check, search starts here
                     // (* Scaler) Especially if they make cutoffCnt increment more often.
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
+                    //dbg_hit_on(moveCount <= 1, 0);
+                    //dbg_hit_on(moveCount <= 2, 1);
+                    //dbg_hit_on(moveCount <= 3, 2);
+                    //dbg_hit_on(moveCount <= 4, 3);
                     break;
                 }
                 else
@@ -1644,7 +1651,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
     MovePicker mp(pos, ttData.move, DEPTH_QS, &thisThread->mainHistory, &thisThread->lowPlyHistory,
-                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, ss->ply);
+                  &thisThread->captureHistory, contHist, &thisThread->pawnHistory, &thisThread->altMoveHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
@@ -1873,6 +1880,7 @@ void update_all_stats(const Position&      pos,
                       int                  moveCount) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
+    AlternateMoveHistory& altMoveHistory  = workerThread.altMoveHistory;
     Piece                  movedPiece     = pos.moved_piece(bestMove);
     PieceType              capturedPiece;
 
@@ -1881,6 +1889,15 @@ void update_all_stats(const Position&      pos,
 
     if (!pos.capture_stage(bestMove))
     {
+        if (bestMove != ttMove && ttMove != Move::none())
+        {
+            auto& currentAltMoveHistory = altMoveHistory[type_of(pos.piece_on(ttMove.from_sq()))][ttMove.to_sq()];
+            currentAltMoveHistory[movedPiece][bestMove.to_sq()] << bonus;
+            for (Move move : quietsSearched)
+                currentAltMoveHistory[pos.moved_piece(move)][move.to_sq()]<<-malus*5/4;
+            for (Move move : capturesSearched)
+                currentAltMoveHistory[pos.moved_piece(move)][move.to_sq()]<<-malus*3/4;
+        }
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1059 / 1024);
 
         // Decrease stats for all non-best quiet moves
@@ -1900,6 +1917,7 @@ void update_all_stats(const Position&      pos,
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq, -malus * 580 / 1024);
 
     // Decrease stats for all non-best capture moves
+
     for (Move move : capturesSearched)
     {
         movedPiece    = pos.moved_piece(move);
