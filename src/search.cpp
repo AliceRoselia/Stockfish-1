@@ -1187,6 +1187,8 @@ moves_loop:  // When in check, search starts here
             else if (cutNode)
                 extension = -2;
         }
+        if (move == ttData.move && !pos.see_ge(move,PawnValue-KnightValue))
+            ++extension;
 
         // Step 16. Make the move
         do_move(pos, move, st, givesCheck);
