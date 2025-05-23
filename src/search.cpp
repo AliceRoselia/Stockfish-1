@@ -87,6 +87,11 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     return 7696 * pcv + 7689 * micv + 9708 * (wnpcv + bnpcv) + 6978 * cntcv;
 }
 
+int update_soft_best_value(Value v1, Value v2){
+    auto [min_value,max_value] = std::minmax(v1, v2);
+    return max_value + (134>>((max_value-min_value)/85));
+}
+
 // Add correctionHistory value to raw staticEval and guarantee evaluation
 // does not hit the tablebase range.
 Value to_corrected_static_eval(const Value v, const int cv) {
@@ -602,7 +607,7 @@ Value Search::Worker::search(
     Key   posKey;
     Move  move, excludedMove, bestMove;
     Depth extension, newDepth;
-    Value bestValue, value, eval, maxValue, probCutBeta;
+    Value bestValue, value, eval, maxValue, probCutBeta, softBestValue;
     bool  givesCheck, improving, priorCapture, opponentWorsening;
     bool  capture, ttCapture;
     int   priorReduction;
@@ -618,6 +623,7 @@ Value Search::Worker::search(
     Color us           = pos.side_to_move();
     ss->moveCount      = 0;
     bestValue          = -VALUE_INFINITE;
+    softBestValue      = -VALUE_INFINITE;
     maxValue           = VALUE_INFINITE;
 
     // Check for the available remaining time
@@ -1274,13 +1280,19 @@ moves_loop:  // When in check, search starts here
                 newDepth += doDeeperSearch - doShallowerSearch;
 
                 if (newDepth > d)
+                {
                     value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
+                    softBestValue = update_soft_best_value(softBestValue,value);
+                }
 
                 // Post LMR continuation history updates
                 update_continuation_histories(ss, movedPiece, move.to_sq(), 1508);
             }
             else if (value > alpha && value < bestValue + 9)
                 newDepth--;
+            if (d>=newDepth)
+                softBestValue = update_soft_best_value(softBestValue,value);
+
         }
 
         // Step 18. Full-depth search when LMR is skipped
@@ -1295,6 +1307,7 @@ moves_loop:  // When in check, search starts here
             // Note that if expected reduction is high, we reduce search depth here
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
                                    newDepth - (r > 3564) - (r > 4969 && newDepth > 2), !cutNode);
+            softBestValue = update_soft_best_value(softBestValue,value);
         }
 
         // For PV nodes only, do a full PV search on the first move or after a fail high,
@@ -1425,6 +1438,9 @@ moves_loop:  // When in check, search starts here
     // All legal moves have been searched and if there are no legal moves, it
     // must be a mate or a stalemate. If we are in a singular extension search then
     // return a fail low score.
+    if (!PvNode && bestValue <= alpha && !is_decisive(bestValue) && !is_decisive(softBestValue) && depth <= thisThread->rootDepth/2)
+        bestValue = std::clamp(softBestValue,bestValue,alpha);
+
 
     assert(moveCount || !ss->inCheck || excludedMove || !MoveList<LEGAL>(pos).size());
 
