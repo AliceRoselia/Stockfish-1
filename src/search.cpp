@@ -1438,7 +1438,7 @@ moves_loop:  // When in check, search starts here
     // All legal moves have been searched and if there are no legal moves, it
     // must be a mate or a stalemate. If we are in a singular extension search then
     // return a fail low score.
-    if (!PvNode && bestValue <= alpha && !is_decisive(bestValue) && !is_decisive(softBestValue) && depth <= thisThread->rootDepth/2)
+    if (!PvNode && bestValue <= alpha && !is_decisive(bestValue) && !is_decisive(softBestValue) && depth <= thisThread->rootDepth/4)
         bestValue = std::clamp(softBestValue,bestValue,alpha);
 
 
