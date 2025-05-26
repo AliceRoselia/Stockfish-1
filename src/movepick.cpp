@@ -122,7 +122,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
 // Assigns a numerical value to each move in a list, used for sorting.
 // Captures are ordered by Most Valuable Victim (MVV), preferring captures
 // with a good history. Quiets moves are ordered using the history tables.
-constexpr int singularGap = 20000;
+constexpr int singularGap = 50000;
 constexpr int singularBonus = 10000;
 
 template<GenType Type>
