@@ -21,6 +21,7 @@
 #include <cassert>
 #include <limits>
 #include <utility>
+#include <bitset>
 
 #include "bitboard.h"
 #include "misc.h"
@@ -121,6 +122,9 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
 // Assigns a numerical value to each move in a list, used for sorting.
 // Captures are ordered by Most Valuable Victim (MVV), preferring captures
 // with a good history. Quiets moves are ordered using the history tables.
+constexpr int singularGap = 30000;
+constexpr int singularBonus = 10000;
+
 template<GenType Type>
 void MovePicker::score() {
 
@@ -129,8 +133,12 @@ void MovePicker::score() {
     Color us = pos.side_to_move();
 
     [[maybe_unused]] Bitboard threatenedPieces, threatByLesser[QUEEN + 1];
+    [[maybe_unused]] std::bitset<64> isSingular;
+    [[maybe_unused]] std::array<int,64> maxValue;
     if constexpr (Type == QUIETS)
     {
+        isSingular = std::bitset<64>();
+        maxValue.fill(std::numeric_limits<int>::min());
         threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
         threatByLesser[ROOK] =
           pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
@@ -179,6 +187,20 @@ void MovePicker::score() {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
+
+
+            if (KNIGHT <= pt)
+            {
+                if(m.value >= maxValue[from])
+                {
+                    isSingular[from] = (m.value >= maxValue[from] + singularGap);
+                    maxValue[from] = m.value;
+                }
+                else
+                {
+                    isSingular[from] = (isSingular[from] && m.value <= maxValue[from] - singularGap);
+                }
+            }
         }
 
         else  // Type == EVASIONS
@@ -191,6 +213,15 @@ void MovePicker::score() {
                 if (ply < LOW_PLY_HISTORY_SIZE)
                     m.value += 2 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
             }
+        }
+    }
+
+    if constexpr (Type == QUIETS)
+    {
+        for (auto& m : *this)
+        {
+            const Square from = m.from_sq();
+            m.value += (isSingular[from] && m.value == maxValue[from])*singularBonus;
         }
     }
 }
