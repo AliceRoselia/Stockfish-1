@@ -140,7 +140,7 @@ void MovePicker::score() {
     {
         isSingular = std::bitset<64>();
         if (depth >= singularDepth)
-            maxValue.fill(-3560*depth);
+            maxValue.fill(std::numeric_limits<int>::min());
         threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
         threatByLesser[ROOK] =
           pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
