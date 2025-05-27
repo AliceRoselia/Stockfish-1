@@ -124,6 +124,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
 // with a good history. Quiets moves are ordered using the history tables.
 constexpr int singularGap = 80000;
 constexpr int singularBonus = 12000;
+constexpr int singularDepth = 8;
 
 template<GenType Type>
 void MovePicker::score() {
@@ -138,7 +139,8 @@ void MovePicker::score() {
     if constexpr (Type == QUIETS)
     {
         isSingular = std::bitset<64>();
-        maxValue.fill(std::numeric_limits<int>::min());
+        if (depth >= singularDepth)
+            maxValue.fill(std::numeric_limits<int>::min());
         threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
         threatByLesser[ROOK] =
           pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
@@ -189,7 +191,7 @@ void MovePicker::score() {
                 m.value += 8 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
 
 
-            if (KNIGHT <= pt)
+            if (depth >= singularDepth && KNIGHT <= pt)
             {
                 if(m.value >= maxValue[from])
                 {
@@ -218,10 +220,13 @@ void MovePicker::score() {
 
     if constexpr (Type == QUIETS)
     {
-        for (auto& m : *this)
+        if (depth >= singularDepth)
         {
-            const Square from = m.from_sq();
-            m.value += (isSingular[from] && m.value == maxValue[from])*singularBonus;
+            for (auto& m : *this)
+            {
+                const Square from = m.from_sq();
+                m.value += (isSingular[from] && m.value == maxValue[from])*singularBonus;
+            }
         }
     }
 }
