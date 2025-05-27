@@ -123,7 +123,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
 // Captures are ordered by Most Valuable Victim (MVV), preferring captures
 // with a good history. Quiets moves are ordered using the history tables.
 constexpr int singularGap = 80000;
-constexpr int singularBonus = 40000;
+constexpr int singularBonus = 12000;
 
 template<GenType Type>
 void MovePicker::score() {
