@@ -129,6 +129,7 @@ void MovePicker::score() {
     Color us = pos.side_to_move();
 
     [[maybe_unused]] Bitboard threatenedPieces, threatByLesser[QUEEN + 1];
+    [[maybe_unused]] int mainMetaHistory=1024, pawnMetaHistory = 1024;
     if constexpr (Type == QUIETS)
     {
         threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
@@ -140,6 +141,10 @@ void MovePicker::score() {
         threatenedPieces = (pos.pieces(us, QUEEN) & threatByLesser[QUEEN])
                          | (pos.pieces(us, ROOK) & threatByLesser[ROOK])
                          | (pos.pieces(us, KNIGHT, BISHOP) & threatByLesser[KNIGHT]);
+        if (!pos.capture_stage(ttMove)){
+            mainMetaHistory += 256*(*mainHistory)[us][ttMove.from_to()] / 7183;
+            pawnMetaHistory += 256*(*pawnHistory)[pawn_structure_index(pos)][pos.moved_piece(ttMove)][ttMove.to_sq()]/8192;
+        }
     }
 
     for (auto& m : *this)
@@ -157,8 +162,8 @@ void MovePicker::score() {
         else if constexpr (Type == QUIETS)
         {
             // histories
-            m.value = 2 * (*mainHistory)[us][m.from_to()];
-            m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
+            m.value = 2 * (*mainHistory)[us][m.from_to()] * mainMetaHistory / 1024;
+            m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to] * pawnMetaHistory / 1024;
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
