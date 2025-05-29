@@ -142,8 +142,8 @@ void MovePicker::score() {
                          | (pos.pieces(us, ROOK) & threatByLesser[ROOK])
                          | (pos.pieces(us, KNIGHT, BISHOP) & threatByLesser[KNIGHT]);
         if (!pos.capture_stage(ttMove)){
-            mainMetaHistory += 256*(*mainHistory)[us][ttMove.from_to()] / 7183;
-            pawnMetaHistory += 256*(*pawnHistory)[pawn_structure_index(pos)][pos.moved_piece(ttMove)][ttMove.to_sq()]/8192;
+            mainMetaHistory += 128*(*mainHistory)[us][ttMove.from_to()] / 7183;
+            pawnMetaHistory += 128*(*pawnHistory)[pawn_structure_index(pos)][pos.moved_piece(ttMove)][ttMove.to_sq()]/8192;
         }
     }
 
