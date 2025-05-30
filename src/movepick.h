@@ -46,8 +46,9 @@ class MovePicker {
                const CapturePieceToHistory*,
                const PieceToHistory**,
                const PawnHistory*,
-               int);
-    MovePicker(const Position&, Move, int, const CapturePieceToHistory*);
+               int,
+               uint32_t);
+    MovePicker(const Position&, Move, int, const CapturePieceToHistory*, uint32_t);
     Move next_move();
     void skip_quiet_moves();
     bool can_move_king_or_pawn();
@@ -74,6 +75,7 @@ class MovePicker {
     int                          ply;
     bool                         skipQuiets = false;
     ExtMove                      moves[MAX_MOVES];
+    uint32_t                     random_seed;
 };
 
 }  // namespace Stockfish
