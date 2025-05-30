@@ -182,6 +182,7 @@ void MovePicker::score() {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
+            m.value += 	((134775813u*(random_seed^(m.from_to()<<8)))>>22)-512;
         }
 
         else  // Type == EVASIONS
@@ -195,7 +196,6 @@ void MovePicker::score() {
                     m.value += 2 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
             }
         }
-        m.value += 	((134775813u*(random_seed^(m.from_to()<<8)))>>22)-512;
     }
 }
 
