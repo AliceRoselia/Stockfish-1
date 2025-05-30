@@ -1243,7 +1243,7 @@ moves_loop:  // When in check, search starts here
         // Step 17. Late moves reduction / extension (LMR)
         bool regularLMR = false;
 
-        if (depth >= 12 && r>=1024){
+        if (depth >= 12 && moveCount > 1 && r>=1024){
             Depth d = std::max(1,newDepth-r/512);
             ss->reduction = newDepth - d;
             value         = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true);
@@ -1292,7 +1292,7 @@ moves_loop:  // When in check, search starts here
         }
 
         // Step 18. Full-depth search when LMR is skipped
-        else if (!PvNode || moveCount > 1)
+        else if (regularLMR && (!PvNode || moveCount > 1))
         {
             // Increase reduction if ttMove is not present
             if (!ttData.move)
