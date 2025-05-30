@@ -1241,7 +1241,20 @@ moves_loop:  // When in check, search starts here
         r -= ss->statScore * 826 / 8192;
 
         // Step 17. Late moves reduction / extension (LMR)
-        if (depth >= 2 && moveCount > 1)
+        bool regularLMR = false;
+
+        if (depth >= 12 && r>=1024){
+            Depth d = std::max(1,newDepth-r/512);
+            ss->reduction = newDepth - d;
+            value         = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true);
+            ss->reduction = 0;
+
+            if (value > alpha)
+                regularLMR = true;
+        }
+        else
+            regularLMR = true;
+        if (depth >= 2 && moveCount > 1 && regularLMR)
         {
             // In general we want to cap the LMR depth search at newDepth, but when
             // reduction is negative, we allow this move a limited search extension
