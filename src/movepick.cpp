@@ -195,7 +195,7 @@ void MovePicker::score() {
                     m.value += 2 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
             }
         }
-        m.value += 	((134775813u*(random_seed^m.from_to()))>>24)-128;
+        m.value += 	((134775813u*(random_seed^(m.from_to()<<8)))>>24)-128;
     }
 }
 
