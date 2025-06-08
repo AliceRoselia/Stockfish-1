@@ -1240,7 +1240,9 @@ moves_loop:  // When in check, search starts here
                     + (ss - 1)->isPvNode;
 
             ss->reduction = newDepth - d;
-            value         = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true);
+
+            //Value value2 = -search<NonPV>(pos, ss + 1, -(reducedAlpha + 1), -reducedAlpha, d, true);
+            value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true);
             ss->reduction = 0;
 
             // Do a full-depth search when reduced LMR search fails high
@@ -1255,7 +1257,9 @@ moves_loop:  // When in check, search starts here
 
                 newDepth += doDeeperSearch - doShallowerSearch;
 
-                if (newDepth > d)
+                if (value > alpha+4)
+                    value = alpha + (value-alpha)/4;
+                else if (newDepth > d)
                     value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
 
                 // Post LMR continuation history updates
