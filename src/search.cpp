@@ -1257,9 +1257,12 @@ moves_loop:  // When in check, search starts here
 
                 newDepth += doDeeperSearch - doShallowerSearch;
 
-
+                Value cutNodeThreshold = 100 - 40*cutNode;
+                bool newCutNode = value < alpha+cutNodeThreshold;
                 if (newDepth > d)
-                    value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, false);
+                    value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, newCutNode);
+
+
 
                 // Post LMR continuation history updates
                 update_continuation_histories(ss, movedPiece, move.to_sq(), 1508);
