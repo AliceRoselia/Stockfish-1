@@ -1211,7 +1211,7 @@ moves_loop:  // When in check, search starts here
         }
 
 
-        r += std::clamp(ss->materialEval,0,512);
+        r += std::clamp(ss->materialEval,0,1024);
 
 
         // Increase reduction if next ply has a lot of fail high
