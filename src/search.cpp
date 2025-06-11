@@ -617,6 +617,7 @@ Value Search::Worker::search(
     ss->moveCount      = 0;
     bestValue          = -VALUE_INFINITE;
     maxValue           = VALUE_INFINITE;
+    ss->materialEval   = 0;
 
     // Check for the available remaining time
     if (is_mainthread())
@@ -1011,6 +1012,10 @@ moves_loop:  // When in check, search starts here
         movedPiece = pos.moved_piece(move);
         givesCheck = pos.gives_check(move);
 
+        Value valueChange = PieceValue[pos.piece_on(move.to_sq())] + (move.type_of() == PROMOTION ? PieceValue[move.promotion_type()]-PawnValue : 0);
+
+
+
         (ss + 1)->quietMoveStreak = (!capture && !givesCheck) ? (ss->quietMoveStreak + 1) : 0;
 
         // Calculate new depth for this move
@@ -1201,7 +1206,13 @@ moves_loop:  // When in check, search starts here
 
         // Increase reduction if ttMove is a capture
         if (ttCapture)
+        {
             r += 1210 + (depth < 8) * 963;
+        }
+
+
+        r += std::clamp(ss->materialEval,0,512) * 3;
+
 
         // Increase reduction if next ply has a lot of fail high
         if ((ss + 1)->cutoffCnt > 2)
@@ -1246,6 +1257,8 @@ moves_loop:  // When in check, search starts here
             // Do a full-depth search when reduced LMR search fails high
             // (*Scaler) Usually doing more shallower searches
             // doesn't scale well to longer TCs
+            //std::cout<<1.0/(1.0+std::exp(-std::clamp(ss->materialEval,0,512)/512.0))<<std::endl;
+
             if (value > alpha && d < newDepth)
             {
                 // Adjust full-depth search based on LMR results - if the result was
@@ -1257,7 +1270,7 @@ moves_loop:  // When in check, search starts here
 
                 if (newDepth > d)
                     value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
-
+                ss->materialEval = std::max(ss->materialEval,valueChange-(ss+1)->materialEval);
                 // Post LMR continuation history updates
                 update_continuation_histories(ss, movedPiece, move.to_sq(), 1508);
             }
@@ -1277,6 +1290,7 @@ moves_loop:  // When in check, search starts here
             // Note that if expected reduction is high, we reduce search depth here
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
                                    newDepth - (r > 3564) - (r > 4969 && newDepth > 2), !cutNode);
+            ss->materialEval = std::max(ss->materialEval,valueChange-(ss+1)->materialEval);
         }
 
         // For PV nodes only, do a full PV search on the first move or after a fail high,
@@ -1291,6 +1305,7 @@ moves_loop:  // When in check, search starts here
                 newDepth = std::max(newDepth, 1);
 
             value = -search<PV>(pos, ss + 1, -beta, -alpha, newDepth, false);
+            ss->materialEval = std::max(ss->materialEval,valueChange-(ss+1)->materialEval);
         }
 
         // Step 19. Undo move
@@ -1458,6 +1473,9 @@ moves_loop:  // When in check, search starts here
         thisThread->captureHistory[pos.piece_on(prevSq)][prevSq][type_of(capturedPiece)] << 1080;
     }
 
+    if (is_loss(bestValue))
+        ss->materialEval = -VALUE_INFINITE;
+
     if (PvNode)
         bestValue = std::min(bestValue, maxValue);
 
@@ -1535,6 +1553,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     bestMove           = Move::none();
     ss->inCheck        = pos.checkers();
     moveCount          = 0;
+    ss->materialEval   = 0;
 
     // Used to send selDepth info to GUI (selDepth counts from 1, ply from 0)
     if (PvNode && thisThread->selDepth < ss->ply + 1)
@@ -1631,6 +1650,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
         givesCheck = pos.gives_check(move);
         capture    = pos.capture_stage(move);
+        Value valueChange = PieceValue[pos.piece_on(move.to_sq())] + (move.type_of() == PROMOTION ? PieceValue[move.promotion_type()]-PawnValue : 0);
 
         moveCount++;
 
@@ -1689,6 +1709,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
           &thisThread->continuationCorrectionHistory[movedPiece][move.to_sq()];
 
         value = -qsearch<nodeType>(pos, ss + 1, -beta, -alpha);
+        ss->materialEval = std::max(ss->materialEval,valueChange-(ss+1)->materialEval);
         undo_move(pos, move);
 
         assert(value > -VALUE_INFINITE && value < VALUE_INFINITE);
@@ -1719,6 +1740,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     if (ss->inCheck && bestValue == -VALUE_INFINITE)
     {
         assert(!MoveList<LEGAL>(pos).size());
+        ss->materialEval = -VALUE_INFINITE;
         return mated_in(ss->ply);  // Plies to mate from the root
     }
 
