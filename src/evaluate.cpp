@@ -40,8 +40,8 @@ namespace Stockfish {
 
 Key prev_pawn_key = 0;
 Key prev_minor_piece_key = 0;
-Key pawn_hash_key[4096] = {};
-Key minor_piece_key[4096] = {};
+Key pawn_hash_key[16384] = {};
+Key minor_piece_key[16384] = {};
 
 
 
@@ -64,14 +64,14 @@ Value Eval::evaluate(const Eval::NNUE::Networks&    networks,
                      Eval::NNUE::AccumulatorCaches& caches,
                      int                            optimism) {
     if (pos.pawn_key() != prev_pawn_key)
-        dbg_hit_on(pawn_hash_key[pos.pawn_key()&4095] == pos.pawn_key());
+        dbg_hit_on(pawn_hash_key[pos.pawn_key()&16383] == pos.pawn_key());
     prev_pawn_key = pos.pawn_key();
     if (pos.minor_piece_key() != prev_minor_piece_key)
-        dbg_hit_on(minor_piece_key[pos.minor_piece_key()&4095] == pos.minor_piece_key(),1);
+        dbg_hit_on(minor_piece_key[pos.minor_piece_key()&16383] == pos.minor_piece_key(),1);
     prev_minor_piece_key = pos.minor_piece_key();
 
-    pawn_hash_key[pos.pawn_key()&4095] = pos.pawn_key();
-    minor_piece_key[pos.minor_piece_key()&4095] = pos.minor_piece_key();
+    pawn_hash_key[pos.pawn_key()&16383] = pos.pawn_key();
+    minor_piece_key[pos.minor_piece_key()&16383] = pos.minor_piece_key();
 
     assert(!pos.checkers());
 
