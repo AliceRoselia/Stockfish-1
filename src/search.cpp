@@ -1211,7 +1211,7 @@ moves_loop:  // When in check, search starts here
         }
 
 
-        r += std::clamp(ss->materialEval,0,1024);
+        r += std::clamp(ss->materialEval,0,1000)*3/2;
 
 
         // Increase reduction if next ply has a lot of fail high
@@ -1258,7 +1258,7 @@ moves_loop:  // When in check, search starts here
             // (*Scaler) Usually doing more shallower searches
             // doesn't scale well to longer TCs
             //std::cout<<1.0/(1.0+std::exp(-std::clamp(ss->materialEval,0,512)/512.0))<<std::endl;
-
+            //dbg_hit_on(value > alpha);
             if (value > alpha && d < newDepth)
             {
                 // Adjust full-depth search based on LMR results - if the result was
