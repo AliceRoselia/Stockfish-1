@@ -874,6 +874,7 @@ Value Search::Worker::search(
         // Do not return unproven mate or TB scores
         if (nullValue >= beta && !is_win(nullValue))
         {
+            ss->materialEval = -(ss+1)->materialEval;
             if (thisThread->nmpMinPly || depth < 16)
                 return nullValue;
 
@@ -926,6 +927,7 @@ Value Search::Worker::search(
 
             movedPiece = pos.moved_piece(move);
 
+            Value valueChange = PieceValue[pos.piece_on(move.to_sq())] + (move.type_of() == PROMOTION ? PieceValue[move.promotion_type()]-PawnValue : 0);
             do_move(pos, move, st);
 
             ss->currentMove = move;
@@ -939,8 +941,11 @@ Value Search::Worker::search(
 
             // If the qsearch held, perform the regular search
             if (value >= probCutBeta && probCutDepth > 0)
+            {
                 value = -search<NonPV>(pos, ss + 1, -probCutBeta, -probCutBeta + 1, probCutDepth,
                                        !cutNode);
+                ss->materialEval = std::max(ss->materialEval,valueChange-(ss+1)->materialEval);
+            }
 
             undo_move(pos, move);
 
@@ -963,6 +968,8 @@ moves_loop:  // When in check, search starts here
     if ((ttData.bound & BOUND_LOWER) && ttData.depth >= depth - 4 && ttData.value >= probCutBeta
         && !is_decisive(beta) && is_valid(ttData.value) && !is_decisive(ttData.value))
         return probCutBeta;
+
+    ss->materialEval = 0; //All probcuts failed. Reset material eval.
 
     const PieceToHistory* contHist[] = {
       (ss - 1)->continuationHistory, (ss - 2)->continuationHistory, (ss - 3)->continuationHistory,
