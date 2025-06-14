@@ -792,6 +792,9 @@ Value Search::Worker::search(
         if (is_valid(ttData.value)
             && (ttData.bound & (ttData.value > eval ? BOUND_LOWER : BOUND_UPPER)))
             eval = ttData.value;
+        //dbg_hit_on(ttData.depth + ss->ply > thisThread->rootDepth * 3);
+        if (ttData.depth + ss->ply > thisThread->rootDepth * 2)
+            eval = eval*3/4;
     }
     else
     {
