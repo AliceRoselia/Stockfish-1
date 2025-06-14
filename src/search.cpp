@@ -1259,7 +1259,9 @@ moves_loop:  // When in check, search starts here
             // doesn't scale well to longer TCs
             //std::cout<<1.0/(1.0+std::exp(-std::clamp(ss->materialEval,0,512)/512.0))<<std::endl;
             //dbg_hit_on(value > alpha);
-            if (value > alpha && d < newDepth)
+            if (d >= newDepth)
+                ss->materialEval = std::max(ss->materialEval,valueChange-(ss+1)->materialEval);
+            else if (value > alpha)
             {
                 // Adjust full-depth search based on LMR results - if the result was
                 // good enough search deeper, if it was bad enough search shallower.
