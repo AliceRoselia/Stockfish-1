@@ -1424,8 +1424,8 @@ moves_loop:  // When in check, search starts here
         if (!PvNode)
             ttMoveHistory << (bestMove == ttData.move ? 800 : -879);
         //Correction for the penalty for putting piece en-prise.
-        if (bestMove.to_sq() != prevSq && prevSq != SQ_NONE && pos.attackers_to_exist(prevSq,pos.pieces(),us))
-            thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()] << 800;
+        if (bestMove.to_sq() != prevSq && !priorCapture && prevSq != SQ_NONE && pos.attackers_to_exist(prevSq,pos.pieces(),us))
+            thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()] << 400;
     }
 
     // Bonus for prior quiet countermove that caused the fail low
