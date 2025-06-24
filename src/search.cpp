@@ -977,6 +977,8 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+    int8_t moved[64] = {};
+
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1018,7 +1020,7 @@ moves_loop:  // When in check, search starts here
 
         int delta = beta - alpha;
 
-        Depth r = reduction(improving, depth, moveCount, delta);
+        Depth r = reduction(improving, depth, moveCount + moved[move.from_sq()] + moved[move.to_sq()], delta);
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
@@ -1389,6 +1391,9 @@ moves_loop:  // When in check, search starts here
                 alpha = value;  // Update alpha! Always alpha < beta
             }
         }
+
+        ++moved[move.from_sq()];
+        ++moved[move.to_sq()];
 
         // If the move is worse than some previously searched move,
         // remember it, to update its stats later.
