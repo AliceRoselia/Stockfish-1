@@ -1018,7 +1018,7 @@ moves_loop:  // When in check, search starts here
 
         int delta = beta - alpha;
 
-        Depth r = reduction(improving, depth, moveCount, delta);
+        Depth r = reduction(improving, depth, delta);
 
         // Increase reduction for ttPv nodes (*Scaler)
         // Smaller or even negative value is better for short time controls
@@ -1192,7 +1192,6 @@ moves_loop:  // When in check, search starts here
         // These reduction adjustments have no proven non-linear scaling
 
         r += 316;  // Base reduction offset to compensate for other tweaks
-        r -= moveCount * 66;
         r -= std::abs(correctionValue) / 28047;
 
         // Increase reduction for cut nodes
@@ -1752,8 +1751,8 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     return bestValue;
 }
 
-Depth Search::Worker::reduction(bool i, Depth d, int mn, int delta) const {
-    int reductionScale = reductions[d] * reductions[mn];
+Depth Search::Worker::reduction(bool i, Depth d, int delta) const {
+    int reductionScale = reductions[d] * 35;
     return reductionScale - delta * 794 / rootDelta + !i * reductionScale * 205 / 512 + 1086;
 }
 
