@@ -23,6 +23,7 @@
 
 #include "bitboard.h"
 #include "position.h"
+#include "misc.h"
 
 namespace Stockfish {
 
@@ -182,18 +183,52 @@ ExtMove* generate_all(const Position& pos, ExtMove* moveList) {
                : Type == NON_EVASIONS ? ~pos.pieces(Us)
                : Type == CAPTURES     ? pos.pieces(~Us)
                                       : ~pos.pieces();  // QUIETS
+        if (Type == CAPTURES)
+        {
+            moveList = generate_moves<Us, QUEEN>(pos, moveList, target);
+            moveList = generate_moves<Us, ROOK>(pos, moveList, target);
+            //Queens and rooks first.
 
-        moveList = generate_pawn_moves<Us, Type>(pos, moveList, target);
-        moveList = generate_moves<Us, KNIGHT>(pos, moveList, target);
-        moveList = generate_moves<Us, BISHOP>(pos, moveList, target);
-        moveList = generate_moves<Us, ROOK>(pos, moveList, target);
-        moveList = generate_moves<Us, QUEEN>(pos, moveList, target);
+            //Generate less frequent moves first.
+            moveList = generate_pawn_moves<Us, Type>(pos, moveList, target);
+            moveList = generate_moves<Us, KNIGHT>(pos, moveList, target);
+            moveList = generate_moves<Us, BISHOP>(pos, moveList, target);
+        }
+        else if (Type == QUIETS)
+        {
+            Bitboard b = attacks_bb<KING>(ksq) & (Type == EVASIONS ? ~pos.pieces(Us) : target);
+            while (b)
+                *moveList++ = Move(ksq, pop_lsb(b));
+            moveList = generate_moves<Us, QUEEN>(pos, moveList, target);
+            moveList = generate_moves<Us, ROOK>(pos, moveList, target);
+            //Queens and rooks first.
+
+            //Generate less frequent moves first.
+            moveList = generate_moves<Us, KNIGHT>(pos, moveList, target);
+            moveList = generate_moves<Us, BISHOP>(pos, moveList, target);
+            moveList = generate_pawn_moves<Us, Type>(pos, moveList, target);
+        }
+        else // Evasions.
+        {
+            Bitboard b = attacks_bb<KING>(ksq) & (Type == EVASIONS ? ~pos.pieces(Us) : target);
+            while (b)
+                *moveList++ = Move(ksq, pop_lsb(b));
+            moveList = generate_moves<Us, QUEEN>(pos, moveList, target);
+            moveList = generate_moves<Us, ROOK>(pos, moveList, target);
+            //Queens and rooks first.
+
+            //Generate less frequent moves first.
+            moveList = generate_moves<Us, BISHOP>(pos, moveList, target);
+            moveList = generate_moves<Us, KNIGHT>(pos, moveList, target);
+            moveList = generate_pawn_moves<Us, Type>(pos, moveList, target);
+        }
     }
-
-    Bitboard b = attacks_bb<KING>(ksq) & (Type == EVASIONS ? ~pos.pieces(Us) : target);
-
-    while (b)
-        *moveList++ = Move(ksq, pop_lsb(b));
+    if (Type == CAPTURES || more_than_one(pos.checkers())) //If quiet moves, king moves need to be generated first
+    {
+        Bitboard b = attacks_bb<KING>(ksq) & (Type == EVASIONS ? ~pos.pieces(Us) : target);
+        while (b)
+            *moveList++ = Move(ksq, pop_lsb(b));
+    }
 
     if ((Type == QUIETS || Type == NON_EVASIONS) && pos.can_castle(Us & ANY_CASTLING))
         for (CastlingRights cr : {Us & KING_SIDE, Us & QUEEN_SIDE})
