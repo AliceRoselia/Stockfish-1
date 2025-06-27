@@ -30,7 +30,6 @@
 
 #include "misc.h"
 #include "position.h"
-#include "bitboard.h"
 
 namespace Stockfish {
 

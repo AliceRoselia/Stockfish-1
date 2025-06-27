@@ -166,7 +166,7 @@ void MovePicker::score() {
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
 
             if (pt == KNIGHT)
-                m.value += (*knightHistory)[us][to][knight_attack_index(attacks_bb<KNIGHT>(to)&pos.pieces(~us),to)];
+                m.value += (*knightHistory)[us][to][knight_attack_index(attacks_bb<KNIGHT>(to)&pos.pieces(~us)&~pos.pieces(PAWN),to)];
 
             // penalty for moving to a square threatened by a lesser piece
             // or bonus for escaping an attack by a lesser piece.

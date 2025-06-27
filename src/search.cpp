@@ -1911,7 +1911,7 @@ void update_quiet_histories(
     if (ss->ply < LOW_PLY_HISTORY_SIZE)
         workerThread.lowPlyHistory[ss->ply][move.from_to()] << bonus * 792 / 1024;
     if (type_of(pos.moved_piece(move)) == KNIGHT)
-        workerThread.knightHistory[us][move.to_sq()][knight_attack_index(attacks_bb<KNIGHT>(move.to_sq())&pos.pieces(~us),move.to_sq())] << bonus;
+        workerThread.knightHistory[us][move.to_sq()][knight_attack_index(attacks_bb<KNIGHT>(move.to_sq())&pos.pieces(~us)&~pos.pieces(PAWN),move.to_sq())] << bonus;
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(),
                                   bonus * (bonus > 0 ? 1082 : 784) / 1024);
