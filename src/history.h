@@ -77,7 +77,7 @@ inline int knight_attack_index(Bitboard target, Square from)
         return unsigned(pext(target, attacks_bb<KNIGHT>(from)));
 #else
 
-    return (target*KnightMagic[from])>>56;
+    return ((target&attacks_bb<KNIGHT>(from))*KnightMagic[from])>>56;
 #endif // USE_PEXT
 }
 
