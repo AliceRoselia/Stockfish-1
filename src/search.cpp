@@ -1446,7 +1446,7 @@ moves_loop:  // When in check, search starts here
         thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()]
           << scaledBonus * 203 / 32768;
         if (type_of(pos.piece_on(prevSq)) == KNIGHT)
-            thisThread->knightHistory[~us][prevSq][knight_attack_index(pos.pieces(us),prevSq)] << scaledBonus * 800 / 32768;
+            thisThread->knightHistory[~us][prevSq][knight_attack_index(pos.pieces(us),prevSq)] << scaledBonus * 400 / 32768;
 
         if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
             thisThread->pawnHistory[pawn_structure_index(pos)][pos.piece_on(prevSq)][prevSq]
