@@ -148,6 +148,11 @@ Search::Worker::Worker(SharedState&                    sharedState,
     clear();
 }
 
+int knightCMBonus = 400;
+TUNE(SetRange(0,2000),knightCMBonus);
+int knightBonus = 1024;
+TUNE(SetRange(0,2048),knightBonus);
+
 void Search::Worker::ensure_network_replicated() {
     // Access once to force lazy initialization.
     // We do this because we want to avoid initialization during search.
@@ -1446,7 +1451,7 @@ moves_loop:  // When in check, search starts here
         thisThread->mainHistory[~us][((ss - 1)->currentMove).from_to()]
           << scaledBonus * 203 / 32768;
         if (type_of(pos.piece_on(prevSq)) == KNIGHT)
-            thisThread->knightHistory[~us][prevSq][knight_attack_index(pos.pieces(us),prevSq)] << scaledBonus * 400 / 32768;
+            thisThread->knightHistory[~us][prevSq][knight_attack_index(pos.pieces(us),prevSq)] << scaledBonus * knightCMBonus / 32768;
 
         if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
             thisThread->pawnHistory[pawn_structure_index(pos)][pos.piece_on(prevSq)][prevSq]
@@ -1913,7 +1918,7 @@ void update_quiet_histories(
     if (ss->ply < LOW_PLY_HISTORY_SIZE)
         workerThread.lowPlyHistory[ss->ply][move.from_to()] << bonus * 792 / 1024;
     if (type_of(pos.moved_piece(move)) == KNIGHT)
-        workerThread.knightHistory[us][move.to_sq()][knight_attack_index(pos.pieces(~us),move.to_sq())] << bonus;
+        workerThread.knightHistory[us][move.to_sq()][knight_attack_index(pos.pieces(~us),move.to_sq())] << bonus * knightBonus/1024;
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(),
                                   bonus * (bonus > 0 ? 1082 : 784) / 1024);

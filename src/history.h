@@ -124,6 +124,26 @@ class StatsEntry {
     }
 };
 
+
+class KnightsEntry{
+
+    int16_t entry;
+    public:
+    KnightsEntry& operator=(const int16_t& v) {
+        entry = v;
+        return *this;
+    }
+    operator const int16_t&() const { return entry; }
+    void operator<<(int bonus) {
+        int knight_D = get_knight_D();
+        // Make sure that bonus is in range [-D, D]
+        int clampedBonus = std::clamp(bonus, -knight_D, knight_D);
+        entry += clampedBonus - entry * std::abs(clampedBonus) / knight_D;
+
+        assert(std::abs(entry) <= knight_D);
+    }
+};
+
 enum StatsType {
     NoCaptures,
     Captures
@@ -158,8 +178,8 @@ using ContinuationHistory = MultiArray<PieceToHistory, PIECE_NB, SQUARE_NB>;
 // PawnHistory is addressed by the pawn structure and a move's [piece][to]
 using PawnHistory = Stats<std::int16_t, 8192, PAWN_HISTORY_SIZE, PIECE_NB, SQUARE_NB>;
 
-using KnightHistory = Stats<std::int16_t, 15000,COLOR_NB, SQUARE_NB, 256>;
-
+//using KnightHistory = Stats<std::int16_t, 15000,COLOR_NB, SQUARE_NB, 256>;
+using KnightHistory = MultiArray<KnightsEntry, COLOR_NB, SQUARE_NB, 256>;
 // Correction histories record differences between the static evaluation of
 // positions and their search score. It is used to improve the static evaluation
 // used by some search heuristics.

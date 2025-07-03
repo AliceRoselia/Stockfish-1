@@ -37,6 +37,15 @@
 
 namespace Stockfish {
 
+//Used in history tune, but had to be placed here for compilation. Is only here for tuning anyway.
+int knight_D = 15000;
+TUNE(SetRange(5000,30000),knight_D);
+
+int get_knight_D(){
+    return knight_D;
+}
+
+
 namespace {
 
 // Version number or dev.
