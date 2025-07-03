@@ -63,7 +63,7 @@ using namespace Search;
 
 namespace {
 
-constexpr int SEARCHEDLIST_CAPACITY = 256;
+constexpr int SEARCHEDLIST_CAPACITY = 16;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
 
 // (*Scalers):
@@ -1393,7 +1393,7 @@ moves_loop:  // When in check, search starts here
 
         // If the move is worse than some previously searched move,
         // remember it, to update its stats later.;
-        if (move != bestMove)
+        if (move != bestMove && moveCount <= SEARCHEDLIST_CAPACITY)
         {
             if (capture)
                 capturesSearched.push_back(move);
