@@ -69,7 +69,7 @@ class MovePicker {
     const PawnHistory*           pawnHistory;
     const KnightHistory*         knightHistory;
     Move                         ttMove;
-    ExtMove *                    cur, *endCur, *endBadCaptures, *endBadQuiets;
+    ExtMove *                    cur, *endCur, *endBadCaptures, *endCaptures, *endGenerated;
     int                          stage;
     int                          threshold;
     Depth                        depth;
