@@ -64,7 +64,26 @@ using namespace Search;
 namespace {
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
-using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
+class SearchedList{
+public:
+    void push_back_quiet(const Move& move){Value_[quietEnd++] = move;}
+    void push_back_capture(const Move& move){Value_[captureEnd--] = move;}
+    Move* quiet_begin(){return Value_;}
+    Move* quiet_end(){return Value_ + quietEnd;}
+    Move* capture_begin(){return Value_ + SEARCHEDLIST_CAPACITY-1;}
+    Move* capture_end(){return Value_ + captureEnd;}
+
+
+
+private:
+    Move Value_[SEARCHEDLIST_CAPACITY];
+    size_t quietEnd = 0;
+    size_t captureEnd = SEARCHEDLIST_CAPACITY-1;
+};
+
+
+
+//using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
 
 // (*Scalers):
 // The values with Scaler asterisks have proven non-linear scaling.
@@ -127,8 +146,7 @@ void update_all_stats(const Position& pos,
                       Search::Worker& workerThread,
                       Move            bestMove,
                       Square          prevSq,
-                      SearchedList&   quietsSearched,
-                      SearchedList&   capturesSearched,
+                      SearchedList&   searched,
                       Depth           depth,
                       Move            TTMove,
                       int             moveCount);
@@ -608,8 +626,7 @@ Value Search::Worker::search(
     int   priorReduction;
     Piece movedPiece;
 
-    SearchedList capturesSearched;
-    SearchedList quietsSearched;
+    SearchedList searched;
 
     // Step 1. Initialize node
     Worker* thisThread = this;
@@ -1396,9 +1413,9 @@ moves_loop:  // When in check, search starts here
         if (move != bestMove && moveCount <= SEARCHEDLIST_CAPACITY)
         {
             if (capture)
-                capturesSearched.push_back(move);
+                searched.push_back_capture(move);
             else
-                quietsSearched.push_back(move);
+                searched.push_back_quiet(move);
         }
     }
 
@@ -1420,7 +1437,7 @@ moves_loop:  // When in check, search starts here
     // we update the stats of searched moves.
     else if (bestMove)
     {
-        update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
+        update_all_stats(pos, ss, *this, bestMove, prevSq, searched, depth,
                          ttData.move, moveCount);
         if (!PvNode)
             ttMoveHistory << (bestMove == ttData.move ? 800 : -879);
@@ -1841,8 +1858,7 @@ void update_all_stats(const Position& pos,
                       Search::Worker& workerThread,
                       Move            bestMove,
                       Square          prevSq,
-                      SearchedList&   quietsSearched,
-                      SearchedList&   capturesSearched,
+                      SearchedList&   searched,
                       Depth           depth,
                       Move            ttMove,
                       int             moveCount) {
@@ -1859,8 +1875,8 @@ void update_all_stats(const Position& pos,
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 1059 / 1024);
 
         // Decrease stats for all non-best quiet moves
-        for (Move move : quietsSearched)
-            update_quiet_histories(pos, ss, workerThread, move, -malus * 1310 / 1024);
+        for (Move* move = searched.quiet_begin(); move != searched.quiet_end(); ++move)
+            update_quiet_histories(pos, ss, workerThread, *move, -malus * 1310 / 1024);
     }
     else
     {
@@ -1875,11 +1891,11 @@ void update_all_stats(const Position& pos,
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq, -malus * 580 / 1024);
 
     // Decrease stats for all non-best capture moves
-    for (Move move : capturesSearched)
+    for (Move* move = searched.capture_begin(); move != searched.capture_end(); --move)
     {
-        movedPiece    = pos.moved_piece(move);
-        capturedPiece = type_of(pos.piece_on(move.to_sq()));
-        captureHistory[movedPiece][move.to_sq()][capturedPiece] << -malus * 1388 / 1024;
+        movedPiece    = pos.moved_piece(*move);
+        capturedPiece = type_of(pos.piece_on(move->to_sq()));
+        captureHistory[movedPiece][move->to_sq()][capturedPiece] << -malus * 1388 / 1024;
     }
 }
 
