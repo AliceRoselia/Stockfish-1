@@ -63,7 +63,7 @@ using namespace Search;
 
 namespace {
 
-constexpr int SEARCHEDLIST_CAPACITY = 20;
+constexpr int SEARCHEDLIST_CAPACITY = 24;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
 
 // (*Scalers):
