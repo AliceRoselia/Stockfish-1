@@ -58,6 +58,7 @@ struct StateInfo {
     Bitboard   checkSquares[PIECE_TYPE_NB];
     Piece      capturedPiece;
     int        repetition;
+    int8_t     latentSpace[8];
 };
 
 
@@ -168,6 +169,8 @@ class Position {
 
     void put_piece(Piece pc, Square s);
     void remove_piece(Square s);
+
+    int latent_space_index() const;
 
    private:
     // Initialization helpers (used while setting up a position)

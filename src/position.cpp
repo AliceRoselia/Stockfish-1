@@ -27,6 +27,7 @@
 #include <initializer_list>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string_view>
 #include <utility>
@@ -109,8 +110,19 @@ inline int H2(Key h) { return (h >> 16) & 0x1fff; }
 std::array<Key, 8192>  cuckoo;
 std::array<Move, 8192> cuckooMove;
 
-// Initializes at startup the various arrays used to compute hash keys
+
+template <typename T>
+void readFile(ifstream& file, T& value){
+    file.read(reinterpret_cast<char*>(&value), sizeof(value));
+}
+int8_t positionWeight[32768];
+
+// Initializes at startup the various arrays used to compute hash keys and move net.
 void Position::init() {
+
+    ifstream ifs ("moverankNet.bin", ifstream::in | ifstream::binary);
+    readFile(ifs,positionWeight);
+
 
     PRNG rng(1070372);
 
@@ -695,6 +707,7 @@ DirtyPiece Position::do_move(Move                      m,
     assert(m.is_ok());
     assert(&newSt != st);
 
+
     Key k = st->key ^ Zobrist::side;
 
     // Copy some fields of the old state to our new StateInfo object except the
@@ -703,6 +716,11 @@ DirtyPiece Position::do_move(Move                      m,
     std::memcpy(&newSt, st, offsetof(StateInfo, key));
     newSt.previous = st;
     st             = &newSt;
+
+    //position state info latent space.
+    for (int i=0; i<8; ++i){
+        st->latentSpace[i] = (st.previous->latentSpace[i] + positionWeight[m.from_to()*8 + i])/2;
+    }
 
     // Increment ply counters. In particular, rule50 will be reset to zero later on
     // in case of a capture or a pawn move.
@@ -1042,6 +1060,14 @@ void Position::undo_null_move() {
 
     st         = st->previous;
     sideToMove = ~sideToMove;
+}
+
+int Position::latent_space_index() const{
+    int result = 0;
+    for (int i=0; i<8; ++i){
+        result |= (st->latentSpace[i]>0)<<i;
+    }
+    return result;
 }
 
 
