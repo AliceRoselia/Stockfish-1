@@ -1091,10 +1091,12 @@ void Position::undo_null_move() {
     sideToMove = ~sideToMove;
 }
 
+constexpr int8_t latentMedians[8] = {-13,-15,10,-14,13,12,8,12};
+
 int Position::latent_space_index() const{
     int result = 0;
     for (int i=0; i<8; ++i){
-        result |= (st->latentSpace[i]>0)<<i;
+        result |= (st->latentSpace[i]>latentMedians[i])<<i;
     }
     return result;
 }
