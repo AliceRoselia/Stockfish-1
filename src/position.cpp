@@ -32,12 +32,16 @@
 #include <string_view>
 #include <utility>
 
+#define INCBIN_SILENCE_BITCODE_WARNING
+#include "incbin/incbin.h"
+
 #include "bitboard.h"
 #include "misc.h"
 #include "movegen.h"
 #include "syzygy/tbprobe.h"
 #include "tt.h"
 #include "uci.h"
+#include "evaluate.h"
 
 using std::string;
 
@@ -117,10 +121,11 @@ void readFile(std::ifstream& file, T& value){
 }
 int8_t positionWeight[32768];
 
+
 // Initializes at startup the various arrays used to compute hash keys and move net.
 void Position::init() {
 
-    std::ifstream ifs ("moverankNet.bin", std::ifstream::in | std::ifstream::binary);
+    std::ifstream ifs (moverankNet, std::ifstream::in | std::ifstream::binary);
     readFile(ifs,positionWeight);
 
 
