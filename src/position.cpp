@@ -32,8 +32,6 @@
 #include <string_view>
 #include <utility>
 
-#define INCBIN_SILENCE_BITCODE_WARNING
-#include "incbin/incbin.h"
 
 #include "bitboard.h"
 #include "misc.h"
@@ -127,6 +125,8 @@ void Position::init() {
 
     std::ifstream ifs (moverankNet, std::ifstream::in | std::ifstream::binary);
     readFile(ifs,positionWeight);
+
+    assert(ifs.get() == EOF);
 
     PRNG rng(1070372);
 
