@@ -31,7 +31,8 @@
 #include <sstream>
 #include <string_view>
 #include <utility>
-
+#define INCBIN_SILENCE_BITCODE_WARNING
+#include "incbin/incbin.h"
 
 #include "bitboard.h"
 #include "misc.h"
@@ -112,9 +113,20 @@ inline int H2(Key h) { return (h >> 16) & 0x1fff; }
 std::array<Key, 8192>  cuckoo;
 std::array<Move, 8192> cuckooMove;
 
+#if !defined(_MSC_VER)
+INCBIN(moveRanker, moverankNet);
+#else
+const unsigned char        gmoveRankerData[1]   = {0x0};
+const unsigned char* const gmoveRankerEnd       = &gmoveRankerData[1];
+const unsigned int         gmoveRankerSize      = 1;
+#endif
+
+
+
+
 
 template <typename T>
-void readFile(std::ifstream& file, T& value){
+void readFile(std::istream& file, T& value){
     file.read(reinterpret_cast<char*>(&value), sizeof(value));
 }
 int8_t positionWeight[32768];
@@ -123,8 +135,21 @@ int8_t positionWeight[32768];
 // Initializes at startup the various arrays used to compute hash keys and move net.
 void Position::init() {
 
-    std::ifstream ifs (moverankNet, std::ifstream::in | std::ifstream::binary);
+
+    class MemoryBuffer: public std::basic_streambuf<char> {
+       public:
+        MemoryBuffer(char* p, size_t n) {
+            setg(p, p, p + n);
+            setp(p, p + n);
+        }
+    };
+
+    MemoryBuffer buffer(const_cast<char*>(reinterpret_cast<const char*>(gmoveRankerData)),
+                        size_t(gmoveRankerSize));
+    std::istream ifs(&buffer);
     readFile(ifs,positionWeight);
+
+
 
     assert(ifs.get() == EOF);
 
