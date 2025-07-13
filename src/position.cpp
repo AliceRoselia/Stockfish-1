@@ -128,7 +128,6 @@ void Position::init() {
     std::ifstream ifs (moverankNet, std::ifstream::in | std::ifstream::binary);
     readFile(ifs,positionWeight);
 
-
     PRNG rng(1070372);
 
     for (Piece pc : Pieces)
@@ -724,7 +723,7 @@ DirtyPiece Position::do_move(Move                      m,
 
     //position state info latent space.
     for (int i=0; i<8; ++i){
-        st->latentSpace[i] = (st->previous->latentSpace[i] + positionWeight[m.from_to()*8 + i])/2;
+        st->latentSpace[i] = (int16_t(st->previous->latentSpace[i]) + int16_t(positionWeight[m.from_to()*8 + i]))/2;
     }
 
     // Increment ply counters. In particular, rule50 will be reset to zero later on
