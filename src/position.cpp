@@ -112,7 +112,7 @@ std::array<Move, 8192> cuckooMove;
 
 
 template <typename T>
-void readFile(ifstream& file, T& value){
+void readFile(std::ifstream& file, T& value){
     file.read(reinterpret_cast<char*>(&value), sizeof(value));
 }
 int8_t positionWeight[32768];
@@ -120,7 +120,7 @@ int8_t positionWeight[32768];
 // Initializes at startup the various arrays used to compute hash keys and move net.
 void Position::init() {
 
-    ifstream ifs ("moverankNet.bin", ifstream::in | ifstream::binary);
+    std::ifstream ifs ("moverankNet.bin", std::ifstream::in | std::ifstream::binary);
     readFile(ifs,positionWeight);
 
 
@@ -719,7 +719,7 @@ DirtyPiece Position::do_move(Move                      m,
 
     //position state info latent space.
     for (int i=0; i<8; ++i){
-        st->latentSpace[i] = (st.previous->latentSpace[i] + positionWeight[m.from_to()*8 + i])/2;
+        st->latentSpace[i] = (st->previous->latentSpace[i] + positionWeight[m.from_to()*8 + i])/2;
     }
 
     // Increment ply counters. In particular, rule50 will be reset to zero later on
