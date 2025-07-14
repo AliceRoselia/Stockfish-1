@@ -163,7 +163,7 @@ void MovePicker::score() {
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[5])[pc][to];
 
-            m.value += 2 * (*neuralHistory)[pos.latent_space_index()][pc][to];
+            m.value += (*neuralHistory)[pos.latent_space_index()][pc][to]/2;
 
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;

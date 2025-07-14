@@ -1919,7 +1919,7 @@ void update_quiet_histories(
     int pIndex = pawn_structure_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
       << bonus * (bonus > 0 ? 705 : 450) / 1024;
-    workerThread.neuralHistory[pos.latent_space_index()][pos.moved_piece(move)][move.to_sq()] << bonus;
+    workerThread.neuralHistory[pos.latent_space_index()][pos.moved_piece(move)][move.to_sq()] << bonus * (bonus > 0 ? 400 : 134) / 1024;
 }
 
 }
