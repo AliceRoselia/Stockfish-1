@@ -1881,7 +1881,7 @@ void update_all_stats(const Position& pos,
     {
         movedPiece    = pos.moved_piece(move);
         capturedPiece = type_of(pos.piece_on(move.to_sq()));
-        captureHistory[movedPiece][move.to_sq()][capturedPiece] << -malus * (32 - (captureSearchedNum++)) * 1388 / 32768;
+        captureHistory[movedPiece][move.to_sq()][capturedPiece] << -malus * (48 - (captureSearchedNum++)) * 1388 / 32768;
     }
 }
 
