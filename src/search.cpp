@@ -51,10 +51,10 @@
 
 namespace Stockfish {
 
-int captureMultiplier = 1388;
-int quietMultiplier = 1310;
+int captureMultiplier = 1338;
+int quietMultiplier = 1291;
 int captureBase = 32;
-int quietBase = 32;
+int quietBase = 33;
 
 TUNE(SetRange(32,64),captureBase,quietBase);
 
