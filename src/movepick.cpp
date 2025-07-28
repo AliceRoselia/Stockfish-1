@@ -130,6 +130,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
     Color us = pos.side_to_move();
 
     [[maybe_unused]] Bitboard threatByLesser[QUEEN + 1];
+    [[maybe_unused]] Move prevMove = Move::none();
+    [[maybe_unused]] int quietHistoryBuffer[64];
     if constexpr (Type == QUIETS)
     {
         threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
@@ -139,6 +141,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
     }
 
     ExtMove* it = cur;
+
     for (auto move : ml)
     {
         ExtMove& m = *it++;
@@ -156,14 +159,34 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
         else if constexpr (Type == QUIETS)
         {
+            if (pt == PAWN)
+            {
+                m.value = 2 * (*mainHistory)[us][m.from_to()];
+                m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
+                m.value += (*continuationHistory[0])[pc][to];
+                m.value += (*continuationHistory[1])[pc][to];
+                m.value += (*continuationHistory[2])[pc][to];
+                m.value += (*continuationHistory[3])[pc][to];
+                m.value += (*continuationHistory[5])[pc][to];
+            }
+            else if (prevMove == Move::none() || prevMove.from_sq() != m.from_sq())
+            {
+                prevMove = m;
+                for (int currentTo = 0; currentTo<SQUARE_NB; ++currentTo)
+                {
+                    quietHistoryBuffer[currentTo] = 2 * (*mainHistory)[us][(from<<6) + currentTo];
+                    assert ((from<<6) + to == m.from_to());
+                    quietHistoryBuffer[currentTo] += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][currentTo];
+                    quietHistoryBuffer[currentTo] += (*continuationHistory[0])[pc][currentTo];
+                    quietHistoryBuffer[currentTo] += (*continuationHistory[1])[pc][currentTo];
+                    quietHistoryBuffer[currentTo] += (*continuationHistory[2])[pc][currentTo];
+                    quietHistoryBuffer[currentTo] += (*continuationHistory[3])[pc][currentTo];
+                    quietHistoryBuffer[currentTo] += (*continuationHistory[5])[pc][currentTo];
+                }
+            }
             // histories
-            m.value = 2 * (*mainHistory)[us][m.from_to()];
-            m.value += 2 * (*pawnHistory)[pawn_structure_index(pos)][pc][to];
-            m.value += (*continuationHistory[0])[pc][to];
-            m.value += (*continuationHistory[1])[pc][to];
-            m.value += (*continuationHistory[2])[pc][to];
-            m.value += (*continuationHistory[3])[pc][to];
-            m.value += (*continuationHistory[5])[pc][to];
+            if (pt != PAWN)
+                m.value = quietHistoryBuffer[to];
 
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
