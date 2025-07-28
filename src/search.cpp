@@ -1013,6 +1013,7 @@ moves_loop:  // When in check, search starts here
             current_info<< (*contHist[3])[pc][to]<<" ";
             current_info<< (*contHist[4])[pc][to]<<" ";
             current_info<< (*contHist[5])[pc][to]<<" ";
+            current_info<< (int)(pt)<<" ";
             current_info<<bool(threatByLesser[pt] & to)<<" ";
             current_info<<bool(threatByLesser[pt] & from)<<" ";
             current_info<< ((ss->ply < LOW_PLY_HISTORY_SIZE) ? lowPlyHistory[ss->ply][move2.from_to()] : 0);
