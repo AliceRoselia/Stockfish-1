@@ -31,6 +31,7 @@
 #include <list>
 #include <ratio>
 #include <string>
+#include <sstream>
 #include <utility>
 
 #include "bitboard.h"
@@ -159,6 +160,8 @@ void Search::Worker::ensure_network_replicated() {
 
 void Search::Worker::start_searching() {
 
+    fout.open("debug.txt",std::ios::app);
+
     accumulatorStack.reset();
 
     // Non-main threads go directly to iterative_deepening()
@@ -228,6 +231,8 @@ void Search::Worker::start_searching() {
 
     auto bestmove = UCIEngine::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
     main_manager()->updates.onBestmove(bestmove, ponder);
+
+    fout.close();
 }
 
 // Main iterative deepening loop. It calls search()
@@ -975,6 +980,48 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+
+    MoveList<QUIETS> debugMoveList(pos);
+    std::vector<std::string> debugMoveInfo;
+
+
+    if (depth > 12)
+    {
+        Bitboard threatByLesser[QUEEN + 1];
+        threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
+        threatByLesser[ROOK] =
+          pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
+        threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
+
+        for (Move move2: debugMoveList)
+        {
+            if (!pos.legal(move2))
+                continue;
+            std::stringstream current_info;
+            //Color us = pos.side_to_move();
+            const Square    from          = move2.from_sq();
+            const Square    to            = move2.to_sq();
+            const Piece     pc            = pos.moved_piece(move2);
+            const PieceType pt            = type_of(pc);
+
+            current_info<<move2.raw()<<" ";
+            current_info<< mainHistory[us][move2.from_to()]<<" ";
+            current_info<< pawnHistory[pawn_structure_index(pos)][pc][to]<<" ";
+            current_info<< (*contHist[0])[pc][to]<<" ";
+            current_info<< (*contHist[1])[pc][to]<<" ";
+            current_info<< (*contHist[2])[pc][to]<<" ";
+            current_info<< (*contHist[3])[pc][to]<<" ";
+            current_info<< (*contHist[4])[pc][to]<<" ";
+            current_info<< (*contHist[5])[pc][to]<<" ";
+            current_info<<bool(threatByLesser[pt] & to)<<" ";
+            current_info<<bool(threatByLesser[pt] & from)<<" ";
+            current_info<< ((ss->ply < LOW_PLY_HISTORY_SIZE) ? lowPlyHistory[ss->ply][move2.from_to()] : 0);
+            debugMoveInfo.push_back(current_info.str());
+        }
+    }
+
+
+
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1353,6 +1400,18 @@ moves_loop:  // When in check, search starts here
                 if (value >= beta)
                 {
                     // (* Scaler) Especially if they make cutoffCnt increment more often.
+                    if (depth > 12 && !pos.capture_stage(bestMove) && bestMove != ttData.move && !ss->inCheck)
+                    {
+                        fout<<"New position"<<std::endl;
+                        fout<<ttData.move.raw()<<std::endl;
+                        fout<<bestMove.raw()<<std::endl;
+                        fout<<ss->ply<<std::endl;
+                        for (const std::string& info: debugMoveInfo)
+                        {
+                            fout<<info<<std::endl;
+                        }
+                    }
+
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
                     break;

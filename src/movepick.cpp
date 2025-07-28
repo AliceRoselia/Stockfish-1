@@ -26,6 +26,8 @@
 #include "misc.h"
 #include "position.h"
 
+#include <iostream>
+
 namespace Stockfish {
 
 namespace {
@@ -122,6 +124,9 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
 // Assigns a numerical value to each move in a list, used for sorting.
 // Captures are ordered by Most Valuable Victim (MVV), preferring captures
 // with a good history. Quiets moves are ordered using the history tables.
+
+
+
 template<GenType Type>
 ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
@@ -179,6 +184,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
+
         }
 
         else  // Type == EVASIONS

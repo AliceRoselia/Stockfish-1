@@ -30,6 +30,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <fstream>
 
 #include "history.h"
 #include "misc.h"
@@ -295,6 +296,7 @@ class Worker {
     TTMoveHistory ttMoveHistory;
 
    private:
+    std::ofstream fout;
     void iterative_deepening();
 
     void do_move(Position& pos, const Move move, StateInfo& st, Stack* const ss);
