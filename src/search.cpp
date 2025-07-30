@@ -249,11 +249,11 @@ void Search::Worker::iterative_deepening() {
     double timeReduction = 1, totBestMoveChanges = 0;
     int    delta, iterIdx                        = 0;
 
-    // Allocate stack with extra size to allow access from (ss - 7) to (ss + 2):
-    // (ss - 7) is needed for update_continuation_histories(ss - 1) which accesses (ss - 6),
+    // Allocate stack with extra size to allow access from (ss - 9) to (ss + 2):
+    // (ss - 9) is needed for update_continuation_histories(ss - 1) which accesses (ss - 8),
     // (ss + 2) is needed for initialization of cutOffCnt.
-    Stack  stack[MAX_PLY + 10] = {};
-    Stack* ss                  = stack + 7;
+    Stack  stack[MAX_PLY + 12] = {};
+    Stack* ss                  = stack + 9;
 
     for (int i = 9; i > 0; --i)
     {
