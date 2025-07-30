@@ -165,6 +165,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += (*continuationHistory[3])[pc][to];
             m.value += std::clamp((int)(*continuationHistory[4])[pc][to],-8192,4096);
             m.value += (*continuationHistory[5])[pc][to];
+            m.value += std::clamp((int)(*continuationHistory[6])[pc][to],-8192,4096);
             m.value += std::clamp((int)(*continuationHistory[7])[pc][to],-8192,4096);
 
             // bonus for checks
