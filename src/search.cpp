@@ -255,7 +255,7 @@ void Search::Worker::iterative_deepening() {
     Stack  stack[MAX_PLY + 10] = {};
     Stack* ss                  = stack + 7;
 
-    for (int i = 7; i > 0; --i)
+    for (int i = 9; i > 0; --i)
     {
         (ss - i)->continuationHistory =
           &continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
@@ -963,7 +963,8 @@ moves_loop:  // When in check, search starts here
 
     const PieceToHistory* contHist[] = {
       (ss - 1)->continuationHistory, (ss - 2)->continuationHistory, (ss - 3)->continuationHistory,
-      (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
+      (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory,
+      (ss - 7)->continuationHistory, (ss - 8)->continuationHistory};
 
 
     MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
