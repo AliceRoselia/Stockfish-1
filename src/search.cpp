@@ -609,7 +609,7 @@ Value Search::Worker::search(
 
     Key   posKey;
     Move  move, excludedMove, bestMove;
-    Depth extension, newDepth;
+    Depth extension = 0, newDepth;
     Value bestValue, value, eval, maxValue, probCutBeta;
     bool  givesCheck, improving, priorCapture, opponentWorsening;
     bool  capture, ttCapture;
@@ -754,7 +754,7 @@ Value Search::Worker::search(
 
                 if (b == BOUND_EXACT || (b == BOUND_LOWER ? value >= beta : value <= alpha))
                 {
-                    ttWriter.write(posKey, value_to_tt(value, ss->ply), ss->ttPv, b,
+                    ttWriter.write(posKey, value_to_tt(value, ss->ply), ss->ttPv||(extension>0), b,
                                    std::min(MAX_PLY - 1, depth + 6), Move::none(), VALUE_NONE,
                                    tt.generation());
 
