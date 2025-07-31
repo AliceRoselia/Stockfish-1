@@ -1058,6 +1058,11 @@ bool Position::see_ge(Move m, int threshold) const {
 
     Square from = m.from_sq(), to = m.to_sq();
 
+    //if (blockers_for_king(~sideToMove) & from)
+        //return !(line_bb(from, to) & pieces(~sideToMove, KING)) || m.type_of() == CASTLING;
+    if ((blockers_for_king(~sideToMove) & from) && !(line_bb(from, to) & pieces(~sideToMove, KING)))
+        return PieceValue[piece_on(to)] >= threshold;
+
     int swap = PieceValue[piece_on(to)] - threshold;
     if (swap < 0)
         return false;
