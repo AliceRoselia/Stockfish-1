@@ -1053,12 +1053,15 @@ bool Position::see_ge(Move m, int threshold) const {
     assert(m.is_ok());
 
     // Only deal with normal moves, assume others pass a simple SEE
-    if (m.type_of() != NORMAL)
-        return VALUE_ZERO >= threshold;
-
     Square from = m.from_sq(), to = m.to_sq();
+    int swap;
+    if (m.type_of() == EN_PASSANT)
+        swap = PieceValue[Pawn] - threshold;
+    else if (m.type_of() != NORMAL)
+        return VALUE_ZERO >= threshold;
+    else
+        swap = PieceValue[piece_on(to)] - threshold;
 
-    int swap = PieceValue[piece_on(to)] - threshold;
     if (swap < 0)
         return false;
 
@@ -1067,8 +1070,13 @@ bool Position::see_ge(Move m, int threshold) const {
         return true;
 
     assert(color_of(piece_on(from)) == sideToMove);
-    Bitboard occupied  = pieces() ^ from ^ to;  // xoring to is important for pinned piece logic
+    Bitboard occupied  = pieces() ^ from;  // xoring to is important for pinned piece logic
     Color    stm       = sideToMove;
+
+    if (m.type_of() == EN_PASSANT)
+        occupied ^= (to - pawn_push(stm));
+    else
+        occupied ^= to;
     Bitboard attackers = attackers_to(to, occupied);
     Bitboard stmAttackers, bb;
     int      res = 1;
