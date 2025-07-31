@@ -1060,8 +1060,6 @@ bool Position::see_ge(Move m, int threshold) const {
 
     //if (blockers_for_king(~sideToMove) & from)
         //return !(line_bb(from, to) & pieces(~sideToMove, KING)) || m.type_of() == CASTLING;
-    if ((blockers_for_king(~sideToMove) & from) && !(line_bb(from, to) & pieces(~sideToMove, KING)))
-        return PieceValue[piece_on(to)] >= threshold;
 
     int swap = PieceValue[piece_on(to)] - threshold;
     if (swap < 0)
@@ -1075,6 +1073,10 @@ bool Position::see_ge(Move m, int threshold) const {
     Bitboard occupied  = pieces() ^ from ^ to;  // xoring to is important for pinned piece logic
     Color    stm       = sideToMove;
     Bitboard attackers = attackers_to(to, occupied);
+    if ((blockers_for_king(~stm) & from) && !(line_bb(from, to) & pieces(~stm, KING)))
+        attackers &= (pieces(stm) | pieces(~stm, KING));
+
+
     Bitboard stmAttackers, bb;
     int      res = 1;
 
