@@ -72,6 +72,16 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
         }
 }
 
+Value material_advantage(const Position& pos){
+    Color us = pos.side_to_move();
+    Value ourMaterial = PawnValue * pos.count<PAWN>(us) + pos.non_pawn_material(us);
+    Value enemyMaterial = PawnValue * pos.count<PAWN>(~us) + pos.non_pawn_material(~us);
+    Value materialAdvantage = (ourMaterial - enemyMaterial)*(1024) / (ourMaterial + enemyMaterial + 1024);
+    //dbg_mean_of(std::abs(materialAdvantage));
+    //dbg_extremes_of(std::abs(materialAdvantage));
+    return materialAdvantage;
+}
+
 }  // namespace
 
 
@@ -98,6 +108,7 @@ MovePicker::MovePicker(const Position&              p,
     ttMove(ttm),
     depth(d),
     ply(pl) {
+    materialAdvantage = material_advantage(pos);
 
     if (pos.checkers())
         stage = EVASION_TT + !(ttm && pos.pseudo_legal(ttm));
@@ -114,7 +125,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     ttMove(ttm),
     threshold(th) {
     assert(!pos.checkers());
-
+    materialAdvantage = material_advantage(pos);
     stage = PROBCUT_TT
           + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm) && pos.see_ge(ttm, threshold));
 }
@@ -240,7 +251,7 @@ top:
 
     case GOOD_CAPTURE :
         if (select([&]() {
-                if (pos.see_ge(*cur, -cur->value / 18))
+                if (pos.see_ge(*cur, -cur->value / 18 - materialAdvantage))
                     return true;
                 std::swap(*endBadCaptures++, *cur);
                 return false;
