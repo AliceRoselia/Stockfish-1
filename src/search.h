@@ -285,6 +285,8 @@ class Worker {
 
     CapturePieceToHistory captureHistory;
     ContinuationHistory   continuationHistory[2][2];
+    ContinuationHistory   branchHistory;
+    PieceToHistory        branchHist[BRANCH_HIST_COUNT];
     PawnHistory           pawnHistory;
 
     CorrectionHistory<Pawn>         pawnCorrectionHistory;

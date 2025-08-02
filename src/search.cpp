@@ -262,6 +262,8 @@ void Search::Worker::iterative_deepening() {
         (ss - i)->continuationCorrectionHistory = &continuationCorrectionHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
     }
+    for (int i=0; i<BRANCH_HIST_COUNT; ++i)
+        branchHist[i] = branchHistory[NO_PIECE][0];
 
     for (int i = 0; i <= MAX_PLY + 2; ++i)
         (ss + i)->ply = i;
@@ -558,6 +560,10 @@ void Search::Worker::clear() {
     for (auto& to : continuationCorrectionHistory)
         for (auto& h : to)
             h.fill(8);
+
+    for (auto& to: branchHistory)
+        for (auto& h: to)
+            h.fill(0);
 
     for (bool inCheck : {false, true})
         for (StatsType c : {NoCaptures, Captures})
@@ -869,6 +875,8 @@ Value Search::Worker::search(
         ss->continuationCorrectionHistory = &continuationCorrectionHistory[NO_PIECE][0];
 
         do_null_move(pos, st);
+        if (ss->ply < BRANCH_HIST_COUNT)
+            branchHist[ss->ply] = branchHistory[NO_PIECE][0];
 
         Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -beta + 1, depth - R, false);
 
@@ -931,6 +939,9 @@ Value Search::Worker::search(
 
             do_move(pos, move, st, ss);
 
+            if (ss->ply < BRANCH_HIST_COUNT)
+                branchHist[ss->ply] = branchHistory[pos.moved_piece(move)][move.to_sq()];
+
             // Perform a preliminary qsearch to verify that the move holds
             value = -qsearch<NonPV>(pos, ss + 1, -probCutBeta, -probCutBeta + 1);
 
@@ -966,7 +977,7 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist, &branchHist,
                   &pawnHistory, ss->ply);
 
     value = bestValue;
@@ -1166,6 +1177,8 @@ moves_loop:  // When in check, search starts here
 
         // Step 16. Make the move
         do_move(pos, move, st, givesCheck, ss);
+        if (ss->ply < BRANCH_HIST_COUNT)
+            branchHist[ss->ply] = branchHistory[pos.moved_piece(move)][move.to_sq()];
 
         // Add extension to new depth
         newDepth += extension;
@@ -1593,7 +1606,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
     MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
-                  contHist, &pawnHistory, ss->ply);
+                  contHist,&branchHist, &pawnHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
@@ -1652,6 +1665,9 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
         // Step 7. Make and search the move
         do_move(pos, move, st, givesCheck, ss);
+
+        if (ss->ply < BRANCH_HIST_COUNT)
+            branchHist[ss->ply] = branchHistory[pos.moved_piece(move)][move.to_sq()];
 
         value = -qsearch<nodeType>(pos, ss + 1, -beta, -alpha);
         undo_move(pos, move);
@@ -1877,6 +1893,10 @@ void update_quiet_histories(
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(),
                                   bonus * (bonus > 0 ? 979 : 842) / 1024);
+
+    for (int i=0; i<std::min(ss->ply,BRANCH_HIST_COUNT); ++i){
+        (workerThread.branchHist)[i][pos.moved_piece(move)][move.to_sq()] << bonus;
+    }
 
     int pIndex = pawn_structure_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
