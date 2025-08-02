@@ -76,7 +76,7 @@ Value material_advantage(const Position& pos){
     Color us = pos.side_to_move();
     Value ourMaterial = PawnValue * pos.count<PAWN>(us) + pos.non_pawn_material(us);
     Value enemyMaterial = PawnValue * pos.count<PAWN>(~us) + pos.non_pawn_material(~us);
-    Value materialAdvantage = (ourMaterial - enemyMaterial)*(4096) / (ourMaterial + enemyMaterial + 4096);
+    Value materialAdvantage = (ourMaterial - enemyMaterial)*(256) / (ourMaterial + enemyMaterial + 256);
     //dbg_mean_of(std::abs(materialAdvantage));
     //dbg_extremes_of(std::abs(materialAdvantage));
     return materialAdvantage;
