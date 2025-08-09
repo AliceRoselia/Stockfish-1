@@ -61,6 +61,13 @@ void syzygy_extend_pv(const OptionsMap&            options,
 
 using namespace Search;
 
+int nonPawnWeight = 165;
+int othercorrHistweight = 153;
+TUNE(SetRange(0,400),nonPawnWeight,othercorrHistweight);
+
+
+int correction_weights[] = {8867,8136,10757,7232};
+TUNE(SetRange(0,16000),correction_weights);
 namespace {
 
 constexpr int SEARCHEDLIST_CAPACITY = 32;
@@ -83,7 +90,7 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
       m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
 
-    return 8867 * pcv + 8136 * micv + 10757 * (wnpcv + bnpcv) + 7232 * cntcv;
+    return correction_weights[0] * pcv + correction_weights[1] * micv + correction_weights[2] * (wnpcv + bnpcv) + correction_weights[3] * cntcv;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -99,10 +106,10 @@ void update_correction_history(const Position& pos,
     const Move  m  = (ss - 1)->currentMove;
     const Color us = pos.side_to_move();
 
-    static constexpr int nonPawnWeight = 165;
+    //static constexpr int nonPawnWeight = 165;
 
     workerThread.pawnCorrectionHistory[pawn_correction_history_index(pos)][us] << bonus;
-    workerThread.minorPieceCorrectionHistory[minor_piece_index(pos)][us] << bonus * 153 / 128;
+    workerThread.minorPieceCorrectionHistory[minor_piece_index(pos)][us] << bonus * othercorrHistweight / 128;
     workerThread.nonPawnCorrectionHistory[non_pawn_index<WHITE>(pos)][WHITE][us]
       << bonus * nonPawnWeight / 128;
     workerThread.nonPawnCorrectionHistory[non_pawn_index<BLACK>(pos)][BLACK][us]
@@ -110,7 +117,7 @@ void update_correction_history(const Position& pos,
 
     if (m.is_ok())
         (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
-          << bonus * 153 / 128;
+          << bonus * othercorrHistweight / 128;
 }
 
 // Add a small random component to draw evaluations to avoid 3-fold blindness
@@ -132,6 +139,102 @@ void update_all_stats(const Position& pos,
                       Move            TTMove);
 
 }  // namespace
+
+
+/*
+int bonusScale = bonus1;
+        bonusScale += std::min(-(ss - 1)->statScore / bonus2, bonus3);
+        bonusScale += std::min(bonus4 * depth, bonus5);
+        bonusScale += bonus6 * ((ss - 1)->moveCount > 8);
+        bonusScale += bonus7 * (!ss->inCheck && bestValue <= ss->staticEval - 94);
+        bonusScale += bonus9 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval - 76);
+
+        bonusScale = std::max(bonusScale, 0);
+
+        const int scaledBonus = std::min(bonus11 * depth + bonus12, bonus13) * bonusScale;
+
+        update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
+                                      scaledBonus * bonus14 / 32768);
+
+        mainHistory[~us][((ss - 1)->currentMove).from_to()] << scaledBonus * bonus15 / 32768;
+
+        if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
+            pawnHistory[pawn_history_index(pos)][pos.piece_on(prevSq)][prevSq]
+              << scaledBonus * bonus16 / 32768;
+*/
+int bonus1 = -215;
+TUNE(SetRange(-1000,1000),bonus1);
+int bonus2 = 103;
+TUNE(SetRange(50,200),bonus2)
+int bonus3 = 337;
+TUNE(SetRange(0,700),bonus3)
+int bonus4 = 64;
+TUNE(SetRange(0,128),bonus4);
+int bonus5 = 552;
+TUNE(SetRange(0,1100),bonus5);
+int bonus6 = 177;
+TUNE(SetRange(0,350),bonus6);
+int bonus7 = 141;
+TUNE(SetRange(0,300),bonus7);
+int bonus8 = -94;
+TUNE(SetRange(-200,0),bonus8);
+int bonus9 = 141;
+TUNE(SetRange(0,300),bonus9);
+int bonus10 = -76;
+TUNE(SetRange(-150,0),bonus10);
+
+
+
+int bonus11 = 155;
+TUNE(SetRange(0,300),bonus11);
+int bonus12 = -88;
+TUNE(SetRange(-200,0),bonus12);
+int bonus13 = 1416;
+TUNE(SetRange(0,3000),bonus13);
+int bonus14 = 397;
+int bonus15 = 224;
+TUNE(SetRange(0,800),bonus14,bonus15);
+int bonus16 = 1127;
+TUNE(SetRange(0,2000),bonus16);
+
+int ttHistparams[] = {811,848};
+TUNE(SetRange(0,1800),ttHistparams);
+
+int sp1 = 170;
+int sp2 = 87;
+int sp3 = 1598;
+int sp4 = 332;
+
+
+
+int sp5 = 743;
+int sp6 = 180;
+int sp7 = 2287;
+int sp8 = 33;
+
+int sp9 = 124;
+int sp10 = 62;
+int sp11 = 1245;
+int sp12 = 336;
+
+int sp13 = 708;
+int sp14 = 148;
+int sp15 = 2287;
+int sp16 = 29;
+
+TUNE(SetRange(0,300),sp1, sp2, sp6, sp8, sp9, sp10, sp14, sp16);
+
+TUNE(SetRange(0,1200),sp4,sp5,sp12,sp13);
+
+TUNE(SetRange(500,3000),sp3,sp7,sp11,sp15);
+
+int conthist_bonuses_params[] = {1108,652,273,572,126,449};
+
+TUNE(SetRange(0,2000),conthist_bonuses_params);
+
+int quiet_history_params[] = {771,979,842,704,439};
+
+TUNE(SetRange(0,1500),quiet_history_params);
 
 Search::Worker::Worker(SharedState&                    sharedState,
                        std::unique_ptr<ISearchManager> sm,
@@ -1403,31 +1506,31 @@ moves_loop:  // When in check, search starts here
         update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
                          ttData.move);
         if (!PvNode)
-            ttMoveHistory << (bestMove == ttData.move ? 811 : -848);
+            ttMoveHistory << (bestMove == ttData.move ? ttHistparams[0] : -ttHistparams[1]);
     }
 
     // Bonus for prior quiet countermove that caused the fail low
     else if (!priorCapture && prevSq != SQ_NONE)
     {
-        int bonusScale = -215;
-        bonusScale += std::min(-(ss - 1)->statScore / 103, 337);
-        bonusScale += std::min(64 * depth, 552);
-        bonusScale += 177 * ((ss - 1)->moveCount > 8);
-        bonusScale += 141 * (!ss->inCheck && bestValue <= ss->staticEval - 94);
-        bonusScale += 141 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval - 76);
+        int bonusScale = bonus1;
+        bonusScale += std::min(-(ss - 1)->statScore / bonus2, bonus3);
+        bonusScale += std::min(bonus4 * depth, bonus5);
+        bonusScale += bonus6 * ((ss - 1)->moveCount > 8);
+        bonusScale += bonus7 * (!ss->inCheck && bestValue <= ss->staticEval + bonus8);
+        bonusScale += bonus9 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval + bonus10);
 
         bonusScale = std::max(bonusScale, 0);
 
-        const int scaledBonus = std::min(155 * depth - 88, 1416) * bonusScale;
+        const int scaledBonus = std::min(bonus11 * depth + bonus12, bonus13) * bonusScale;
 
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
-                                      scaledBonus * 397 / 32768);
+                                      scaledBonus * bonus14 / 32768);
 
-        mainHistory[~us][((ss - 1)->currentMove).from_to()] << scaledBonus * 224 / 32768;
+        mainHistory[~us][((ss - 1)->currentMove).from_to()] << scaledBonus * bonus15 / 32768;
 
         if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
             pawnHistory[pawn_history_index(pos)][pos.piece_on(prevSq)][prevSq]
-              << scaledBonus * 1127 / 32768;
+              << scaledBonus * bonus16 / 32768;
     }
 
     // Bonus for prior capture countermove that caused the fail low
@@ -1856,9 +1959,11 @@ void update_all_stats(const Position& pos,
 
 // Updates histories of the move pairs formed by moves
 // at ply -1, -2, -3, -4, and -6 with current move.
+
+
 void update_continuation_histories(Stack* ss, Piece pc, Square to, int bonus) {
-    static constexpr std::array<ConthistBonus, 6> conthist_bonuses = {
-      {{1, 1108}, {2, 652}, {3, 273}, {4, 572}, {5, 126}, {6, 449}}};
+    std::array<ConthistBonus, 6> conthist_bonuses = {
+      {{1, conthist_bonuses_params[0]}, {2, conthist_bonuses_params[1]}, {3, conthist_bonuses_params[2]}, {4, conthist_bonuses_params[3]}, {5, conthist_bonuses_params[4]}, {6, conthist_bonuses_params[5]}}};
 
     for (const auto [i, weight] : conthist_bonuses)
     {
@@ -1872,6 +1977,7 @@ void update_continuation_histories(Stack* ss, Piece pc, Square to, int bonus) {
 
 // Updates move sorting heuristics
 
+
 void update_quiet_histories(
   const Position& pos, Stack* ss, Search::Worker& workerThread, Move move, int bonus) {
 
@@ -1879,14 +1985,14 @@ void update_quiet_histories(
     workerThread.mainHistory[us][move.from_to()] << bonus;  // Untuned to prevent duplicate effort
 
     if (ss->ply < LOW_PLY_HISTORY_SIZE)
-        workerThread.lowPlyHistory[ss->ply][move.from_to()] << (bonus * 771 / 1024) + 40;
+        workerThread.lowPlyHistory[ss->ply][move.from_to()] << (bonus * quiet_history_params[0] / 1024) + 40;
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(),
-                                  bonus * (bonus > 0 ? 979 : 842) / 1024);
+                                  bonus * (bonus > 0 ? quiet_history_params[1] : quiet_history_params[2]) / 1024);
 
     int pIndex = pawn_history_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
-      << (bonus * (bonus > 0 ? 704 : 439) / 1024) + 70;
+      << (bonus * (bonus > 0 ? quiet_history_params[3] : quiet_history_params[4]) / 1024) + 70;
 }
 
 }
