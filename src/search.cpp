@@ -83,7 +83,7 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
       m.is_ok() ? (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 0;
 
-    return 9379 * pcv + 7890 * micv + 10726 * (wnpcv + bnpcv) + 7862 * cntcv;
+    return 8867 * pcv + 8136 * micv + 10757 * (wnpcv + bnpcv) + 7232 * cntcv;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -99,10 +99,10 @@ void update_correction_history(const Position& pos,
     const Move  m  = (ss - 1)->currentMove;
     const Color us = pos.side_to_move();
 
-    static constexpr int nonPawnWeight = 158;
+    static constexpr int nonPawnWeight = 165;
 
     workerThread.pawnCorrectionHistory[pawn_correction_history_index(pos)][us] << bonus;
-    workerThread.minorPieceCorrectionHistory[minor_piece_index(pos)][us] << bonus * 154 / 128;
+    workerThread.minorPieceCorrectionHistory[minor_piece_index(pos)][us] << bonus * 153 / 128;
     workerThread.nonPawnCorrectionHistory[non_pawn_index<WHITE>(pos)][WHITE][us]
       << bonus * nonPawnWeight / 128;
     workerThread.nonPawnCorrectionHistory[non_pawn_index<BLACK>(pos)][BLACK][us]
@@ -110,7 +110,7 @@ void update_correction_history(const Position& pos,
 
     if (m.is_ok())
         (*(ss - 2)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
-          << bonus * 154 / 128;
+          << bonus * 153 / 128;
 }
 
 // Add a small random component to draw evaluations to avoid 3-fold blindness
@@ -1403,31 +1403,31 @@ moves_loop:  // When in check, search starts here
         update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
                          ttData.move);
         if (!PvNode)
-            ttMoveHistory << (bestMove == ttData.move ? 791 : -849);
+            ttMoveHistory << (bestMove == ttData.move ? 811 : -848);
     }
 
     // Bonus for prior quiet countermove that caused the fail low
     else if (!priorCapture && prevSq != SQ_NONE)
     {
-        int bonusScale = -212;
-        bonusScale += std::min(-(ss - 1)->statScore / 102, 335);
-        bonusScale += std::min(62 * depth, 567);
-        bonusScale += 188 * ((ss - 1)->moveCount > 8);
-        bonusScale += 148 * (!ss->inCheck && bestValue <= ss->staticEval -90);
-        bonusScale += 149 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval -83);
+        int bonusScale = -215;
+        bonusScale += std::min(-(ss - 1)->statScore / 103, 337);
+        bonusScale += std::min(64 * depth, 552);
+        bonusScale += 177 * ((ss - 1)->moveCount > 8);
+        bonusScale += 141 * (!ss->inCheck && bestValue <= ss->staticEval - 94);
+        bonusScale += 141 * (!(ss - 1)->inCheck && bestValue <= -(ss - 1)->staticEval - 76);
 
         bonusScale = std::max(bonusScale, 0);
 
-        const int scaledBonus = std::min(157 * depth -88, 1296) * bonusScale;
+        const int scaledBonus = std::min(155 * depth - 88, 1416) * bonusScale;
 
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
-                                      scaledBonus * 392 / 32768);
+                                      scaledBonus * 397 / 32768);
 
-        mainHistory[~us][((ss - 1)->currentMove).from_to()] << scaledBonus * 202 / 32768;
+        mainHistory[~us][((ss - 1)->currentMove).from_to()] << scaledBonus * 224 / 32768;
 
         if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
             pawnHistory[pawn_history_index(pos)][pos.piece_on(prevSq)][prevSq]
-              << scaledBonus * 1135 / 32768;
+              << scaledBonus * 1127 / 32768;
     }
 
     // Bonus for prior capture countermove that caused the fail low
@@ -1858,7 +1858,7 @@ void update_all_stats(const Position& pos,
 // at ply -1, -2, -3, -4, and -6 with current move.
 void update_continuation_histories(Stack* ss, Piece pc, Square to, int bonus) {
     static constexpr std::array<ConthistBonus, 6> conthist_bonuses = {
-      {{1, 1157}, {2, 664}, {3, 354}, {4, 584}, {5, 158}, {6, 432}}};
+      {{1, 1108}, {2, 652}, {3, 273}, {4, 572}, {5, 126}, {6, 449}}};
 
     for (const auto [i, weight] : conthist_bonuses)
     {
@@ -1882,11 +1882,11 @@ void update_quiet_histories(
         workerThread.lowPlyHistory[ss->ply][move.from_to()] << (bonus * 771 / 1024) + 40;
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(),
-                                  bonus * (bonus > 0 ? 975 : 868) / 1024);
+                                  bonus * (bonus > 0 ? 979 : 842) / 1024);
 
     int pIndex = pawn_history_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
-      << (bonus * (bonus > 0 ? 738 : 429) / 1024) + 70;
+      << (bonus * (bonus > 0 ? 704 : 439) / 1024) + 70;
 }
 
 }
