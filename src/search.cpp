@@ -1921,10 +1921,10 @@ void update_all_stats(const Position& pos,
     Piece                  movedPiece     = pos.moved_piece(bestMove);
     PieceType              capturedPiece;
 
-    int quietBonus   = std::min(170 * depth - 87, 1598) + 332 * (bestMove == ttMove);
-    int quietMalus   = std::min(743 * depth - 180, 2287) - 33 * quietsSearched.size();
-    int captureBonus = std::min(124 * depth - 62, 1245) + 336 * (bestMove == ttMove);
-    int captureMalus = std::min(708 * depth - 148, 2287) - 29 * capturesSearched.size();
+    int quietBonus   = std::min(sp1 * depth - sp2, sp3) + sp4 * (bestMove == ttMove);
+    int quietMalus   = std::min(sp5 * depth - sp6, sp7) - sp8 * quietsSearched.size();
+    int captureBonus = std::min(sp9 * depth - sp10, sp11) + sp12 * (bestMove == ttMove);
+    int captureMalus = std::min(sp13 * depth - sp14, sp15) - sp16 * capturesSearched.size();
 
     if (!pos.capture_stage(bestMove))
     {
