@@ -44,10 +44,11 @@ class MovePicker {
                const ButterflyHistory*,
                const LowPlyHistory*,
                const CapturePieceToHistory*,
+               const NonPawnCaptureHistory*,
                const PieceToHistory**,
                const PawnHistory*,
                int);
-    MovePicker(const Position&, Move, int, const CapturePieceToHistory*);
+    MovePicker(const Position&, Move, int, const CapturePieceToHistory*, const NonPawnCaptureHistory*);
     Move next_move();
     void skip_quiet_moves();
     bool can_move_king_or_pawn() const;
@@ -64,6 +65,7 @@ class MovePicker {
     const ButterflyHistory*      mainHistory;
     const LowPlyHistory*         lowPlyHistory;
     const CapturePieceToHistory* captureHistory;
+    const NonPawnCaptureHistory* nonPawnCaptureHistory;
     const PieceToHistory**       continuationHistory;
     const PawnHistory*           pawnHistory;
     Move                         ttMove;
