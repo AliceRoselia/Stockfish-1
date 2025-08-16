@@ -86,6 +86,7 @@ MovePicker::MovePicker(const Position&              p,
                        const ButterflyHistory*      mh,
                        const LowPlyHistory*         lph,
                        const CapturePieceToHistory* cph,
+                       const NonPawnCaptureHistory* npc,
                        const PieceToHistory**       ch,
                        const PawnHistory*           ph,
                        int                          pl) :
@@ -93,6 +94,7 @@ MovePicker::MovePicker(const Position&              p,
     mainHistory(mh),
     lowPlyHistory(lph),
     captureHistory(cph),
+    nonPawnCaptureHistory(npc),
     continuationHistory(ch),
     pawnHistory(ph),
     ttMove(ttm),
@@ -108,9 +110,10 @@ MovePicker::MovePicker(const Position&              p,
 
 // MovePicker constructor for ProbCut: we generate captures with Static Exchange
 // Evaluation (SEE) greater than or equal to the given threshold.
-MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceToHistory* cph) :
+MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceToHistory* cph, const NonPawnCaptureHistory* npc) :
     pos(p),
     captureHistory(cph),
+    nonPawnCaptureHistory(npc),
     ttMove(ttm),
     threshold(th) {
     assert(!pos.checkers());
@@ -152,6 +155,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
         if constexpr (Type == CAPTURES)
             m.value = (*captureHistory)[pc][to][type_of(capturedPiece)]
+                    + (*nonPawnCaptureHistory)[us][non_pawn_capture_index(pos)][to]
                     + 7 * int(PieceValue[capturedPiece]) + 1024 * bool(pos.check_squares(pt) & to);
 
         else if constexpr (Type == QUIETS)
@@ -319,7 +323,14 @@ void MovePicker::skip_quiet_moves() { skipQuiets = true; }
 // this function must be called after all quiet moves and captures have been generated
 bool MovePicker::can_move_king_or_pawn() const {
     // SEE negative captures shouldn't be returned in GOOD_CAPTURE stage
-    assert(stage > GOOD_CAPTURE && stage != EVASION_INIT);
+    assert(stage != EVASION_INIT);
+
+    // Until good capture state no quiet moves are generated for comparison so simply assume king or pawns can move
+    if (stage <= GOOD_CAPTURE)
+        return true;
+
+    // If condition not holds the variable endGenereted is not defined
+    assert(stage > GOOD_CAPTURE);
 
     for (const ExtMove* m = moves; m < endGenerated; ++m)
     {

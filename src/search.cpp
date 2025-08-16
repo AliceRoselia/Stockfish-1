@@ -550,6 +550,7 @@ void Search::Worker::clear() {
     pawnCorrectionHistory.fill(5);
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
+    nonPawnCaptureHistory.fill(0);
 
     ttMoveHistory = 0;
 
@@ -913,7 +914,7 @@ Value Search::Worker::search(
     {
         assert(probCutBeta < VALUE_INFINITE && probCutBeta > beta);
 
-        MovePicker mp(pos, ttData.move, probCutBeta - ss->staticEval, &captureHistory);
+        MovePicker mp(pos, ttData.move, probCutBeta - ss->staticEval, &captureHistory, &nonPawnCaptureHistory);
         Depth      dynamicReduction = (ss->staticEval - beta) / 300;
         Depth      probCutDepth     = std::max(depth - 5 - dynamicReduction, 0);
 
@@ -965,7 +966,7 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, &nonPawnCaptureHistory, contHist,
                   &pawnHistory, ss->ply);
 
     value = bestValue;
@@ -1594,7 +1595,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // Initialize a MovePicker object for the current position, and prepare to search
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
-    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
+    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,&nonPawnCaptureHistory,
                   contHist, &pawnHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
@@ -1813,6 +1814,7 @@ void update_all_stats(const Position& pos,
                       Move            ttMove) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
+    NonPawnCaptureHistory& nonPawnCaptureHistory = workerThread.nonPawnCaptureHistory;
     Piece                  movedPiece     = pos.moved_piece(bestMove);
     PieceType              capturedPiece;
 
@@ -1832,7 +1834,9 @@ void update_all_stats(const Position& pos,
     {
         // Increase stats for the best move in case it was a capture move
         capturedPiece = type_of(pos.piece_on(bestMove.to_sq()));
+
         captureHistory[movedPiece][bestMove.to_sq()][capturedPiece] << bonus;
+        nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][bestMove.to_sq()]<<bonus;
     }
 
     // Extra penalty for a quiet early move that was not a TT move in
@@ -1847,6 +1851,7 @@ void update_all_stats(const Position& pos,
         movedPiece    = pos.moved_piece(move);
         capturedPiece = type_of(pos.piece_on(move.to_sq()));
         captureHistory[movedPiece][move.to_sq()][capturedPiece] << -captureMalus * 1431 / 1024;
+        nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][move.to_sq()]<<-captureMalus;
     }
 }
 

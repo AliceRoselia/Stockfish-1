@@ -34,6 +34,7 @@
 namespace Stockfish {
 
 constexpr int PAWN_HISTORY_SIZE        = 512;    // has to be a power of 2
+constexpr int NON_PAWN_HISTORY_SIZE   = 1024;   // has to be a power of 2
 constexpr int CORRECTION_HISTORY_SIZE  = 32768;  // has to be a power of 2
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 5;
@@ -51,6 +52,12 @@ inline int pawn_history_index(const Position& pos) {
 inline int pawn_correction_history_index(const Position& pos) {
     return pos.pawn_key() & (CORRECTION_HISTORY_SIZE - 1);
 }
+
+inline int non_pawn_capture_index(const Position& pos)
+{
+    return pos.non_pawn_key(pos.side_to_move())&(NON_PAWN_HISTORY_SIZE-1);
+}
+
 
 inline int minor_piece_index(const Position& pos) {
     return pos.minor_piece_key() & (CORRECTION_HISTORY_SIZE - 1);
@@ -111,6 +118,8 @@ using LowPlyHistory =
 
 // CapturePieceToHistory is addressed by a move's [piece][to][captured piece type]
 using CapturePieceToHistory = Stats<std::int16_t, 10692, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
+
+using NonPawnCaptureHistory = Stats<std::int16_t, 10692,COLOR_NB , NON_PAWN_HISTORY_SIZE, SQUARE_NB>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
 using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;
