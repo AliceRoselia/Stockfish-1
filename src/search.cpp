@@ -1036,7 +1036,7 @@ moves_loop:  // When in check, search starts here
             if (capture || givesCheck)
             {
                 Piece capturedPiece = pos.piece_on(move.to_sq());
-                int   captHist = captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)];
+                int   captHist = captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)] + nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][move.to_sq()];
 
                 // Futility pruning for captures
                 if (!givesCheck && lmrDepth < 7 && !ss->inCheck)
@@ -1202,7 +1202,8 @@ moves_loop:  // When in check, search starts here
 
         if (capture)
             ss->statScore = 782 * int(PieceValue[pos.captured_piece()]) / 128
-                          + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())];
+                          + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())]
+                          + nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][move.to_sq()];
         else
             ss->statScore = 2 * mainHistory[us][move.from_to()]
                           + (*contHist[0])[movedPiece][move.to_sq()]
