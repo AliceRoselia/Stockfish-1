@@ -31,6 +31,14 @@ namespace Stockfish {
 class ThreadPool;
 struct TTEntry;
 struct Cluster;
+struct CacheEntry{
+    uint16_t key16;
+    int16_t value16;
+};
+
+static_assert(sizeof(CacheEntry) == 4);
+constexpr size_t TT_CACHE_SIZE = 1024;
+//
 
 // There is only one global hash table for the engine and all its threads. For chess in particular, we even allow racy
 // updates between threads to and from the TT, as taking the time to synchronize access would cost thinking time and
@@ -81,7 +89,7 @@ struct TTWriter {
 class TranspositionTable {
 
    public:
-    ~TranspositionTable() { aligned_large_pages_free(table); }
+    ~TranspositionTable() { aligned_large_pages_free(table); aligned_large_pages_free(cache); }
 
     void resize(size_t mbSize, ThreadPool& threads);  // Set TT size
     void clear(ThreadPool& threads);                  // Re-initialize memory, multithreaded
@@ -93,6 +101,8 @@ class TranspositionTable {
     uint8_t generation() const;  // The current age, used when writing new data to the TT
     std::tuple<bool, TTData, TTWriter>
     probe(const Key key) const;  // The main method, whose retvals separate local vs global objects
+    Value cached(const Key key) const;
+    void write_cache(const Key key, const Value value) const;
     TTEntry* first_entry(const Key key)
       const;  // This is the hash function; its only external use is memory prefetching.
 
@@ -101,6 +111,7 @@ class TranspositionTable {
 
     size_t   clusterCount;
     Cluster* table = nullptr;
+    CacheEntry* cache = nullptr;
 
     uint8_t generation8 = 0;  // Size must be not bigger than TTEntry::genBound8
 };

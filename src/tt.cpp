@@ -154,12 +154,16 @@ static_assert(sizeof(Cluster) == 32, "Suboptimal Cluster size");
 // of clusters and each cluster consists of ClusterSize number of TTEntry.
 void TranspositionTable::resize(size_t mbSize, ThreadPool& threads) {
     aligned_large_pages_free(table);
-
+    aligned_large_pages_free(cache);
     clusterCount = mbSize * 1024 * 1024 / sizeof(Cluster);
 
     table = static_cast<Cluster*>(aligned_large_pages_alloc(clusterCount * sizeof(Cluster)));
+    cache = static_cast<CacheEntry*>(aligned_large_pages_alloc(TT_CACHE_SIZE*sizeof(CacheEntry)));
 
-    if (!table)
+    for (size_t i=0; i<TT_CACHE_SIZE; ++i)
+        cache[i].value16 = -VALUE_INFINITE;
+
+    if (!table || !cache)
     {
         std::cerr << "Failed to allocate " << mbSize << "MB for transposition table." << std::endl;
         exit(EXIT_FAILURE);
@@ -248,6 +252,20 @@ std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) cons
 
 TTEntry* TranspositionTable::first_entry(const Key key) const {
     return &table[mul_hi64(key, clusterCount)].entry[0];
+}
+
+Value TranspositionTable::cached(const Key key) const{
+    const CacheEntry& tmp = cache[mul_hi64(key,TT_CACHE_SIZE)];
+    //dbg_hit_on(tmp.key16 == uint16_t(key));
+    if (tmp.key16 != uint16_t(key))
+        return -VALUE_INFINITE;
+    return tmp.value16;
+}
+
+void TranspositionTable::write_cache(const Key key, const Value value) const{
+    CacheEntry& tmp = cache[mul_hi64(key,TT_CACHE_SIZE)];
+    tmp.key16 = uint16_t(key);
+    tmp.value16 = uint16_t(value);
 }
 
 }  // namespace Stockfish

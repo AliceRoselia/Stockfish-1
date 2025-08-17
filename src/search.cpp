@@ -661,9 +661,18 @@ Value Search::Worker::search(
     ss->statScore       = 0;
     (ss + 2)->cutoffCnt = 0;
 
+
     // Step 4. Transposition table lookup
     excludedMove                   = ss->excludedMove;
     posKey                         = pos.key();
+
+    if (!excludedMove && cutNode && depth <= 4)
+    {
+        Value cached = tt.cached(posKey);
+        if (cached >= beta)
+            return cached;
+    }
+
     auto [ttHit, ttData, ttWriter] = tt.probe(posKey);
     // Need further processing of the saved data
     ss->ttHit    = ttHit;
@@ -749,7 +758,8 @@ Value Search::Worker::search(
                 Bound b = wdl < -drawScore ? BOUND_UPPER
                         : wdl > drawScore  ? BOUND_LOWER
                                            : BOUND_EXACT;
-
+                if (b == BOUND_LOWER)
+                    tt.write_cache(posKey,value);
                 if (b == BOUND_EXACT || (b == BOUND_LOWER ? value >= beta : value <= alpha))
                 {
                     ttWriter.write(posKey, value_to_tt(value, ss->ply), ss->ttPv, b,
@@ -945,7 +955,8 @@ Value Search::Worker::search(
                 // Save ProbCut data into transposition table
                 ttWriter.write(posKey, value_to_tt(value, ss->ply), ss->ttPv, BOUND_LOWER,
                                probCutDepth + 1, move, unadjustedStaticEval, tt.generation());
-
+                if (probCutDepth >= 4)
+                    tt.write_cache(posKey,value);
                 if (!is_decisive(value))
                     return value - (probCutBeta - beta);
             }
@@ -1453,7 +1464,8 @@ moves_loop:  // When in check, search starts here
                                             : BOUND_UPPER,
                        moveCount != 0 ? depth : std::min(MAX_PLY - 1, depth + 6), bestMove,
                        unadjustedStaticEval, tt.generation());
-
+    if (bestValue >= beta && depth >= 4)
+        tt.write_cache(posKey,value);
     // Adjust correction history
     if (!ss->inCheck && !(bestMove && pos.capture(bestMove))
         && ((bestValue < ss->staticEval && bestValue < beta)  // negative correction & no fail high
@@ -1524,7 +1536,14 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     assert(0 <= ss->ply && ss->ply < MAX_PLY);
 
     // Step 3. Transposition table lookup
+
+
+
+
     posKey                         = pos.key();
+    Value cached = tt.cached(posKey);
+    if (cached >= beta)
+        return cached;
     auto [ttHit, ttData, ttWriter] = tt.probe(posKey);
     // Need further processing of the saved data
     ss->ttHit    = ttHit;
