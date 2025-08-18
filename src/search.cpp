@@ -550,6 +550,7 @@ void Search::Worker::clear() {
     pawnCorrectionHistory.fill(5);
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
+    nonPawnCaptureHistory.fill(Move::none());
 
     ttMoveHistory = 0;
 
@@ -913,7 +914,8 @@ Value Search::Worker::search(
     {
         assert(probCutBeta < VALUE_INFINITE && probCutBeta > beta);
 
-        MovePicker mp(pos, ttData.move, probCutBeta - ss->staticEval, &captureHistory);
+
+        MovePicker mp(pos, ttData.move, probCutBeta - ss->staticEval, &captureHistory, &nonPawnCaptureHistory);
         Depth      dynamicReduction = (ss->staticEval - beta) / 306;
         Depth      probCutDepth     = std::max(depth - 5 - dynamicReduction, 0);
 
@@ -965,7 +967,7 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, &nonPawnCaptureHistory, contHist,
                   &pawnHistory, ss->ply);
 
     value = bestValue;
@@ -1035,7 +1037,7 @@ moves_loop:  // When in check, search starts here
             if (capture || givesCheck)
             {
                 Piece capturedPiece = pos.piece_on(move.to_sq());
-                int   captHist = captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)];
+                int   captHist = captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)] + (nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)] == move)*3000;
 
                 // Futility pruning for captures
                 if (!givesCheck && lmrDepth < 7 && !ss->inCheck)
@@ -1201,7 +1203,8 @@ moves_loop:  // When in check, search starts here
 
         if (capture)
             ss->statScore = 803 * int(PieceValue[pos.captured_piece()]) / 128
-                          + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())];
+                          + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())]
+                          + (nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)] == move)*3000;
         else
             ss->statScore = 2 * mainHistory[us][move.from_to()]
                           + (*contHist[0])[movedPiece][move.to_sq()]
@@ -1595,7 +1598,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // Initialize a MovePicker object for the current position, and prepare to search
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
-    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
+    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,&nonPawnCaptureHistory,
                   contHist, &pawnHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
@@ -1814,6 +1817,7 @@ void update_all_stats(const Position& pos,
                       Move            ttMove) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
+    NonPawnCaptureHistory& nonPawnCaptureHistory = workerThread.nonPawnCaptureHistory;
     Piece                  movedPiece     = pos.moved_piece(bestMove);
     PieceType              capturedPiece;
 
@@ -1833,7 +1837,9 @@ void update_all_stats(const Position& pos,
     {
         // Increase stats for the best move in case it was a capture move
         capturedPiece = type_of(pos.piece_on(bestMove.to_sq()));
+
         captureHistory[movedPiece][bestMove.to_sq()][capturedPiece] << bonus;
+        nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)] = bestMove;
     }
 
     // Extra penalty for a quiet early move that was not a TT move in
