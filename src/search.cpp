@@ -550,7 +550,7 @@ void Search::Worker::clear() {
     pawnCorrectionHistory.fill(5);
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
-    nonPawnCaptureHistory.fill(0);
+    nonPawnCaptureHistory.fill(Move::none());
 
     ttMoveHistory = 0;
 
@@ -1036,7 +1036,7 @@ moves_loop:  // When in check, search starts here
             if (capture || givesCheck)
             {
                 Piece capturedPiece = pos.piece_on(move.to_sq());
-                int   captHist = captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)] + nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][move.to_sq()];
+                int   captHist = captureHistory[movedPiece][move.to_sq()][type_of(capturedPiece)] + (nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)] == move)*3000;
 
                 // Futility pruning for captures
                 if (!givesCheck && lmrDepth < 7 && !ss->inCheck)
@@ -1203,7 +1203,7 @@ moves_loop:  // When in check, search starts here
         if (capture)
             ss->statScore = 782 * int(PieceValue[pos.captured_piece()]) / 128
                           + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())]
-                          + nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][move.to_sq()];
+                          + (nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)] == move)*3000;
         else
             ss->statScore = 2 * mainHistory[us][move.from_to()]
                           + (*contHist[0])[movedPiece][move.to_sq()]
@@ -1837,7 +1837,7 @@ void update_all_stats(const Position& pos,
         capturedPiece = type_of(pos.piece_on(bestMove.to_sq()));
 
         captureHistory[movedPiece][bestMove.to_sq()][capturedPiece] << bonus;
-        nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][bestMove.to_sq()]<<bonus;
+        nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)] = bestMove;
     }
 
     // Extra penalty for a quiet early move that was not a TT move in
@@ -1852,7 +1852,6 @@ void update_all_stats(const Position& pos,
         movedPiece    = pos.moved_piece(move);
         capturedPiece = type_of(pos.piece_on(move.to_sq()));
         captureHistory[movedPiece][move.to_sq()][capturedPiece] << -captureMalus * 1431 / 1024;
-        nonPawnCaptureHistory[pos.side_to_move()][non_pawn_capture_index(pos)][move.to_sq()]<<-captureMalus;
     }
 }
 

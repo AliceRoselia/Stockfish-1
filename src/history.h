@@ -34,7 +34,7 @@
 namespace Stockfish {
 
 constexpr int PAWN_HISTORY_SIZE        = 512;    // has to be a power of 2
-constexpr int NON_PAWN_HISTORY_SIZE   = 256;   // has to be a power of 2
+constexpr int NON_PAWN_HISTORY_SIZE   = 1024;   // has to be a power of 2
 constexpr int CORRECTION_HISTORY_SIZE  = 32768;  // has to be a power of 2
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 5;
@@ -119,7 +119,7 @@ using LowPlyHistory =
 // CapturePieceToHistory is addressed by a move's [piece][to][captured piece type]
 using CapturePieceToHistory = Stats<std::int16_t, 10692, PIECE_NB, SQUARE_NB, PIECE_TYPE_NB>;
 
-using NonPawnCaptureHistory = Stats<std::int16_t, 10692,COLOR_NB , NON_PAWN_HISTORY_SIZE, SQUARE_NB>;
+using NonPawnCaptureHistory = MultiArray<Move,COLOR_NB,NON_PAWN_HISTORY_SIZE>;
 
 // PieceToHistory is like ButterflyHistory but is addressed by a move's [piece][to]
 using PieceToHistory = Stats<std::int16_t, 30000, PIECE_NB, SQUARE_NB>;
