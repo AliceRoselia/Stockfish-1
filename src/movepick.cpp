@@ -177,7 +177,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             }
 
             //move ranking futility pruning: if the move ranking value is bad enough, keep the value as-is.
-            if (m.value < -3560*depth - 5000)
+            if (m.value < -3560*depth - 10000)
                 continue;
 
 
