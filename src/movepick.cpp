@@ -130,12 +130,14 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
     Color us = pos.side_to_move();
 
     [[maybe_unused]] Bitboard threatByLesser[QUEEN + 1];
+    [[maybe_unused]] Bitboard enemyKingEscapeRoute;
     if constexpr (Type == QUIETS)
     {
         threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
         threatByLesser[ROOK] =
           pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
         threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
+        enemyKingEscapeRoute = attacks_bb<KING>(pos.square<KING>(~us));
     }
 
     ExtMove* it = cur;
@@ -165,6 +167,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[5])[pc][to];
 
+            m.value += popcount(attacks_bb(pt,to,pos.pieces()& (~square_bb(from))) & enemyKingEscapeRoute)*1024;
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
 
