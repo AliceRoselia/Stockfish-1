@@ -167,7 +167,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[5])[pc][to];
 
-            m.value += popcount(attacks_bb(pt,to,pos.pieces()& (~square_bb(from))) & enemyKingEscapeRoute)*1024;
+            m.value += popcount(attacks_bb(pt,to,pos.pieces()& (~square_bb(from))) & enemyKingEscapeRoute)*512;
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
 
