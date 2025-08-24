@@ -157,15 +157,14 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         else if constexpr (Type == QUIETS)
         {
             // histories
+            //Move ranking threshold is at -3560 * depth
+            //m.value = 0;
+
             m.value = 2 * (*mainHistory)[us][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += (*continuationHistory[0])[pc][to];
-            m.value += (*continuationHistory[1])[pc][to];
-            m.value += (*continuationHistory[2])[pc][to];
-            m.value += (*continuationHistory[3])[pc][to];
-            m.value += (*continuationHistory[5])[pc][to];
 
-            // bonus for checks
+            if (ply < LOW_PLY_HISTORY_SIZE)
+                m.value += 8 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
 
             // penalty for moving to a square threatened by a lesser piece
@@ -177,8 +176,26 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
                 m.value += bonus[pt] * v;
             }
 
-            if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 8 * (*lowPlyHistory)[ply][m.from_to()] / (1 + ply);
+            //move ranking futility pruning: if the move ranking value is bad enough, keep the value as-is.
+            if (m.value < -3560*depth - 5000)
+                continue;
+
+
+            m.value += (*continuationHistory[0])[pc][to];
+            m.value += (*continuationHistory[1])[pc][to];
+            m.value += (*continuationHistory[2])[pc][to];
+            m.value += (*continuationHistory[3])[pc][to];
+            m.value += (*continuationHistory[5])[pc][to];
+
+            // bonus for checks
+
+            //dbg_hit_on(m.value < - 3560*depth - 5000,1);
+
+            //if (m.value < -3560*depth - 5000)
+                //dbg_hit_on(history_value>5000);
+
+            //m.value += history_value;
+
         }
 
         else  // Type == EVASIONS
