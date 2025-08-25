@@ -174,26 +174,38 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             int v = threatByLesser[pt] & to ? -95 : 100 * bool(threatByLesser[pt] & from);
             m.value += bonus[pt] * v;
 
-
-            //move ranking futility pruning: if the move ranking value is bad enough, keep the value as-is.
-            if (m.value < -3560*depth - 10000)
-                continue;
-
-
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
+            //move ranking futility pruning: if the move ranking value is bad enough, keep the value as-is.
+
+
+            if (m.value < -4000*depth - 10000)
+                continue;
+
             m.value += (*continuationHistory[2])[pc][to];
             m.value += (*continuationHistory[3])[pc][to];
             m.value += (*continuationHistory[5])[pc][to];
 
+
+            /*
+            int history = 0;
+            history += (*continuationHistory[2])[pc][to];
+            history += (*continuationHistory[3])[pc][to];
+            history += (*continuationHistory[5])[pc][to];
+
             // bonus for checks
 
-            //dbg_hit_on(m.value < - 3560*depth - 5000,1);
+            dbg_hit_on(m.value < - 4000*depth - 5000,1);
+            dbg_hit_on(m.value < - 4000*depth - 10000,2);
 
-            //if (m.value < -3560*depth - 5000)
-                //dbg_hit_on(history_value>5000);
+            if (m.value < -4000*depth - 5000)
+                dbg_hit_on(history>5000);
+            if (m.value < -4000*depth - 10000)
+                dbg_hit_on(history>10000,3);
 
-            //m.value += history_value;
+            m.value += history;
+            */
+
 
         }
 
