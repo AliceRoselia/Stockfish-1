@@ -178,8 +178,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += (*continuationHistory[1])[pc][to];
             //move ranking futility pruning: if the move ranking value is bad enough, keep the value as-is.
 
-
-            if (m.value < -4000*depth - 10000)
+            if (m.value < -5000*depth - 10000)
                 continue;
 
             m.value += (*continuationHistory[2])[pc][to];
