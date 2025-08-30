@@ -950,6 +950,8 @@ Value Search::Worker::search(
                 if (!is_decisive(value))
                     return value - (probCutBeta - beta);
             }
+            if (probCutDepth >= 3 && value < alpha)
+                captureHistory[pos.moved_piece(move)][move.to_sq()][type_of(pos.piece_on(move.to_sq()))] << -800;
         }
     }
 
