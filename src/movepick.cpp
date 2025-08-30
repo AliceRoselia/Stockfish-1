@@ -66,8 +66,13 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
         {
             ExtMove tmp = *p, *q;
             *p          = *++sortedEnd;
+            //int count = 0;
             for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
+            {
+                //++count;
                 *q = *(q - 1);
+            }
+            //dbg_mean_of(count);
             *q = tmp;
         }
 }
