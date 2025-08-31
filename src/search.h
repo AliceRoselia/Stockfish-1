@@ -290,6 +290,7 @@ class Worker {
     CorrectionHistory<Pawn>         pawnCorrectionHistory;
     CorrectionHistory<Minor>        minorPieceCorrectionHistory;
     CorrectionHistory<NonPawn>      nonPawnCorrectionHistory;
+    CorrectionHistory<TT>           ttCorrectionHistory;
     CorrectionHistory<Continuation> continuationCorrectionHistory;
 
     TTMoveHistory ttMoveHistory;
