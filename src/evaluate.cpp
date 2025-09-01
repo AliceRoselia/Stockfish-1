@@ -63,10 +63,10 @@ int Eval::mobility_of(const Position& pos){
     return moveCount;
 }
 
-constexpr Value KNIGHT_MOBILITY_VALUE = 100;
-constexpr Value BISHOP_MOBILITY_VALUE = 100;
-constexpr Value ROOK_MOBILITY_VALUE   = 150;
-constexpr Value QUEEN_MOBILITY_VALUE  = 180;
+constexpr Value KNIGHT_MOBILITY_VALUE = 80;
+constexpr Value BISHOP_MOBILITY_VALUE = 80;
+constexpr Value ROOK_MOBILITY_VALUE   = 120;
+constexpr Value QUEEN_MOBILITY_VALUE  = 150;
 
 
 /*
