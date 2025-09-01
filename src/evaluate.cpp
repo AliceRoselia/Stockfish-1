@@ -46,6 +46,47 @@ int Eval::simple_eval(const Position& pos) {
          + (pos.non_pawn_material(c) - pos.non_pawn_material(~c));
 }
 
+template<PieceType Pt>
+int Eval::mobility_of(const Position& pos){
+    Color us = pos.side_to_move();
+    static_assert(Pt != KING && Pt != PAWN, "Unsupported piece type in mobility_of()");
+    Bitboard bb = pos.pieces(us, Pt);
+    int moveCount = 0;
+    const Bitboard target = ~pos.pieces(us);
+    while (bb)
+    {
+        Square   from = pop_lsb(bb);
+        Bitboard b    = attacks_bb<Pt>(from, pos.pieces()) & target;
+
+        moveCount += popcount(b);
+    }
+    return moveCount;
+}
+
+constexpr Value KNIGHT_MOBILITY_VALUE = 100;
+constexpr Value BISHOP_MOBILITY_VALUE = 100;
+constexpr Value ROOK_MOBILITY_VALUE   = 150;
+constexpr Value QUEEN_MOBILITY_VALUE  = 180;
+
+
+/*
+constexpr Value KnightValue = 781;
+constexpr Value BishopValue = 825;
+constexpr Value RookValue   = 1276;
+constexpr Value QueenValue  = 2538;
+*/
+
+Value Eval::mobility_optimism(const Position& pos){
+
+
+    Value mobility = mobility_of<KNIGHT>(pos) * KNIGHT_MOBILITY_VALUE;
+    mobility += mobility_of<BISHOP>(pos) * BISHOP_MOBILITY_VALUE;
+    mobility += mobility_of<ROOK>(pos) * ROOK_MOBILITY_VALUE;
+    mobility += mobility_of<QUEEN>(pos) * QUEEN_MOBILITY_VALUE;
+
+    return mobility;
+}
+
 bool Eval::use_smallnet(const Position& pos) { return std::abs(simple_eval(pos)) > 962; }
 
 // Evaluate is the evaluator for the outer world. It returns a static evaluation
@@ -77,8 +118,11 @@ Value Eval::evaluate(const Eval::NNUE::Networks&    networks,
     optimism += optimism * nnueComplexity / 468;
     nnue -= nnue * nnueComplexity / 18000;
 
+
+    Value mobility = mobility_optimism(pos);
+
     int material = 535 * pos.count<PAWN>() + pos.non_pawn_material();
-    int v        = (nnue * (77777 + material) + optimism * (7777 + material)) / 77777;
+    int v        = (nnue * (77777 + material+mobility) + optimism * (7777 + material+mobility)) / 77777;
 
     // Damp down the evaluation linearly when shuffling
     v -= v * pos.rule50_count() / 212;

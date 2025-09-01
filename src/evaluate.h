@@ -51,6 +51,9 @@ Value evaluate(const NNUE::Networks&          networks,
                Eval::NNUE::AccumulatorStack&  accumulators,
                Eval::NNUE::AccumulatorCaches& caches,
                int                            optimism);
+template<PieceType Pt>
+int mobility_of(const Position& pos);
+Value mobility_optimism(const Position& pos);
 }  // namespace Eval
 
 }  // namespace Stockfish
