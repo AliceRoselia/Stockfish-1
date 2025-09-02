@@ -40,9 +40,6 @@ struct StateInfo {
 
     // Copied when making a move
     Key    materialKey;
-    Key    pawnKey;
-    Key    minorPieceKey;
-    Key    nonPawnKey[COLOR_NB];
     Value  nonPawnMaterial[COLOR_NB];
     int    castlingRights;
     int    rule50;
@@ -288,13 +285,23 @@ inline Key Position::adjust_key50(Key k) const {
     return st->rule50 < 14 ? k : k ^ make_key((st->rule50 - 14) / 8);
 }
 
-inline Key Position::pawn_key() const { return st->pawnKey; }
+
+
+
+//These primes are the next primes after the 2^64/(golden ratio number)
+constexpr uint64_t firstPrime = 11400714819323198549ULL;
+constexpr uint64_t secondPrime = 11400714819323198581ULL;
+constexpr uint64_t thirdPrime = 11400714819323198647ULL;
+constexpr uint64_t fourthPrime = 11400714819323198669ULL;
+
+inline Key Position::pawn_key() const { return (pieces(WHITE,PAWN)*firstPrime)^(pieces(BLACK,PAWN)*secondPrime); }
+
 
 inline Key Position::material_key() const { return st->materialKey; }
 
-inline Key Position::minor_piece_key() const { return st->minorPieceKey; }
+inline Key Position::minor_piece_key() const { return (pieces(WHITE,KNIGHT)*firstPrime) ^ (pieces(BLACK,KNIGHT)*secondPrime) ^ (pieces(WHITE,BISHOP)*thirdPrime) ^ (pieces(BLACK,BISHOP)*fourthPrime); }
 
-inline Key Position::non_pawn_key(Color c) const { return st->nonPawnKey[c]; }
+inline Key Position::non_pawn_key(Color c) const { return (pieces(c,KNIGHT)*firstPrime)^(pieces(c,KNIGHT)*secondPrime)^(pieces(c,KNIGHT)*thirdPrime)^(pieces(c,KNIGHT)*fourthPrime); }
 
 inline Value Position::non_pawn_material(Color c) const { return st->nonPawnMaterial[c]; }
 

@@ -336,9 +336,6 @@ void Position::set_check_info() const {
 void Position::set_state() const {
 
     st->key = st->materialKey = 0;
-    st->minorPieceKey         = 0;
-    st->nonPawnKey[WHITE] = st->nonPawnKey[BLACK] = 0;
-    st->pawnKey                                   = Zobrist::noPawns;
     st->nonPawnMaterial[WHITE] = st->nonPawnMaterial[BLACK] = VALUE_ZERO;
     st->checkersBB = attackers_to(square<KING>(sideToMove)) & pieces(~sideToMove);
 
@@ -350,21 +347,10 @@ void Position::set_state() const {
         Piece  pc = piece_on(s);
         st->key ^= Zobrist::psq[pc][s];
 
-        if (type_of(pc) == PAWN)
-            st->pawnKey ^= Zobrist::psq[pc][s];
 
-        else
-        {
-            st->nonPawnKey[color_of(pc)] ^= Zobrist::psq[pc][s];
 
-            if (type_of(pc) != KING)
-            {
-                st->nonPawnMaterial[color_of(pc)] += PieceValue[pc];
-
-                if (type_of(pc) <= BISHOP)
-                    st->minorPieceKey ^= Zobrist::psq[pc][s];
-            }
-        }
+        if (type_of(pc) != PAWN && type_of(pc) != KING)
+            st->nonPawnMaterial[color_of(pc)] += PieceValue[pc];
     }
 
     if (st->epSquare != SQ_NONE)
@@ -738,7 +724,6 @@ DirtyPiece Position::do_move(Move                      m,
         do_castling<true>(us, from, to, rfrom, rto, &dp);
 
         k ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
-        st->nonPawnKey[us] ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
         captured = NO_PIECE;
     }
     else if (captured)
@@ -759,17 +744,9 @@ DirtyPiece Position::do_move(Move                      m,
                 assert(piece_on(to) == NO_PIECE);
                 assert(piece_on(capsq) == make_piece(them, PAWN));
             }
-
-            st->pawnKey ^= Zobrist::psq[captured][capsq];
         }
         else
-        {
             st->nonPawnMaterial[them] -= PieceValue[captured];
-            st->nonPawnKey[them] ^= Zobrist::psq[captured][capsq];
-
-            if (type_of(captured) <= BISHOP)
-                st->minorPieceKey ^= Zobrist::psq[captured][capsq];
-        }
 
         dp.remove_pc = captured;
         dp.remove_sq = capsq;
@@ -818,7 +795,6 @@ DirtyPiece Position::do_move(Move                      m,
         else if (m.type_of() == PROMOTION)
         {
             Piece     promotion     = make_piece(us, m.promotion_type());
-            PieceType promotionType = type_of(promotion);
 
             assert(relative_rank(us, to) == RANK_8);
             assert(type_of(promotion) >= KNIGHT && type_of(promotion) <= QUEEN);
@@ -836,26 +812,14 @@ DirtyPiece Position::do_move(Move                      m,
             st->materialKey ^= Zobrist::psq[promotion][8 + pieceCount[promotion] - 1]
                              ^ Zobrist::psq[pc][8 + pieceCount[pc]];
 
-            if (promotionType <= BISHOP)
-                st->minorPieceKey ^= Zobrist::psq[promotion][to];
+
 
             // Update material
             st->nonPawnMaterial[us] += PieceValue[promotion];
         }
 
-        // Update pawn hash key
-        st->pawnKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
-
         // Reset rule 50 draw counter
         st->rule50 = 0;
-    }
-
-    else
-    {
-        st->nonPawnKey[us] ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
-
-        if (type_of(pc) <= BISHOP)
-            st->minorPieceKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
     }
 
     // Set capture piece
