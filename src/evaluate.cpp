@@ -63,8 +63,8 @@ int Eval::mobility_of(const Position& pos){
     return moveCount;
 }
 
-constexpr Value KNIGHT_MOBILITY_VALUE = 79;
-constexpr Value BISHOP_MOBILITY_VALUE = 80;
+
+constexpr Value MINOR_PIECE_MOBILITY_VALUE = 80;
 constexpr Value ROOK_MOBILITY_VALUE   = 118;
 constexpr Value QUEEN_MOBILITY_VALUE  = 147;
 
@@ -79,8 +79,8 @@ constexpr Value QueenValue  = 2538;
 Value Eval::mobility_optimism(const Position& pos){
 
 
-    Value mobility = mobility_of<KNIGHT>(pos) * KNIGHT_MOBILITY_VALUE;
-    mobility += mobility_of<BISHOP>(pos) * BISHOP_MOBILITY_VALUE;
+    Value mobility = mobility_of<KNIGHT>(pos) * MINOR_PIECE_MOBILITY_VALUE;
+    mobility += mobility_of<BISHOP>(pos) * MINOR_PIECE_MOBILITY_VALUE;
     mobility += mobility_of<ROOK>(pos) * ROOK_MOBILITY_VALUE;
     mobility += mobility_of<QUEEN>(pos) * QUEEN_MOBILITY_VALUE;
 
