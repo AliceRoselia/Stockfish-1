@@ -64,9 +64,10 @@ int Eval::mobility_of(const Position& pos){
 }
 
 
-//constexpr Value MINOR_PIECE_MOBILITY_VALUE = 80;
-//constexpr Value ROOK_MOBILITY_VALUE   = 128;
-//constexpr Value QUEEN_MOBILITY_VALUE  = 144;
+constexpr Value KNIGHT_MOBILITY_VALUE = 80;
+constexpr Value BISHOP_MOBILITY_VALUE = 80;
+constexpr Value ROOK_MOBILITY_VALUE   = 120;
+constexpr Value QUEEN_MOBILITY_VALUE  = 150;
 
 
 /*
@@ -78,13 +79,14 @@ constexpr Value QueenValue  = 2538;
 
 Value Eval::mobility_optimism(const Position& pos){
 
-    int knightMobility = mobility_of<KNIGHT>(pos);
-    int bishopMobility = mobility_of<BISHOP>(pos);
-    int rookMobility = mobility_of<ROOK>(pos);
-    int queenMobility = mobility_of<QUEEN>(pos);
-    return (knightMobility + bishopMobility)*80 + rookMobility*128 + queenMobility*144;
-}
 
+    Value mobility = mobility_of<KNIGHT>(pos) * KNIGHT_MOBILITY_VALUE;
+    mobility += mobility_of<BISHOP>(pos) * BISHOP_MOBILITY_VALUE;
+    mobility += mobility_of<ROOK>(pos) * ROOK_MOBILITY_VALUE;
+    mobility += mobility_of<QUEEN>(pos) * QUEEN_MOBILITY_VALUE;
+
+    return mobility;
+}
 bool Eval::use_smallnet(const Position& pos) { return std::abs(simple_eval(pos)) > 962; }
 
 // Evaluate is the evaluator for the outer world. It returns a static evaluation
