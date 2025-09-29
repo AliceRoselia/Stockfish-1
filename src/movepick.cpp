@@ -198,7 +198,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += bonus[pt] * v;
 
             if (prevsq != from)
-                threatValue = threatByLesser[pt] & from ? threat_to(from,pt)*3 : 0;
+                threatValue = threatByLesser[pt] & from ? threat_to(from,pt)*2 : 0;
             m.value += threatValue;
 
 
