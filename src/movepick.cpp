@@ -118,6 +118,24 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     stage = PROBCUT_TT + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm));
 }
 
+int MovePicker::threat_to(Square sq, PieceType pt) const{
+    Color attacker = ~pos.side_to_move();
+
+    assert(pt > PAWN);
+    int value = (attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN)) ? (*captureHistory)[make_piece(attacker,PAWN)][sq][pt] : 0;
+
+    if (pt < ROOK)
+        return value;
+    Bitboard occupied = pos.pieces();
+    value = std::max(value, attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT) ? (*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt] : 0);
+    value = std::max(value, attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP) ? (*captureHistory)[make_piece(attacker,BISHOP)][sq][pt] : 0);
+    if (pt < QUEEN)
+        return value;
+    value = std::max(value, attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK) ? (*captureHistory)[make_piece(attacker,ROOK)][sq][pt] : 0);
+
+    return value;
+}
+
 // Assigns a numerical value to each move in a list, used for sorting.
 // Captures are ordered by Most Valuable Victim (MVV), preferring captures
 // with a good history. Quiets moves are ordered using the history tables.
@@ -174,6 +192,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             static constexpr int bonus[KING + 1] = {0, 0, 144, 144, 256, 517, 10000};
             int v = threatByLesser[pt] & to ? -95 : 100 * bool(threatByLesser[pt] & from);
             m.value += bonus[pt] * v;
+
+            m.value += threatByLesser[pt] & from ? threat_to(from,pt)*2 : 0;
 
 
             if (ply < LOW_PLY_HISTORY_SIZE)

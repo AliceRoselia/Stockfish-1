@@ -52,6 +52,7 @@ class MovePicker {
     void skip_quiet_moves();
 
    private:
+    int threat_to(Square sq, PieceType pt) const;
     template<typename Pred>
     Move select(Pred);
     template<GenType T>
