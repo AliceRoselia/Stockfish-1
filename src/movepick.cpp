@@ -122,16 +122,16 @@ int MovePicker::threat_to(Square sq, PieceType pt) const{
     Color attacker = ~pos.side_to_move();
 
     assert(pt > PAWN);
-    int value = (attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN)) ? (*captureHistory)[make_piece(attacker,PAWN)][sq][pt] : 0;
+    int value = std::max(0,(bool(attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN))) * (*captureHistory)[make_piece(attacker,PAWN)][sq][pt]);
 
     if (pt < ROOK)
         return value;
     Bitboard occupied = pos.pieces();
-    value = std::max(value, attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT) ? (*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt] : 0);
-    value = std::max(value, attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP) ? (*captureHistory)[make_piece(attacker,BISHOP)][sq][pt] : 0);
+    value = std::max(value, bool(attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT)) * (*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt]);
+    value = std::max(value, bool(attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP)) * (*captureHistory)[make_piece(attacker,BISHOP)][sq][pt]);
     if (pt < QUEEN)
         return value;
-    value = std::max(value, attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK) ? (*captureHistory)[make_piece(attacker,ROOK)][sq][pt] : 0);
+    value = std::max(value, bool(attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK)) * (*captureHistory)[make_piece(attacker,ROOK)][sq][pt]);
 
     return value;
 }
@@ -193,7 +193,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             int v = threatByLesser[pt] & to ? -95 : 100 * bool(threatByLesser[pt] & from);
             m.value += bonus[pt] * v;
 
-            m.value += threatByLesser[pt] & from ? threat_to(from,pt)*5/2 : 0;
+            m.value += threatByLesser[pt] & from ? threat_to(from,pt)*3 : 0;
 
 
             if (ply < LOW_PLY_HISTORY_SIZE)
