@@ -122,7 +122,7 @@ int MovePicker::threat_to(Square sq, PieceType pt) const{
     Color attacker = ~pos.side_to_move();
 
     assert(pt > PAWN);
-    int value = std::max(0,(bool(attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN))) * (*captureHistory)[make_piece(attacker,PAWN)][sq][pt]);
+    int value = (bool(attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN))) * (*captureHistory)[make_piece(attacker,PAWN)][sq][pt];
 
     if (pt < ROOK)
         return value;
