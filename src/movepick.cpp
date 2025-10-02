@@ -118,22 +118,24 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     stage = PROBCUT_TT + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm));
 }
 
+constexpr int OFFSET = 16384;
+
 int MovePicker::threat_to(Square sq, PieceType pt) const{
     Color attacker = ~pos.side_to_move();
 
     assert(pt > PAWN);
-    int value = (bool(attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN))) * (*captureHistory)[make_piece(attacker,PAWN)][sq][pt];
+    int value = (bool(attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN))) * ((*captureHistory)[make_piece(attacker,PAWN)][sq][pt]+OFFSET);
 
     if (pt < ROOK)
-        return value;
+        return value-OFFSET;
     Bitboard occupied = pos.pieces();
-    value = std::max(value, bool(attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT)) * (*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt]);
-    value = std::max(value, bool(attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP)) * (*captureHistory)[make_piece(attacker,BISHOP)][sq][pt]);
+    value = std::max(value, bool(attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT)) * ((*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt]+OFFSET));
+    value = std::max(value, bool(attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP)) * ((*captureHistory)[make_piece(attacker,BISHOP)][sq][pt]+OFFSET));
     if (pt < QUEEN)
-        return value;
-    value = std::max(value, bool(attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK)) * (*captureHistory)[make_piece(attacker,ROOK)][sq][pt]);
+        return value-OFFSET;
+    value = std::max(value, bool(attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK)) * ((*captureHistory)[make_piece(attacker,ROOK)][sq][pt]+OFFSET));
 
-    return value;
+    return value-OFFSET;
 }
 
 // Assigns a numerical value to each move in a list, used for sorting.
