@@ -124,18 +124,18 @@ int MovePicker::threat_to(Square sq, PieceType pt) const{
     Color attacker = ~pos.side_to_move();
 
     assert(pt > PAWN);
-    int value = (bool(attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN))) * ((*captureHistory)[make_piece(attacker,PAWN)][sq][pt]+OFFSET);
+    int value = (attacks_bb<PAWN>(sq,pos.side_to_move()) & pos.pieces(attacker,PAWN)) ? (*captureHistory)[make_piece(attacker,PAWN)][sq][pt] : -OFFSET;
 
     if (pt < ROOK)
-        return value-OFFSET;
+        return value;
     Bitboard occupied = pos.pieces();
-    value = std::max(value, bool(attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT)) * ((*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt]+OFFSET));
-    value = std::max(value, bool(attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP)) * ((*captureHistory)[make_piece(attacker,BISHOP)][sq][pt]+OFFSET));
+    value = std::max(value, attacks_bb<KNIGHT>(sq)&pos.pieces(attacker,KNIGHT) ? (*captureHistory)[make_piece(attacker,KNIGHT)][sq][pt] : -OFFSET);
+    value = std::max(value, attacks_bb<BISHOP>(sq,occupied)&pos.pieces(attacker,BISHOP) ? (*captureHistory)[make_piece(attacker,BISHOP)][sq][pt] : -OFFSET);
     if (pt < QUEEN)
-        return value-OFFSET;
-    value = std::max(value, bool(attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK)) * ((*captureHistory)[make_piece(attacker,ROOK)][sq][pt]+OFFSET));
+        return value;
+    value = std::max(value, attacks_bb<ROOK>(sq,occupied)&pos.pieces(attacker,ROOK) ? (*captureHistory)[make_piece(attacker,ROOK)][sq][pt] : -OFFSET);
 
-    return value-OFFSET;
+    return value;
 }
 
 // Assigns a numerical value to each move in a list, used for sorting.
@@ -195,7 +195,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             int v = threatByLesser[pt] & to ? -95 : 100 * bool(threatByLesser[pt] & from);
             m.value += bonus[pt] * v;
 
-            m.value += threatByLesser[pt] & from ? threat_to(from,pt)*3 : 0;
+            m.value += ((threatByLesser[pt] & from) && !(threatByLesser[pt]&to)) ? threat_to(from,pt)*3 : 0;
 
 
             if (ply < LOW_PLY_HISTORY_SIZE)
