@@ -118,7 +118,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     stage = PROBCUT_TT + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm));
 }
 
-constexpr int OFFSET = 16384;
+constexpr int OFFSET = 0;
 
 int MovePicker::threat_to(Square sq, PieceType pt) const{
     Color attacker = ~pos.side_to_move();
