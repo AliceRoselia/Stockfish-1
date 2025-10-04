@@ -167,7 +167,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += (*continuationHistory[5])[pc][to];
 
             //Penalty for moving to an inactive square.
-            m.value -= (pt != PAWN && !more_than_one(PseudoAttacks[pt][to] & pos.pieces()))*8192;
+            m.value -= (pt != PAWN && !more_than_one(PseudoAttacks[pt][to] & pos.pieces()))*16384;
 
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
