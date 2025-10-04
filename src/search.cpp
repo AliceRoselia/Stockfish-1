@@ -945,6 +945,8 @@ Value Search::Worker::search(
 
             if (value >= probCutBeta)
             {
+                int bonus = std::min(151 * depth - 91, 1730) + 302 * (move == ttData.move);
+                captureHistory[pos.moved_piece(move)][move.to_sq()][type_of(pos.piece_on(move.to_sq()))] << bonus;
                 // Save ProbCut data into transposition table
                 ttWriter.write(posKey, value_to_tt(value, ss->ply), ss->ttPv, BOUND_LOWER,
                                probCutDepth + 1, move, unadjustedStaticEval, tt.generation());
