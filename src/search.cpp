@@ -264,7 +264,7 @@ void Search::Worker::iterative_deepening() {
     for (int i = 7; i > 0; --i)
     {
         (ss - i)->continuationHistory =
-          &continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
+          &continuationHistory[0][0][0][NO_PIECE][0];  // Use as a sentinel
         (ss - i)->continuationCorrectionHistory = &continuationCorrectionHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
     }
@@ -523,12 +523,12 @@ void Search::Worker::iterative_deepening() {
 }
 
 
-void Search::Worker::do_move(Position& pos, const Move move, StateInfo& st, Stack* const ss) {
-    do_move(pos, move, st, pos.gives_check(move), ss);
+void Search::Worker::do_move(Position& pos, const Move move, StateInfo& st, const bool goodStage, Stack* const ss) {
+    do_move(pos, move, st, pos.gives_check(move),goodStage, ss);
 }
 
 void Search::Worker::do_move(
-  Position& pos, const Move move, StateInfo& st, const bool givesCheck, Stack* const ss) {
+  Position& pos, const Move move, StateInfo& st, const bool givesCheck,const bool goodStage, Stack* const ss) {
     bool       capture = pos.capture_stage(move);
     DirtyPiece dp      = pos.do_move(move, st, givesCheck, &tt);
     nodes.fetch_add(1, std::memory_order_relaxed);
@@ -536,7 +536,7 @@ void Search::Worker::do_move(
     if (ss != nullptr)
     {
         ss->currentMove         = move;
-        ss->continuationHistory = &continuationHistory[ss->inCheck][capture][dp.pc][move.to_sq()];
+        ss->continuationHistory = &continuationHistory[ss->inCheck][capture][goodStage][dp.pc][move.to_sq()];
         ss->continuationCorrectionHistory = &continuationCorrectionHistory[dp.pc][move.to_sq()];
     }
 }
@@ -568,9 +568,10 @@ void Search::Worker::clear() {
 
     for (bool inCheck : {false, true})
         for (StatsType c : {NoCaptures, Captures})
-            for (auto& to : continuationHistory[inCheck][c])
-                for (auto& h : to)
-                    h.fill(-529);
+            for (bool good: {false, true})
+                for (auto& to : continuationHistory[inCheck][c][good])
+                    for (auto& h : to)
+                        h.fill(-529);
 
     for (size_t i = 1; i < reductions.size(); ++i)
         reductions[i] = int(2809 / 128.0 * std::log(i));
@@ -872,7 +873,7 @@ Value Search::Worker::search(
         Depth R = 6 + depth / 3;
 
         ss->currentMove                   = Move::null();
-        ss->continuationHistory           = &continuationHistory[0][0][NO_PIECE][0];
+        ss->continuationHistory           = &continuationHistory[0][0][0][NO_PIECE][0];
         ss->continuationCorrectionHistory = &continuationCorrectionHistory[NO_PIECE][0];
 
         do_null_move(pos, st);
@@ -934,7 +935,7 @@ Value Search::Worker::search(
 
             assert(pos.capture_stage(move));
 
-            do_move(pos, move, st, ss);
+            do_move(pos, move, st,true, ss);
 
             // Perform a preliminary qsearch to verify that the move holds
             value = -qsearch<NonPV>(pos, ss + 1, -probCutBeta, -probCutBeta + 1);
@@ -1161,7 +1162,7 @@ moves_loop:  // When in check, search starts here
         }
 
         // Step 16. Make the move
-        do_move(pos, move, st, givesCheck, ss);
+        do_move(pos, move, st, givesCheck,mp.good_stage(), ss);
 
         // Add extension to new depth
         newDepth += extension;
@@ -1645,7 +1646,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         }
 
         // Step 7. Make and search the move
-        do_move(pos, move, st, givesCheck, ss);
+        do_move(pos, move, st, givesCheck,true, ss);
 
         value = -qsearch<nodeType>(pos, ss + 1, -beta, -alpha);
         undo_move(pos, move);

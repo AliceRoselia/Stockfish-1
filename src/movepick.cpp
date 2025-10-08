@@ -315,4 +315,5 @@ top:
 
 void MovePicker::skip_quiet_moves() { skipQuiets = true; }
 
+bool MovePicker::good_stage() const {return stage == GOOD_CAPTURE || stage == GOOD_QUIET;}
 }  // namespace Stockfish
