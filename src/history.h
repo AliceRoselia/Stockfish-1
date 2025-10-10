@@ -84,14 +84,38 @@ class StatsEntry {
     void operator<<(int bonus) {
         // Make sure that bonus is in range [-D, D]
         int clampedBonus = std::clamp(bonus, -D, D);
+        entry += clampedBonus - entry * std::abs(clampedBonus) / D;
+
+        assert(std::abs(entry) <= D);
+    }
+};
+
+template<typename T, int D>
+class CorrectionStatsEntry {
+
+    static_assert(std::is_arithmetic_v<T>, "Not an arithmetic type");
+    static_assert(D <= std::numeric_limits<T>::max(), "D overflows T");
+
+    T entry;
+
+   public:
+    CorrectionStatsEntry& operator=(const T& v) {
+        entry = v;
+        return *this;
+    }
+    operator const T&() const { return entry; }
+
+    void operator<<(int bonus) {
+        // Make sure that bonus is in range [-D, D]
+        int clampedBonus = std::clamp(bonus, -D, D);
         int absolute_bonus = std::abs(clampedBonus);
         int entry_term = entry*absolute_bonus/D;
         int term = clampedBonus - entry_term;
         int term2 = term*absolute_bonus/(2*D);
-        int term3 = term2*absolute_bonus/(3*D);
-        int term4 = term3*absolute_bonus/(4*D);
+        //int term3 = term2*absolute_bonus/(3*D);
+        //int term4 = term3*absolute_bonus/(4*D);
 
-        entry += term - term2 + term3 - term4;
+        entry += term - term2; //+ term3 - term4;
 
         assert(std::abs(entry) <= D);
     }
@@ -104,6 +128,8 @@ enum StatsType {
 
 template<typename T, int D, std::size_t... Sizes>
 using Stats = MultiArray<StatsEntry<T, D>, Sizes...>;
+template<typename T, int D, std::size_t... Sizes>
+using CorrectionStats = MultiArray<CorrectionStatsEntry<T, D>, Sizes...>;
 
 // ButterflyHistory records how often quiet moves have been successful or unsuccessful
 // during the current search, and is used for reduction and move ordering decisions.
@@ -146,12 +172,12 @@ namespace Detail {
 
 template<CorrHistType>
 struct CorrHistTypedef {
-    using type = Stats<std::int16_t, CORRECTION_HISTORY_LIMIT, CORRECTION_HISTORY_SIZE, COLOR_NB>;
+    using type = CorrectionStats<std::int16_t, CORRECTION_HISTORY_LIMIT, CORRECTION_HISTORY_SIZE, COLOR_NB>;
 };
 
 template<>
 struct CorrHistTypedef<PieceTo> {
-    using type = Stats<std::int16_t, CORRECTION_HISTORY_LIMIT, PIECE_NB, SQUARE_NB>;
+    using type = CorrectionStats<std::int16_t, CORRECTION_HISTORY_LIMIT, PIECE_NB, SQUARE_NB>;
 };
 
 template<>
@@ -162,7 +188,7 @@ struct CorrHistTypedef<Continuation> {
 template<>
 struct CorrHistTypedef<NonPawn> {
     using type =
-      Stats<std::int16_t, CORRECTION_HISTORY_LIMIT, CORRECTION_HISTORY_SIZE, COLOR_NB, COLOR_NB>;
+      CorrectionStats<std::int16_t, CORRECTION_HISTORY_LIMIT, CORRECTION_HISTORY_SIZE, COLOR_NB, COLOR_NB>;
 };
 
 }
@@ -170,7 +196,7 @@ struct CorrHistTypedef<NonPawn> {
 template<CorrHistType T>
 using CorrectionHistory = typename Detail::CorrHistTypedef<T>::type;
 
-using TTMoveHistory = StatsEntry<std::int16_t, 8192>;
+using TTMoveHistory = CorrectionStatsEntry<std::int16_t, 8192>;
 
 }  // namespace Stockfish
 
