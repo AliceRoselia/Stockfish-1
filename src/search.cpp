@@ -80,6 +80,7 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
     const auto  m     = (ss - 1)->currentMove;
     const auto  pcv   = w.pawnCorrectionHistory[pawn_correction_history_index(pos)][us];
     const auto  micv  = w.minorPieceCorrectionHistory[minor_piece_index(pos)][us];
+    const auto  dicv  = w.diagonalPieceCorrectionHistory[diagonal_piece_index(pos)][us];
     const auto  wnpcv = w.nonPawnCorrectionHistory[non_pawn_index<WHITE>(pos)][WHITE][us];
     const auto  bnpcv = w.nonPawnCorrectionHistory[non_pawn_index<BLACK>(pos)][BLACK][us];
     const auto  cntcv =
@@ -87,7 +88,7 @@ int correction_value(const Worker& w, const Position& pos, const Stack* const ss
                     + (*(ss - 4)->continuationCorrectionHistory)[pos.piece_on(m.to_sq())][m.to_sq()]
                  : 8;
 
-    return 9536 * pcv + 8494 * micv + 10132 * (wnpcv + bnpcv) + 7156 * cntcv;
+    return 9536 * pcv + 8494 * micv + 9000 * dicv + 10132 * (wnpcv + bnpcv) + 7156 * cntcv;
 }
 
 // Add correctionHistory value to raw staticEval and guarantee evaluation
@@ -107,6 +108,7 @@ void update_correction_history(const Position& pos,
 
     workerThread.pawnCorrectionHistory[pawn_correction_history_index(pos)][us] << bonus;
     workerThread.minorPieceCorrectionHistory[minor_piece_index(pos)][us] << bonus * 145 / 128;
+    workerThread.diagonalPieceCorrectionHistory[diagonal_piece_index(pos)][us] << bonus * 150/128;
     workerThread.nonPawnCorrectionHistory[non_pawn_index<WHITE>(pos)][WHITE][us]
       << bonus * nonPawnWeight / 128;
     workerThread.nonPawnCorrectionHistory[non_pawn_index<BLACK>(pos)][BLACK][us]
@@ -558,6 +560,7 @@ void Search::Worker::clear() {
     pawnHistory.fill(-1238);
     pawnCorrectionHistory.fill(5);
     minorPieceCorrectionHistory.fill(0);
+    diagonalPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
 
     ttMoveHistory = 0;

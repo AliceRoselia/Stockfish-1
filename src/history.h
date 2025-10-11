@@ -56,6 +56,10 @@ inline int minor_piece_index(const Position& pos) {
     return pos.minor_piece_key() & (CORRECTION_HISTORY_SIZE - 1);
 }
 
+inline int diagonal_piece_index(const Position& pos){
+    return pos.diagonal_piece_key() & (CORRECTION_HISTORY_SIZE - 1);
+}
+
 template<Color c>
 inline int non_pawn_index(const Position& pos) {
     return pos.non_pawn_key(c) & (CORRECTION_HISTORY_SIZE - 1);
@@ -130,6 +134,7 @@ using PawnHistory = Stats<std::int16_t, 8192, PAWN_HISTORY_SIZE, PIECE_NB, SQUAR
 enum CorrHistType {
     Pawn,          // By color and pawn structure
     Minor,         // By color and positions of minor pieces (Knight, Bishop)
+    Diagonal,      // By the bishops and queens.
     NonPawn,       // By non-pawn material positions and color
     PieceTo,       // By [piece][to] move
     Continuation,  // Combined history of move pairs

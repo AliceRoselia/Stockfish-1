@@ -337,6 +337,7 @@ void Position::set_state() const {
 
     st->key = st->materialKey = 0;
     st->minorPieceKey         = 0;
+    st->diagonalPieceKey      = 0;
     st->nonPawnKey[WHITE] = st->nonPawnKey[BLACK] = 0;
     st->pawnKey                                   = Zobrist::noPawns;
     st->nonPawnMaterial[WHITE] = st->nonPawnMaterial[BLACK] = VALUE_ZERO;
@@ -360,6 +361,8 @@ void Position::set_state() const {
             if (type_of(pc) != KING)
             {
                 st->nonPawnMaterial[color_of(pc)] += PieceValue[pc];
+                if (type_of(pc)&1) // // A faster way for queen and bishop. Includes pawn but since pawns are already filtered out.
+                    st->diagonalPieceKey ^= Zobrist::psq[pc][s];
 
                 if (type_of(pc) <= BISHOP)
                     st->minorPieceKey ^= Zobrist::psq[pc][s];
@@ -766,7 +769,8 @@ DirtyPiece Position::do_move(Move                      m,
         {
             st->nonPawnMaterial[them] -= PieceValue[captured];
             st->nonPawnKey[them] ^= Zobrist::psq[captured][capsq];
-
+            if (type_of(captured)&1) // A faster way for queen and bishop. Includes pawn but since pawns are already filtered out.
+                st->diagonalPieceKey ^= Zobrist::psq[captured][capsq];
             if (type_of(captured) <= BISHOP)
                 st->minorPieceKey ^= Zobrist::psq[captured][capsq];
         }
@@ -836,6 +840,8 @@ DirtyPiece Position::do_move(Move                      m,
             st->materialKey ^= Zobrist::psq[promotion][8 + pieceCount[promotion] - 1]
                              ^ Zobrist::psq[pc][8 + pieceCount[pc]];
 
+            if (promotionType & 1) // A faster way for queen and bishop. Includes pawn but pawns are impossible here.
+                st->diagonalPieceKey ^= Zobrist::psq[promotion][to];
             if (promotionType <= BISHOP)
                 st->minorPieceKey ^= Zobrist::psq[promotion][to];
 
@@ -853,6 +859,9 @@ DirtyPiece Position::do_move(Move                      m,
     else
     {
         st->nonPawnKey[us] ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
+
+        if (type_of(pc)&1) // A faster way for queen and bishop. Includes pawn but since pawns are already filtered out.
+            st->diagonalPieceKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
 
         if (type_of(pc) <= BISHOP)
             st->minorPieceKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
