@@ -1349,6 +1349,7 @@ moves_loop:  // When in check, search starts here
 
                 if (value >= beta)
                 {
+                    //dbg_hit_on(moveCount == 1);
                     // (*Scaler) Especially if they make cutoffCnt increment more often.
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
@@ -1884,7 +1885,7 @@ void update_self_organizing_history(const Position& pos, Search::Worker& workerT
 
     auto& selfOrganizingHistory = workerThread.selfOrganizingHistory[pc][to];
     auto& selfOrganizingHistoryIndex = workerThread.selfOrganizingHistoryIndex[pos.side_to_move()];
-    for (int i=0; i<8; ++i)
+    for (int i=0; i<4; ++i)
     {
         int lesser_index = selfOrganizingIndex & (~(1<<i));
         int greater_index = selfOrganizingIndex | (1<<i);
