@@ -125,7 +125,7 @@ using ContinuationHistory = MultiArray<PieceToHistory, PIECE_NB, SQUARE_NB>;
 using PawnHistory = Stats<std::int16_t, 8192, PAWN_HISTORY_SIZE, PIECE_NB, SQUARE_NB>;
 
 using SelfOrganizingHistoryIndex = Stats<std::int16_t, 8192, COLOR_NB, PIECE_NB, SQUARE_NB, 8>;
-using SelfOrganizingHistory = Stats<std::int16_t, 8192, PIECE_NB, SQUARE_NB, 256>;
+using SelfOrganizingHistory = Stats<std::int16_t, 16384, PIECE_NB, SQUARE_NB, 256>;
 
 inline int self_organizing_index(const Position& pos, const SelfOrganizingHistoryIndex& selfOrganizingHistoryIndex){
     //It might benefit from SIMD but for simple testing let's elide it for now.
