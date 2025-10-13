@@ -129,6 +129,7 @@ void  update_pv(Move* pv, Move move, const Move* childPv);
 void  update_continuation_histories(Stack* ss, Piece pc, Square to, int bonus);
 void  update_quiet_histories(
    const Position& pos, Stack* ss, Search::Worker& workerThread, Move move, int bonus);
+void update_self_organizing_history(const Position& pos, Search::Worker& workerThread, Piece pc, Square to, int bonus);
 void update_all_stats(const Position& pos,
                       Stack*          ss,
                       Search::Worker& workerThread,
@@ -559,6 +560,8 @@ void Search::Worker::clear() {
     pawnCorrectionHistory.fill(5);
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
+    selfOrganizingHistoryIndex.fill(0);
+    selfOrganizingHistory.fill(0);
 
     ttMoveHistory = 0;
 
@@ -971,8 +974,8 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
-                  &pawnHistory, ss->ply);
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory,
+                  contHist, &pawnHistory,&selfOrganizingHistory,&selfOrganizingHistoryIndex, ss->ply);
 
     value = bestValue;
 
@@ -1589,7 +1592,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
     MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
-                  contHist, &pawnHistory, ss->ply);
+                  contHist, &pawnHistory,&selfOrganizingHistory,&selfOrganizingHistoryIndex, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
@@ -1869,10 +1872,34 @@ void update_quiet_histories(
         workerThread.lowPlyHistory[ss->ply][move.from_to()] << bonus * 761 / 1024;
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(), bonus * 955 / 1024);
+    update_self_organizing_history(pos,workerThread,pos.moved_piece(move),move.to_sq(),bonus);
 
     int pIndex = pawn_history_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
       << (bonus * (bonus > 0 ? 800 : 500) / 1024) + 70;
+}
+
+void update_self_organizing_history(const Position& pos, Search::Worker& workerThread, Piece pc, Square to, int bonus){
+    int selfOrganizingIndex = self_organizing_index(pos,workerThread.selfOrganizingHistoryIndex);
+
+    auto& selfOrganizingHistory = workerThread.selfOrganizingHistory[pc][to];
+    auto& selfOrganizingHistoryIndex = workerThread.selfOrganizingHistoryIndex[pos.side_to_move()];
+    for (int i=0; i<8; ++i)
+    {
+        int lesser_index = selfOrganizingIndex & (~(1<<i));
+        int greater_index = selfOrganizingIndex | (1<<i);
+        int difference = selfOrganizingHistory[greater_index] - selfOrganizingHistory[lesser_index];
+
+        Bitboard bb = pos.pieces();
+        while (bb)
+        {
+            Square sq = pop_lsb(bb);
+            //std::cout<<(int)(sq)<<std::endl;
+            Piece p = pos.piece_on(sq);
+            selfOrganizingHistoryIndex[p][sq][i] << difference * bonus / 16384;
+        }
+    }
+    selfOrganizingHistory[selfOrganizingIndex] << bonus;
 }
 
 }

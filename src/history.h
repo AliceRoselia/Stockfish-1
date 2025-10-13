@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <limits>
 #include <type_traits>  // IWYU pragma: keep
+#include <iostream>
 
 #include "misc.h"
 #include "position.h"
@@ -122,6 +123,44 @@ using ContinuationHistory = MultiArray<PieceToHistory, PIECE_NB, SQUARE_NB>;
 
 // PawnHistory is addressed by the pawn structure and a move's [piece][to]
 using PawnHistory = Stats<std::int16_t, 8192, PAWN_HISTORY_SIZE, PIECE_NB, SQUARE_NB>;
+
+using SelfOrganizingHistoryIndex = Stats<std::int16_t, 8192, COLOR_NB, PIECE_NB, SQUARE_NB, 8>;
+using SelfOrganizingHistory = Stats<std::int16_t, 8192, PIECE_NB, SQUARE_NB, 256>;
+
+inline int self_organizing_index(const Position& pos, const SelfOrganizingHistoryIndex& selfOrganizingHistoryIndex){
+    //It might benefit from SIMD but for simple testing let's elide it for now.
+    int values[8];
+    uint64_t perturbation = pos.key();
+    for (int i=0; i<8; ++i)
+    {
+
+        values[i] = ((perturbation >> (i*8)) & 255)*64; // Perturb values slightly to randomize the outcomes. Threshold = 32768
+    }
+
+    Bitboard bb = pos.pieces();
+    Color stm = pos.side_to_move();
+
+    while (bb)
+    {
+        Square sq = pop_lsb(bb);
+        //std::cout<<(int)(sq)<<std::endl;
+        Piece p = pos.piece_on(sq);
+        for (int i=0; i<8; ++i)
+        {
+            //dbg_mean_of(selfOrganizingHistoryIndex[stm][p][sq][i],i);
+            values[i] += selfOrganizingHistoryIndex[stm][p][sq][i];
+        }
+    }
+
+    int answer = 0;
+    for (int i=0; i<8; ++i)
+    {
+        answer |= (1<<i) * (values[i] >= 8192);
+    }
+
+    return answer;
+}
+
 
 // Correction histories record differences between the static evaluation of
 // positions and their search score. It is used to improve the static evaluation

@@ -26,6 +26,8 @@
 #include "misc.h"
 #include "position.h"
 
+#include<iostream>
+
 namespace Stockfish {
 
 namespace {
@@ -80,21 +82,25 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 // good moves first, and how important move ordering is at the current node.
 
 // MovePicker constructor for the main search and for the quiescence search
-MovePicker::MovePicker(const Position&              p,
-                       Move                         ttm,
-                       Depth                        d,
-                       const ButterflyHistory*      mh,
-                       const LowPlyHistory*         lph,
-                       const CapturePieceToHistory* cph,
-                       const PieceToHistory**       ch,
-                       const PawnHistory*           ph,
-                       int                          pl) :
+MovePicker::MovePicker(const Position&                   p,
+                       Move                              ttm,
+                       Depth                             d,
+                       const ButterflyHistory*           mh,
+                       const LowPlyHistory*              lph,
+                       const CapturePieceToHistory*      cph,
+                       const PieceToHistory**            ch,
+                       const PawnHistory*                ph,
+                       const SelfOrganizingHistory*      sh,
+                       const SelfOrganizingHistoryIndex* shi,
+                       int                               pl) :
     pos(p),
     mainHistory(mh),
     lowPlyHistory(lph),
     captureHistory(cph),
     continuationHistory(ch),
     pawnHistory(ph),
+    selfOrganizingHistory(sh),
+    selfOrganizingHistoryIndex(shi),
     ttMove(ttm),
     depth(d),
     ply(pl) {
@@ -129,6 +135,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
     Color us = pos.side_to_move();
 
     [[maybe_unused]] Bitboard threatByLesser[KING + 1];
+    [[maybe_unused]] int selfOrganizingIndex;
     if constexpr (Type == QUIETS)
     {
         threatByLesser[PAWN]   = 0;
@@ -137,6 +144,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
           pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
         threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
         threatByLesser[KING]  = pos.attacks_by<QUEEN>(~us) | threatByLesser[QUEEN];
+        selfOrganizingIndex = self_organizing_index(pos,*selfOrganizingHistoryIndex);
     }
 
     ExtMove* it = cur;
@@ -160,6 +168,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             // histories
             m.value = 2 * (*mainHistory)[us][m.from_to()];
             m.value += 2 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += 2 * (*selfOrganizingHistory)[pc][to][selfOrganizingIndex];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
