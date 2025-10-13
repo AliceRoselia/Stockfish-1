@@ -124,17 +124,17 @@ using ContinuationHistory = MultiArray<PieceToHistory, PIECE_NB, SQUARE_NB>;
 // PawnHistory is addressed by the pawn structure and a move's [piece][to]
 using PawnHistory = Stats<std::int16_t, 8192, PAWN_HISTORY_SIZE, PIECE_NB, SQUARE_NB>;
 
-using SelfOrganizingHistoryIndex = Stats<std::int16_t, 8192, COLOR_NB, PIECE_NB, SQUARE_NB, 4>;
+using SelfOrganizingHistoryIndex = Stats<std::int16_t, 8192, COLOR_NB, PIECE_NB, SQUARE_NB, 16>;
 using SelfOrganizingHistory = Stats<std::int16_t, 16384, PIECE_NB, SQUARE_NB, 16>;
 
 inline int self_organizing_index(const Position& pos, const SelfOrganizingHistoryIndex& selfOrganizingHistoryIndex){
     //It might benefit from SIMD but for simple testing let's elide it for now.
-    int values[4];
+    int values[16];
     uint64_t perturbation = pos.key();
-    for (int i=0; i<4; ++i)
+    for (int i=0; i<16; ++i)
     {
 
-        values[i] = ((perturbation >> (i*16)) & 16383); // Perturb values slightly to randomize the outcomes. Threshold = 32768
+        values[i] = ((perturbation >> (i*4)) & 15)*1024; // Perturb values slightly to randomize the outcomes. Threshold = 32768
     }
 
     Bitboard bb = pos.pieces();
@@ -145,20 +145,25 @@ inline int self_organizing_index(const Position& pos, const SelfOrganizingHistor
         Square sq = pop_lsb(bb);
         //std::cout<<(int)(sq)<<std::endl;
         Piece p = pos.piece_on(sq);
-        for (int i=0; i<4; ++i)
+        for (int i=0; i<16; ++i)
         {
             //dbg_mean_of(selfOrganizingHistoryIndex[stm][p][sq][i],i);
             values[i] += selfOrganizingHistoryIndex[stm][p][sq][i];
         }
     }
 
-    int answer = 0;
-    for (int i=0; i<4; ++i)
+    int idx = 0;
+    int current_value = values[0];
+    for (int i=1; i<16; ++i)
     {
-        answer |= (1<<i) * (values[i] >= 8192);
+        if (values[i] > current_value)
+        {
+            current_value = values[i];
+            idx = i;
+        }
     }
 
-    return answer;
+    return idx;
 }
 
 

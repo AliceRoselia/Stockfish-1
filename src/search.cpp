@@ -1885,18 +1885,16 @@ void update_self_organizing_history(const Position& pos, Search::Worker& workerT
 
     auto& selfOrganizingHistory = workerThread.selfOrganizingHistory[pc][to];
     auto& selfOrganizingHistoryIndex = workerThread.selfOrganizingHistoryIndex[pos.side_to_move()];
-    for (int i=0; i<4; ++i)
-    {
-        int lesser_index = selfOrganizingIndex & (~(1<<i));
-        int greater_index = selfOrganizingIndex | (1<<i);
-        int difference = selfOrganizingHistory[greater_index] - selfOrganizingHistory[lesser_index];
 
-        Bitboard bb = pos.pieces();
-        while (bb)
+    Bitboard bb = pos.pieces();
+    while (bb)
+    {
+        Square sq = pop_lsb(bb);
+        //std::cout<<(int)(sq)<<std::endl;
+        Piece p = pos.piece_on(sq);
+        for (int i=0; i<16; ++i)
         {
-            Square sq = pop_lsb(bb);
-            //std::cout<<(int)(sq)<<std::endl;
-            Piece p = pos.piece_on(sq);
+            int difference = selfOrganizingHistory[i] - selfOrganizingHistory[selfOrganizingIndex];
             selfOrganizingHistoryIndex[p][sq][i] << difference * bonus / 16384;
         }
     }
