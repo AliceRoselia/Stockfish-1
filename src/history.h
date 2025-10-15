@@ -79,7 +79,13 @@ class StatsEntry {
         entry = v;
         return *this;
     }
-    operator const T&() const { return entry; }
+    operator const T() const {
+        int entry_casted = static_cast<int>(entry);
+        int entry_abs = std::abs(entry_casted);
+        int entry_squared = entry_casted*entry_abs/D;
+        int entry_cubed = entry_squared*entry_abs/D;
+        return 3*entry_squared - 2*entry_cubed;
+        }
 
     void operator<<(int bonus) {
         // Make sure that bonus is in range [-D, D]
