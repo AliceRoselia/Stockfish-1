@@ -309,7 +309,7 @@ struct AccumulatorUpdateContext {
 
     void apply(typename FeatureSet::IndexList added, typename FeatureSet::IndexList removed) {
 
-        bool repeat = (added.size() && removed.size() && added[0] == removed[removed.size()-1]);
+        [[maybe_unused]] bool repeat = (added.size() && removed.size() && added[0] == removed[removed.size()-1]);
 
         const auto fromAcc = from.template acc<Dimensions>().accumulation[Perspective];
         const auto toAcc   = to.template acc<Dimensions>().accumulation[Perspective];
@@ -366,7 +366,7 @@ struct AccumulatorUpdateContext {
             for (IndexType k = 0; k < Tiling::NumPsqtRegs; ++k)
                 psqt[k] = fromTilePsqt[k];
 
-            for (IndexType i = 0; i < removed.size(); ++i)
+            for (IndexType i = 0; i < removed.size()-repeat; ++i)
             {
                 IndexType       index      = removed[i];
                 const IndexType offset     = PSQTBuckets * index + j * Tiling::PsqtTileHeight;
@@ -377,7 +377,7 @@ struct AccumulatorUpdateContext {
                     psqt[k] = vec_sub_psqt_32(psqt[k], columnPsqt[k]);
             }
 
-            for (IndexType i = 0; i < added.size(); ++i)
+            for (IndexType i = repeat; i < added.size(); ++i)
             {
                 IndexType       index      = added[i];
                 const IndexType offset     = PSQTBuckets * index + j * Tiling::PsqtTileHeight;
