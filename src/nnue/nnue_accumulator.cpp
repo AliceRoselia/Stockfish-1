@@ -308,6 +308,9 @@ struct AccumulatorUpdateContext {
     }
 
     void apply(typename FeatureSet::IndexList added, typename FeatureSet::IndexList removed) {
+
+        bool repeat = (added.size() && removed.size() && added[0] == removed[removed.size()-1]);
+
         const auto fromAcc = from.template acc<Dimensions>().accumulation[Perspective];
         const auto toAcc   = to.template acc<Dimensions>().accumulation[Perspective];
 
@@ -327,7 +330,7 @@ struct AccumulatorUpdateContext {
             for (IndexType k = 0; k < Tiling::NumRegs; ++k)
                 acc[k] = fromTile[k];
 
-            for (IndexType i = 0; i < removed.size(); ++i)
+            for (IndexType i = 0; i < removed.size()-repeat; ++i)
             {
                 IndexType       index  = removed[i];
                 const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
@@ -338,7 +341,7 @@ struct AccumulatorUpdateContext {
                     acc[k] = vec_sub_16(acc[k], column[k]);
             }
 
-            for (IndexType i = 0; i < added.size(); ++i)
+            for (IndexType i = repeat; i < added.size(); ++i)
             {
                 IndexType       index  = added[i];
                 const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
