@@ -155,7 +155,7 @@ constexpr Bitboard pawn_attacks_bb(Bitboard b) {
                       : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
 }
 
-constexpr Bitboard table[64][2] ={
+constexpr Bitboard pawns_attack_table[64][2] ={
 {pawn_attacks_bb<WHITE>(square_bb(Square(0))),pawn_attacks_bb<BLACK>(square_bb(Square(0)))},{pawn_attacks_bb<WHITE>(square_bb(Square(1))),pawn_attacks_bb<BLACK>(square_bb(Square(1)))},{pawn_attacks_bb<WHITE>(square_bb(Square(2))),pawn_attacks_bb<BLACK>(square_bb(Square(2)))},{pawn_attacks_bb<WHITE>(square_bb(Square(3))),pawn_attacks_bb<BLACK>(square_bb(Square(3)))},
 {pawn_attacks_bb<WHITE>(square_bb(Square(4))),pawn_attacks_bb<BLACK>(square_bb(Square(4)))},{pawn_attacks_bb<WHITE>(square_bb(Square(5))),pawn_attacks_bb<BLACK>(square_bb(Square(5)))},{pawn_attacks_bb<WHITE>(square_bb(Square(6))),pawn_attacks_bb<BLACK>(square_bb(Square(6)))},{pawn_attacks_bb<WHITE>(square_bb(Square(7))),pawn_attacks_bb<BLACK>(square_bb(Square(7)))},
 {pawn_attacks_bb<WHITE>(square_bb(Square(8))),pawn_attacks_bb<BLACK>(square_bb(Square(8)))},{pawn_attacks_bb<WHITE>(square_bb(Square(9))),pawn_attacks_bb<BLACK>(square_bb(Square(9)))},{pawn_attacks_bb<WHITE>(square_bb(Square(10))),pawn_attacks_bb<BLACK>(square_bb(Square(10)))},{pawn_attacks_bb<WHITE>(square_bb(Square(11))),pawn_attacks_bb<BLACK>(square_bb(Square(11)))},
@@ -177,7 +177,7 @@ constexpr Bitboard table[64][2] ={
 
 template<Color C>
 constexpr Bitboard pawn_attacks_bb(Square s){
-    return table[s][C];
+    return pawns_attack_table[s][C];
 }
 
 
