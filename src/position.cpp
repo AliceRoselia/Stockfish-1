@@ -1038,13 +1038,14 @@ void Position::update_piece_threats(Piece pc, Square s, DirtyThreats* const dts)
     Bitboard rAttacks = attacks_bb<ROOK>(s, occupied);
     Bitboard bAttacks = attacks_bb<BISHOP>(s, occupied);
     Bitboard qAttacks = rAttacks | bAttacks;
+    Bitboard kAttacks = PseudoAttacks[KING][s];
+    Bitboard KnAttacks = PseudoAttacks[KNIGHT][s];
 
+    //Bitboard threatened = attacks_bb(pc, s, occupied) & occupied;
     Bitboard threatened;
-
-    switch (type_of(pc))
-    {
+    switch(type_of(pc)){
     case PAWN :
-        threatened = PseudoAttacks[color_of(pc)][s];
+        threatened = PseudoAttacks[color_of(pc)][PAWN];
         break;
     case BISHOP :
         threatened = bAttacks;
@@ -1055,9 +1056,14 @@ void Position::update_piece_threats(Piece pc, Square s, DirtyThreats* const dts)
     case QUEEN :
         threatened = qAttacks;
         break;
-
+    case KING :
+        threatened = kAttacks;
+        break;
+    case KNIGHT :
+        threatened = KnAttacks;
+        break;
     default :
-        threatened = PseudoAttacks[type_of(pc)][s];
+        assert(false);
     }
 
     threatened &= occupied;
@@ -1075,10 +1081,10 @@ void Position::update_piece_threats(Piece pc, Square s, DirtyThreats* const dts)
 
     Bitboard sliders = (pieces(ROOK, QUEEN) & rAttacks) | (pieces(BISHOP, QUEEN) & bAttacks);
 
-    Bitboard incoming_threats = (attacks_bb<KNIGHT>(s, occupied) & pieces(KNIGHT))
+    Bitboard incoming_threats = (KnAttacks & pieces(KNIGHT))
                               | (pawn_attacks_bb<WHITE>(s) & pieces(BLACK, PAWN))
                               | (pawn_attacks_bb<BLACK>(s) & pieces(WHITE, PAWN))
-                              | (attacks_bb<KING>(s, occupied) & pieces(KING));
+                              | (kAttacks & pieces(KING));
 
     while (sliders)
     {
