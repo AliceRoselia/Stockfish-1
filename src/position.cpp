@@ -1045,7 +1045,7 @@ void Position::update_piece_threats(Piece pc, Square s, DirtyThreats* const dts)
     Bitboard threatened;
     switch(type_of(pc)){
     case PAWN :
-        threatened = PseudoAttacks[color_of(pc)][PAWN];
+        threatened = PseudoAttacks[color_of(pc)][s];
         break;
     case BISHOP :
         threatened = bAttacks;
