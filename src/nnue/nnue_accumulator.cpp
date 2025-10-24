@@ -345,6 +345,17 @@ struct AccumulatorUpdateContext {
         const auto fromPsqtAcc = from.template acc<Dimensions>().psqtAccumulation[Perspective];
         const auto toPsqtAcc   = to.template acc<Dimensions>().psqtAccumulation[Perspective];
 
+        /*
+        for (size_t i=0; i<16; ++i){
+
+            dbg_hit_on(removed.size() == i,i);
+        }
+        for (size_t i=0; i<16; ++i){
+
+            dbg_hit_on(added.size() == i,i+16);
+        }
+        */
+
 #ifdef VECTOR
         using Tiling = SIMDTiling<Dimensions, Dimensions, PSQTBuckets>;
         vec_t      acc[Tiling::NumRegs];
@@ -369,24 +380,6 @@ struct AccumulatorUpdateContext {
             case 2:
                 reduce_small_sub<2>(acc,removed,j);
                 break;
-            case 3:
-                reduce_small_sub<3>(acc,removed,j);
-                break;
-            case 4:
-                reduce_small_sub<4>(acc,removed,j);
-                break;
-            case 5:
-                reduce_small_sub<5>(acc,removed,j);
-                break;
-            case 6:
-                reduce_small_sub<6>(acc,removed,j);
-                break;
-            case 7:
-                reduce_small_sub<7>(acc,removed,j);
-                break;
-            case 8:
-                reduce_small_sub<8>(acc,removed,j);
-                break;
             default:
                 for (IndexType i = 0; i < removed.size(); ++i)
                 {
@@ -409,30 +402,6 @@ struct AccumulatorUpdateContext {
                 break;
             case 2:
                 reduce_small_add<2>(acc,added,j);
-                break;
-            case 3:
-                reduce_small_add<3>(acc,added,j);
-                break;
-            case 4:
-                reduce_small_add<4>(acc,added,j);
-                break;
-            case 5:
-                reduce_small_add<5>(acc,added,j);
-                break;
-            case 6:
-                reduce_small_add<6>(acc,added,j);
-                break;
-            case 7:
-                reduce_small_add<7>(acc,added,j);
-                break;
-            case 8:
-                reduce_small_add<8>(acc,added,j);
-                break;
-            case 9:
-                reduce_small_add<9>(acc,added,j);
-                break;
-            case 10:
-                reduce_small_add<10>(acc,added,j);
                 break;
             default:
                 for (IndexType i = 0; i < added.size(); ++i)
