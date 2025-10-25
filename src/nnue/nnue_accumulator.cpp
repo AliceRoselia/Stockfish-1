@@ -316,9 +316,20 @@ struct AccumulatorUpdateContext {
             IndexType       index  = opped[i];
             const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
             auto*           column =
+              reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+            for (IndexType k = 0; k < Tiling::PrefetchSize; ++k)
+                acc[k] = vec_sub_16(acc[k], column[k]);
+        }
+
+        for (IndexType i = 0; i < SIZE; ++i)
+        {
+            IndexType       index  = opped[i];
+            const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+            auto*           column =
                 reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
 
-            for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+            for (IndexType k = Tiling::PrefetchSize; k < Tiling::NumRegs; ++k)
                 acc[k] = vec_sub_16(acc[k], column[k]);
         }
     }
@@ -331,9 +342,20 @@ struct AccumulatorUpdateContext {
             IndexType       index  = opped[i];
             const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
             auto*           column =
+              reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+            for (IndexType k = 0; k < Tiling::PrefetchSize; ++k)
+                acc[k] = vec_add_16(acc[k], column[k]);
+        }
+
+        for (IndexType i = 0; i < SIZE; ++i)
+        {
+            IndexType       index  = opped[i];
+            const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+            auto*           column =
                 reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
 
-            for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+            for (IndexType k = Tiling::PrefetchSize; k < Tiling::NumRegs; ++k)
                 acc[k] = vec_add_16(acc[k], column[k]);
         }
     }
@@ -388,7 +410,19 @@ struct AccumulatorUpdateContext {
                     auto*           column =
                       reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
 
-                    for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+                    for (IndexType k = 0; k < Tiling::PrefetchSize; ++k)
+                        acc[k] = vec_sub_16(acc[k], column[k]);
+                }
+
+
+                for (IndexType i = 0; i < removed.size(); ++i)
+                {
+                    IndexType       index  = removed[i];
+                    const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+                    auto*           column =
+                      reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+                    for (IndexType k = Tiling::PrefetchSize; k < Tiling::NumRegs; ++k)
                         acc[k] = vec_sub_16(acc[k], column[k]);
                 }
             }
@@ -411,7 +445,18 @@ struct AccumulatorUpdateContext {
                     auto*           column =
                       reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
 
-                    for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+                    for (IndexType k = 0; k < Tiling::PrefetchSize; ++k)
+                        acc[k] = vec_add_16(acc[k], column[k]);
+                }
+
+                for (IndexType i = 0; i < added.size(); ++i)
+                {
+                    IndexType       index  = added[i];
+                    const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+                    auto*           column =
+                      reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+                    for (IndexType k = Tiling::PrefetchSize; k < Tiling::NumRegs; ++k)
                         acc[k] = vec_add_16(acc[k], column[k]);
                 }
             }
