@@ -307,12 +307,54 @@ struct AccumulatorUpdateContext {
           to_psqt_weight_vector(indices)...);
     }
 
+    template<size_t SIZE>
+    void reduce_small_sub(vec_t acc[SIMDTiling<Dimensions, Dimensions, PSQTBuckets>::Numregs], typename FeatureSet::IndexList opped, IndexType j){
+        assert(opped.size() == SIZE);
+        using Tiling = SIMDTiling<Dimensions, Dimensions, PSQTBuckets>;
+        for (IndexType i = 0; i < SIZE; ++i)
+        {
+            IndexType       index  = opped[i];
+            const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+            auto*           column =
+                reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+            for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+                acc[k] = vec_sub_16(acc[k], column[k]);
+        }
+    }
+    template<size_t SIZE>
+    void reduce_small_add(vec_t acc[SIMDTiling<Dimensions, Dimensions, PSQTBuckets>::Numregs], typename FeatureSet::IndexList opped, IndexType j){
+        assert(opped.size() == SIZE);
+        using Tiling = SIMDTiling<Dimensions, Dimensions, PSQTBuckets>;
+        for (IndexType i = 0; i < SIZE; ++i)
+        {
+            IndexType       index  = opped[i];
+            const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+            auto*           column =
+                reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+            for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+                acc[k] = vec_add_16(acc[k], column[k]);
+        }
+    }
+
     void apply(typename FeatureSet::IndexList added, typename FeatureSet::IndexList removed) {
         const auto fromAcc = from.template acc<Dimensions>().accumulation[Perspective];
         const auto toAcc   = to.template acc<Dimensions>().accumulation[Perspective];
 
         const auto fromPsqtAcc = from.template acc<Dimensions>().psqtAccumulation[Perspective];
         const auto toPsqtAcc   = to.template acc<Dimensions>().psqtAccumulation[Perspective];
+
+        /*
+        for (size_t i=0; i<16; ++i){
+
+            dbg_hit_on(removed.size() == i,i);
+        }
+        for (size_t i=0; i<16; ++i){
+
+            dbg_hit_on(added.size() == i,i+16);
+        }
+        */
 
 #ifdef VECTOR
         using Tiling = SIMDTiling<Dimensions, Dimensions, PSQTBuckets>;
@@ -327,26 +369,51 @@ struct AccumulatorUpdateContext {
             for (IndexType k = 0; k < Tiling::NumRegs; ++k)
                 acc[k] = fromTile[k];
 
-            for (IndexType i = 0; i < removed.size(); ++i)
-            {
-                IndexType       index  = removed[i];
-                const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
-                auto*           column =
-                  reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
 
-                for (IndexType k = 0; k < Tiling::NumRegs; ++k)
-                    acc[k] = vec_sub_16(acc[k], column[k]);
+            switch(removed.size())
+            {
+            case 0:
+                break;
+            case 1:
+                reduce_small_sub<1>(acc,removed,j);
+                break;
+            case 2:
+                reduce_small_sub<2>(acc,removed,j);
+                break;
+            default:
+                for (IndexType i = 0; i < removed.size(); ++i)
+                {
+                    IndexType       index  = removed[i];
+                    const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+                    auto*           column =
+                      reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+
+                    for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+                        acc[k] = vec_sub_16(acc[k], column[k]);
+                }
             }
 
-            for (IndexType i = 0; i < added.size(); ++i)
+            switch(added.size())
             {
-                IndexType       index  = added[i];
-                const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
-                auto*           column =
-                  reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
+            case 0:
+                break;
+            case 1:
+                reduce_small_add<1>(acc,added,j);
+                break;
+            case 2:
+                reduce_small_add<2>(acc,added,j);
+                break;
+            default:
+                for (IndexType i = 0; i < added.size(); ++i)
+                {
+                    IndexType       index  = added[i];
+                    const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
+                    auto*           column =
+                      reinterpret_cast<const vec_t*>(&featureTransformer.threatWeights[offset]);
 
-                for (IndexType k = 0; k < Tiling::NumRegs; ++k)
-                    acc[k] = vec_add_16(acc[k], column[k]);
+                    for (IndexType k = 0; k < Tiling::NumRegs; ++k)
+                        acc[k] = vec_add_16(acc[k], column[k]);
+                }
             }
 
             for (IndexType k = 0; k < Tiling::NumRegs; k++)
