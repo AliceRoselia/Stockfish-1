@@ -397,7 +397,7 @@ class SIMDTiling {
     static constexpr IndexType TileHeight     = NumRegs * sizeof(vec_t) / 2;
     static constexpr IndexType PsqtTileHeight = NumPsqtRegs * sizeof(psqt_vec_t) / 4;
 
-    static constexpr int PrefetchSize = sizeof(vec_t) >= 128 ? 1 : 128/sizeof(vec_t);
+    static constexpr int PrefetchSize = sizeof(vec_t) >= 256 ? 1 : 256/sizeof(vec_t);
 
     static_assert(PrefetchSize <= NumRegs);
 
