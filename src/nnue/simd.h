@@ -397,6 +397,10 @@ class SIMDTiling {
     static constexpr IndexType TileHeight     = NumRegs * sizeof(vec_t) / 2;
     static constexpr IndexType PsqtTileHeight = NumPsqtRegs * sizeof(psqt_vec_t) / 4;
 
+    static constexpr int PrefetchSize = sizeof(vec_t) >= 128 ? 1 : 128/sizeof(vec_t);
+
+    static_assert(PrefetchSize <= NumRegs);
+
     static_assert(HalfDimensions % TileHeight == 0, "TileHeight must divide HalfDimensions");
     static_assert(PSQTBuckets % PsqtTileHeight == 0, "PsqtTileHeight must divide PSQTBuckets");
 #endif
