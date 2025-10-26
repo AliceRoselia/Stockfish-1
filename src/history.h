@@ -53,7 +53,15 @@ inline int pawn_correction_history_index(const Position& pos) {
 }
 
 inline int minor_piece_index(const Position& pos) {
-    return pos.minor_piece_key() & (CORRECTION_HISTORY_SIZE - 1);
+    #ifdef USE_PEXT
+    Bitboard minor_pieces = pos.pieces(KNIGHT,BISHOP);
+    Bitboard attackedbyPawn = pos.attacks_by<PAWN>(WHITE) | pos.attacks_by<PAWN>(BLACK);
+    Key result = pext(attackedbyPawn,minor_pieces);
+    #else
+    "Not supported yet."
+    #endif // USE_PEXT
+
+    return (result ^ pos.minor_piece_key()) & (CORRECTION_HISTORY_SIZE - 1);
 }
 
 template<Color c>
