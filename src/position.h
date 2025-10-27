@@ -173,6 +173,7 @@ class Position {
     void set_castling_right(Color c, Square rfrom);
     void set_state() const;
     void set_check_info() const;
+    int piece_count(Piece pc) const;
 
     // Other helpers
     void move_piece(Square from, Square to);
@@ -189,7 +190,6 @@ class Position {
     Piece      board[SQUARE_NB];
     Bitboard   byTypeBB[PIECE_TYPE_NB];
     Bitboard   byColorBB[COLOR_NB];
-    int        pieceCount[PIECE_NB];
     int        castlingRightsMask[SQUARE_NB];
     Square     castlingRookSquare[CASTLING_RIGHT_NB];
     Bitboard   castlingPath[CASTLING_RIGHT_NB];
@@ -228,12 +228,12 @@ inline Bitboard Position::pieces(Color c, PieceTypes... pts) const {
 
 template<PieceType Pt>
 inline int Position::count(Color c) const {
-    return pieceCount[make_piece(c, Pt)];
+    return popcount(pieces(c,Pt));
 }
 
 template<PieceType Pt>
 inline int Position::count() const {
-    return count<Pt>(WHITE) + count<Pt>(BLACK);
+    return popcount(pieces(Pt));
 }
 
 template<PieceType Pt>
@@ -323,13 +323,15 @@ inline bool Position::capture_stage(Move m) const {
 
 inline Piece Position::captured_piece() const { return st->capturedPiece; }
 
+inline int Position::piece_count(Piece pc) const{
+    return popcount(pieces(color_of(pc),type_of(pc)));
+}
+
 inline void Position::put_piece(Piece pc, Square s) {
 
     board[s] = pc;
     byTypeBB[ALL_PIECES] |= byTypeBB[type_of(pc)] |= s;
     byColorBB[color_of(pc)] |= s;
-    pieceCount[pc]++;
-    pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
 }
 
 inline void Position::remove_piece(Square s) {
@@ -339,8 +341,6 @@ inline void Position::remove_piece(Square s) {
     byTypeBB[type_of(pc)] ^= s;
     byColorBB[color_of(pc)] ^= s;
     board[s] = NO_PIECE;
-    pieceCount[pc]--;
-    pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
 }
 
 inline void Position::move_piece(Square from, Square to) {
