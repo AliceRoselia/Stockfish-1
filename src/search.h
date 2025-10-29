@@ -322,7 +322,7 @@ class Worker {
     TimePoint elapsed() const;
     TimePoint elapsed_time() const;
 
-    Value evaluate(const Position&);
+    std::tuple<Value,int> evaluate(const Position&);
 
     LimitsType limits;
 

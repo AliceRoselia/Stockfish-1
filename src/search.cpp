@@ -644,7 +644,7 @@ Value Search::Worker::search(
         // Step 2. Check for aborted search and immediate draw
         if (threads.stop.load(std::memory_order_relaxed) || pos.is_draw(ss->ply)
             || ss->ply >= MAX_PLY)
-            return (ss->ply >= MAX_PLY && !ss->inCheck) ? evaluate(pos) : value_draw(nodes);
+            return (ss->ply >= MAX_PLY && !ss->inCheck) ? std::get<0>(evaluate(pos)) : value_draw(nodes);
 
         // Step 3. Mate distance pruning. Even if we mate at the next move our score
         // would be at best mate_in(ss->ply + 1), but if alpha is already bigger because
@@ -781,6 +781,7 @@ Value Search::Worker::search(
 
     // Step 6. Static evaluation of the position
     Value      unadjustedStaticEval = VALUE_NONE;
+    int      complexity           = 800;
     const auto correctionValue      = correction_value(*this, pos, ss);
     if (ss->inCheck)
     {
@@ -796,7 +797,7 @@ Value Search::Worker::search(
         // Never assume anything about values stored in TT
         unadjustedStaticEval = ttData.eval;
         if (!is_valid(unadjustedStaticEval))
-            unadjustedStaticEval = evaluate(pos);
+            std::tie(unadjustedStaticEval,complexity) = evaluate(pos);
 
         ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
 
@@ -807,7 +808,7 @@ Value Search::Worker::search(
     }
     else
     {
-        unadjustedStaticEval = evaluate(pos);
+        std::tie(unadjustedStaticEval,complexity) = evaluate(pos);
         ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
 
         // Static evaluation is saved as it was before adjustment by correction history
@@ -1173,8 +1174,8 @@ moves_loop:  // When in check, search starts here
                + (ttData.depth >= depth) * (978 + cutNode * 1051);
 
         // These reduction adjustments have no proven non-linear scaling
-
-        r += 843;  // Base reduction offset to compensate for other tweaks
+        r -= std::min(complexity,1600);
+        r += 1643;  // Base reduction offset to compensate for other tweaks
         r -= moveCount * 66;
         r -= std::abs(correctionValue) / 30450;
 
@@ -1513,7 +1514,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
 
     // Step 2. Check for an immediate draw or maximum ply reached
     if (pos.is_draw(ss->ply) || ss->ply >= MAX_PLY)
-        return (ss->ply >= MAX_PLY && !ss->inCheck) ? evaluate(pos) : VALUE_DRAW;
+        return (ss->ply >= MAX_PLY && !ss->inCheck) ? std::get<0>(evaluate(pos)) : VALUE_DRAW;
 
     assert(0 <= ss->ply && ss->ply < MAX_PLY);
 
@@ -1545,7 +1546,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
             // Never assume anything about values stored in TT
             unadjustedStaticEval = ttData.eval;
             if (!is_valid(unadjustedStaticEval))
-                unadjustedStaticEval = evaluate(pos);
+                unadjustedStaticEval = std::get<0>(evaluate(pos));
             ss->staticEval = bestValue =
               to_corrected_static_eval(unadjustedStaticEval, correctionValue);
 
@@ -1556,7 +1557,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
         }
         else
         {
-            unadjustedStaticEval = evaluate(pos);
+            unadjustedStaticEval = std::get<0>(evaluate(pos));
 
             ss->staticEval = bestValue =
               to_corrected_static_eval(unadjustedStaticEval, correctionValue);
@@ -1729,7 +1730,7 @@ TimePoint Search::Worker::elapsed() const {
 
 TimePoint Search::Worker::elapsed_time() const { return main_manager()->tm.elapsed_time(); }
 
-Value Search::Worker::evaluate(const Position& pos) {
+std::tuple<Value,int> Search::Worker::evaluate(const Position& pos) {
     return Eval::evaluate(networks[numaAccessToken], pos, accumulatorStack, refreshTable,
                           optimism[pos.side_to_move()]);
 }
