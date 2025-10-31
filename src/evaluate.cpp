@@ -46,7 +46,103 @@ int Eval::simple_eval(const Position& pos) {
          + (pos.non_pawn_material(c) - pos.non_pawn_material(~c));
 }
 
-bool Eval::use_smallnet(const Position& pos) { return std::abs(simple_eval(pos)) > 962; }
+constexpr int SMALLNET_THRESHOLD = 962;
+
+bool Eval::use_smallnet(const Position& pos, const Square prevsq) {
+    int static_material = simple_eval(pos);
+    //We are not losing enough material-wise, so let's ignore other factors.
+    if (static_material >= -SMALLNET_THRESHOLD)
+        return static_material > SMALLNET_THRESHOLD;
+    //If there was no previous square, we can't take back.
+    if (prevsq == SQ_NONE)
+        return static_material < -SMALLNET_THRESHOLD;
+
+    //If this position is quite futile in material, don't try.
+    if (static_material + PieceValue[pos.piece_on(prevsq)] < -SMALLNET_THRESHOLD)
+        return false;
+
+    //Otherwise, we will distinguish between two types of positions.
+    //One is a position where the opponent just played
+    //The rest of the logic will be siimilar to see_ge.
+
+    Color stm = pos.side_to_move();
+    Bitboard occupied  = pos.pieces()^prevsq;
+    Bitboard attackers = pos.attackers_to(prevsq, occupied);
+    Bitboard stmAttackers, bb;
+    int side_multiplier = -1;
+    int material_gain = PieceValue[pos.piece_on(prevsq)];
+    while (true)
+    {
+        //We don't lose anymore.
+        if (stm == pos.side_to_move() && static_material >= -SMALLNET_THRESHOLD)
+            return false;
+
+        // If stm has no more attackers then give up: stm loses
+        if (!(stmAttackers = attackers & pos.pieces(stm)))
+            break;
+        // Don't allow pinned pieces to attack as long as there are
+        // pinners on their original square.
+        if (pos.pinners(~stm) & occupied)
+        {
+            stmAttackers &= ~pos.blockers_for_king(stm);
+
+            if (!stmAttackers)
+                break;
+        }
+        static_material += material_gain;
+        //We can't save this position anymore.
+        if (stm == pos.side_to_move() && static_material < -SMALLNET_THRESHOLD)
+            return true;
+
+        if ((bb = stmAttackers & pos.pieces(PAWN)))
+        {
+            material_gain = PawnValue*side_multiplier;
+            occupied ^= least_significant_square_bb(bb);
+            attackers |= attacks_bb<BISHOP>(prevsq, occupied) & pos.pieces(BISHOP, QUEEN);
+        }
+        else if ((bb = stmAttackers & pos.pieces(KNIGHT)))
+        {
+            material_gain = KnightValue*side_multiplier;
+            occupied ^= least_significant_square_bb(bb);
+        }
+
+        else if ((bb = stmAttackers & pos.pieces(BISHOP)))
+        {
+            material_gain = BishopValue*side_multiplier;
+            occupied ^= least_significant_square_bb(bb);
+            attackers |= attacks_bb<BISHOP>(prevsq, occupied) & pos.pieces(BISHOP, QUEEN);
+        }
+
+        else if ((bb = stmAttackers & pos.pieces(ROOK)))
+        {
+            material_gain = RookValue*side_multiplier;
+            occupied ^= least_significant_square_bb(bb);
+            attackers |= attacks_bb<ROOK>(prevsq, occupied) & pos.pieces(ROOK, QUEEN);
+        }
+
+        else if ((bb = stmAttackers & pos.pieces(QUEEN)))
+        {
+            material_gain = QueenValue*side_multiplier;
+            occupied ^= least_significant_square_bb(bb);
+            attackers |= (attacks_bb<BISHOP>(prevsq, occupied) & pos.pieces(BISHOP, QUEEN))
+                       | (attacks_bb<ROOK>(prevsq, occupied) & pos.pieces(ROOK, QUEEN));
+        }
+        else //KING
+        {
+            // if it's our side to move, return true when the opponent has no piece left.
+            // Otherwise, return true when we have any attacker left.
+            return (stm == pos.side_to_move()) != bool(attackers & ~pos.pieces(stm));
+
+        }
+
+        attackers &= occupied;
+        stm = ~stm;
+        side_multiplier = -side_multiplier;
+    }
+
+    //If the position cannot be salvaged (our turn we had to play), we lose. If the opponent gave up, we win.
+    return (stm == pos.side_to_move());
+    }
 
 // Evaluate is the evaluator for the outer world. It returns a static evaluation
 // of the position from the point of view of the side to move.
@@ -54,11 +150,13 @@ Value Eval::evaluate(const Eval::NNUE::Networks&    networks,
                      const Position&                pos,
                      Eval::NNUE::AccumulatorStack&  accumulators,
                      Eval::NNUE::AccumulatorCaches& caches,
-                     int                            optimism) {
+                     int                            optimism,
+                     const Square                   prevsq
+                     ) {
 
     assert(!pos.checkers());
 
-    bool smallNet           = use_smallnet(pos);
+    bool smallNet           = use_smallnet(pos,prevsq);
     auto [psqt, positional] = smallNet ? networks.small.evaluate(pos, accumulators, &caches.small)
                                        : networks.big.evaluate(pos, accumulators, &caches.big);
 
@@ -112,7 +210,7 @@ std::string Eval::trace(Position& pos, const Eval::NNUE::Networks& networks) {
     v                       = pos.side_to_move() == WHITE ? v : -v;
     ss << "NNUE evaluation        " << 0.01 * UCIEngine::to_cp(v, pos) << " (white side)\n";
 
-    v = evaluate(networks, pos, accumulators, *caches, VALUE_ZERO);
+    v = evaluate(networks, pos, accumulators, *caches, VALUE_ZERO,SQ_NONE);
     v = pos.side_to_move() == WHITE ? v : -v;
     ss << "Final evaluation       " << 0.01 * UCIEngine::to_cp(v, pos) << " (white side)";
     ss << " [with scaled NNUE, ...]";
