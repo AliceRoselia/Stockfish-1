@@ -61,8 +61,8 @@ struct alignas(CacheLineSize) Accumulator {
 struct AccumulatorCaches {
 
     template<typename Networks>
-    AccumulatorCaches(const Networks& networks) {
-        clear(networks);
+    AccumulatorCaches(const Networks& networks, bool use_alt_net) {
+        clear(networks,use_alt_net);
     }
 
     template<IndexType Size>
@@ -96,11 +96,16 @@ struct AccumulatorCaches {
         std::array<std::array<Entry, COLOR_NB>, SQUARE_NB> entries;
     };
 
+
     template<typename Networks>
-    void clear(const Networks& networks) {
-        big.clear(networks.big);
+    void clear(const Networks& networks, bool use_alt_net) {
+        if (use_alt_net)
+            big.clear(networks.alt);
+        else
+            big.clear(networks.big);
         small.clear(networks.small);
     }
+
 
     Cache<TransformedFeatureDimensionsBig>   big;
     Cache<TransformedFeatureDimensionsSmall> small;

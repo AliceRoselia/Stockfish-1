@@ -48,6 +48,7 @@
 #if !defined(_MSC_VER) && !defined(NNUE_EMBEDDING_OFF)
 INCBIN(EmbeddedNNUEBig, EvalFileDefaultNameBig);
 INCBIN(EmbeddedNNUESmall, EvalFileDefaultNameSmall);
+INCBIN(EmbeddedNNUEAlt, EvalFileDefaultNameAlt);
 #else
 const unsigned char        gEmbeddedNNUEBigData[1]   = {0x0};
 const unsigned char* const gEmbeddedNNUEBigEnd       = &gEmbeddedNNUEBigData[1];
@@ -55,6 +56,9 @@ const unsigned int         gEmbeddedNNUEBigSize      = 1;
 const unsigned char        gEmbeddedNNUESmallData[1] = {0x0};
 const unsigned char* const gEmbeddedNNUESmallEnd     = &gEmbeddedNNUESmallData[1];
 const unsigned int         gEmbeddedNNUESmallSize    = 1;
+const unsigned char        gEmbeddedNNUEAltData[1] = {0x0};
+const unsigned char* const gEmbeddedNNUEAltEnd     = &gEmbeddedNNUEAltData[1];
+const unsigned int         gEmbeddedNNUEAltSize    = 1;
 #endif
 
 namespace {
@@ -76,8 +80,10 @@ using namespace Stockfish::Eval::NNUE;
 EmbeddedNNUE get_embedded(EmbeddedNNUEType type) {
     if (type == EmbeddedNNUEType::BIG)
         return EmbeddedNNUE(gEmbeddedNNUEBigData, gEmbeddedNNUEBigEnd, gEmbeddedNNUEBigSize);
-    else
+    else if (type == EmbeddedNNUEType::SMALL)
         return EmbeddedNNUE(gEmbeddedNNUESmallData, gEmbeddedNNUESmallEnd, gEmbeddedNNUESmallSize);
+    else
+        return EmbeddedNNUE(gEmbeddedNNUEAltData, gEmbeddedNNUEAltEnd, gEmbeddedNNUEAltSize);
 }
 
 }

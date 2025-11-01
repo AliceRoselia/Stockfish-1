@@ -302,6 +302,7 @@ class Worker {
     void do_null_move(Position& pos, StateInfo& st);
     void undo_move(Position& pos, const Move move);
     void undo_null_move(Position& pos);
+    bool use_alt_net() const;
 
     // This is the main search function, for both PV and non-PV nodes
     template<NodeType nodeType>
