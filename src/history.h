@@ -34,7 +34,7 @@
 namespace Stockfish {
 
 constexpr int PAWN_HISTORY_SIZE        = 8192;   // has to be a power of 2
-constexpr int CORRECTION_HISTORY_SIZE  = 32768;  // has to be a power of 2
+constexpr int CORRECTION_HISTORY_SIZE  = 65536;  // has to be a power of 2
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 5;
 
@@ -48,17 +48,17 @@ inline int pawn_history_index(const Position& pos) {
     return pos.pawn_key() & (PAWN_HISTORY_SIZE - 1);
 }
 
-inline int pawn_correction_history_index(const Position& pos) {
-    return pos.pawn_key() & (CORRECTION_HISTORY_SIZE - 1);
+inline uint16_t pawn_correction_history_index(const Position& pos) {
+    return pos.pawn_key();
 }
 
-inline int minor_piece_index(const Position& pos) {
-    return pos.minor_piece_key() & (CORRECTION_HISTORY_SIZE - 1);
+inline uint16_t minor_piece_index(const Position& pos) {
+    return pos.minor_piece_key();
 }
 
 template<Color c>
-inline int non_pawn_index(const Position& pos) {
-    return pos.non_pawn_key(c) & (CORRECTION_HISTORY_SIZE - 1);
+inline uint16_t non_pawn_index(const Position& pos) {
+    return pos.non_pawn_key(c);
 }
 
 // StatsEntry is the container of various numerical statistics. We use a class
