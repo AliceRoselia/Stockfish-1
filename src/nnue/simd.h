@@ -92,7 +92,7 @@ using vec_uint_t = __m256i;
     #define vec_load(a) _mm256_load_si256(a)
     #define vec_store(a, b) _mm256_store_si256(a, b)
     #define vec_convert_8_16(a) _mm256_cvtepi8_epi16(a)
-    #define vec_extract_8_16(a,b) _mm256_cvtepi8_epi16(_mm256_extracti64x2_epi64(a,b))
+    #define vec_extract_8_16(a,b) _mm256_cvtepi8_epi16(_mm256_extractf128_si256 (a,b))
     #define vec_add_16(a, b) _mm256_add_epi16(a, b)
     #define vec_sub_16(a, b) _mm256_sub_epi16(a, b)
     #define vec_mulhi_16(a, b) _mm256_mulhi_epi16(a, b)
