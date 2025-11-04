@@ -343,6 +343,7 @@ struct AccumulatorUpdateContext {
         vec_t      acc[Tiling::NumRegs];
         psqt_vec_t psqt[Tiling::NumPsqtRegs];
 
+
         for (IndexType j = 0; j < Dimensions / Tiling::TileHeight; ++j)
         {
             auto* fromTile = reinterpret_cast<const vec_t*>(&fromAcc[j * Tiling::TileHeight]);
@@ -355,22 +356,44 @@ struct AccumulatorUpdateContext {
             {
                 IndexType       index  = removed[i];
                 const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
-                auto*           column =
-                  reinterpret_cast<const vec_i8_t*>(&featureTransformer.threatWeights[offset]);
 
-                for (IndexType k = 0; k < Tiling::NumRegs; ++k)
-                    acc[k] = vec_sub_16(acc[k], vec_convert_8_16(column[k]));
+                auto*           column =
+                  reinterpret_cast<const vec_t*> (&featureTransformer.threatWeights[offset]);
+                for (IndexType k=0; k<Tiling::NumRegs/2; ++k){
+                    auto currentColumn = column[k];
+                    acc[k*2] = vec_sub_16(acc[k*2],vec_extract_8_16(currentColumn,0));
+                    acc[k*2+1] = vec_sub_16(acc[k*2+1],vec_extract_8_16(currentColumn,1));
+                }
+
+                if constexpr (Tiling::NumRegs % 2 == 1)
+                {
+                auto*           column_remainder =
+                  reinterpret_cast<const vec_i8_t*>(&featureTransformer.threatWeights[offset]);
+                    IndexType k = Tiling::NumRegs-1;
+                    acc[k] = vec_sub_16(acc[k], vec_convert_8_16(column_remainder[k]));
+                }
             }
 
             for (IndexType i = 0; i < added.size(); ++i)
             {
                 IndexType       index  = added[i];
                 const IndexType offset = Dimensions * index + j * Tiling::TileHeight;
-                auto*           column =
-                  reinterpret_cast<const vec_i8_t*>(&featureTransformer.threatWeights[offset]);
 
-                for (IndexType k = 0; k < Tiling::NumRegs; ++k)
-                    acc[k] = vec_add_16(acc[k], vec_convert_8_16(column[k]));
+                auto*           column =
+                  reinterpret_cast<const vec_t*> (&featureTransformer.threatWeights[offset]);
+                for (IndexType k=0; k<Tiling::NumRegs/2; ++k){
+                    auto currentColumn = column[k];
+                    acc[k*2] = vec_add_16(acc[k*2],vec_extract_8_16(currentColumn,0));
+                    acc[k*2+1] = vec_add_16(acc[k*2+1],vec_extract_8_16(currentColumn,1));
+                }
+
+                if constexpr (Tiling::NumRegs % 2 == 1)
+                {
+                auto*           column_remainder =
+                  reinterpret_cast<const vec_i8_t*>(&featureTransformer.threatWeights[offset]);
+                    IndexType k = Tiling::NumRegs-1;
+                    acc[k] = vec_add_16(acc[k], vec_convert_8_16(column_remainder[k]));
+                }
             }
 
             for (IndexType k = 0; k < Tiling::NumRegs; k++)
