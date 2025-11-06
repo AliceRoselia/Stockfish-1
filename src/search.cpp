@@ -984,6 +984,9 @@ moves_loop:  // When in check, search starts here
         if (!pos.legal(move))
             continue;
 
+        if (move != ttData.move && move.type_of() == PROMOTION && bestValue < VALUE_DRAW-1 && move.promotion_type() != QUEEN && move.promotion_type() != KNIGHT)
+            continue;
+
         // At root obey the "searchmoves" option and skip moves not listed in Root
         // Move List. In MultiPV mode we also skip PV moves that have been already
         // searched and those of lower "TB rank" if we are in a TB root position.
