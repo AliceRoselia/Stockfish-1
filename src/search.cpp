@@ -827,7 +827,7 @@ Value Search::Worker::search(
 
         if (priorCapture)
         {
-            captureHistory[pos.piece_on(prevSq)][prevSq][type_of(pos.captured_piece())] << evalDiff * 9;
+            captureHistory[pos.piece_on(prevSq)][prevSq][type_of(pos.captured_piece())] << evalDiff * 6;
         }
         else
         {
