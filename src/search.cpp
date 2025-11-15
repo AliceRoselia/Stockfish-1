@@ -821,13 +821,21 @@ Value Search::Worker::search(
     }
 
     // Use static evaluation difference to improve quiet move ordering
-    if (((ss - 1)->currentMove).is_ok() && !(ss - 1)->inCheck && !priorCapture)
+    if (((ss - 1)->currentMove).is_ok() && !(ss - 1)->inCheck)
     {
         int evalDiff = std::clamp(-int((ss - 1)->staticEval + ss->staticEval), -200, 156) + 58;
-        mainHistory[~us][((ss - 1)->currentMove).raw()] << evalDiff * 9;
-        if (!ttHit && type_of(pos.piece_on(prevSq)) != PAWN
-            && ((ss - 1)->currentMove).type_of() != PROMOTION)
-            pawnHistory[pawn_history_index(pos)][pos.piece_on(prevSq)][prevSq] << evalDiff * 14;
+
+        if (priorCapture)
+        {
+            captureHistory[pos.piece_on(prevSq)][prevSq][type_of(pos.captured_piece())] << evalDiff * 9;
+        }
+        else
+        {
+            mainHistory[~us][((ss - 1)->currentMove).raw()] << evalDiff * 9;
+            if (!ttHit && type_of(pos.piece_on(prevSq)) != PAWN
+                && ((ss - 1)->currentMove).type_of() != PROMOTION)
+                pawnHistory[pawn_history_index(pos)][pos.piece_on(prevSq)][prevSq] << evalDiff * 14;
+        }
     }
 
     // Set up the improving flag, which is true if current static evaluation is
