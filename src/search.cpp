@@ -1094,6 +1094,7 @@ moves_loop:  // When in check, search starts here
                     continue;
             }
         }
+        ss->priorSingular = false;
 
         // Step 15. Extensions
         // Singular extension search. If all moves but one
@@ -1119,8 +1120,10 @@ moves_loop:  // When in check, search starts here
 
             if (value < singularBeta)
             {
+                ss->priorSingular = true;
+
                 int corrValAdj   = std::abs(correctionValue) / 229958;
-                int doubleMargin = -4 + 198 * PvNode - 212 * !ttCapture - corrValAdj
+                int doubleMargin = -4 + 198 * PvNode - 212 * !ttCapture - corrValAdj - 200*(ss-1)->priorSingular
                                  - 921 * ttMoveHistory / 127649 - (ss->ply > rootDepth) * 45;
                 int tripleMargin = 76 + 308 * PvNode - 250 * !ttCapture + 92 * ss->ttPv - corrValAdj
                                  - (ss->ply * 2 > rootDepth * 3) * 52;
