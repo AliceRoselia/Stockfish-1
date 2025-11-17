@@ -87,6 +87,7 @@ MovePicker::MovePicker(const Position&              p,
                        const LowPlyHistory*         lph,
                        const CapturePieceToHistory* cph,
                        const PieceToHistory**       ch,
+                       const PieceToHistory*        nrh,
                        const PawnHistory*           ph,
                        int                          pl) :
     pos(p),
@@ -94,6 +95,7 @@ MovePicker::MovePicker(const Position&              p,
     lowPlyHistory(lph),
     captureHistory(cph),
     continuationHistory(ch),
+    nullResponseHistory(nrh),
     pawnHistory(ph),
     ttMove(ttm),
     depth(d),
@@ -174,7 +176,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             int v = threatByLesser[pt] & to ? -19 : 20 * bool(threatByLesser[pt] & from);
             m.value += PieceValue[pt] * v;
 
-
+            if (nullResponseHistory != nullptr)
+                m.value += (*nullResponseHistory)[pc][to];
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
         }

@@ -128,7 +128,7 @@ void Position::init() {
     for (int cr = NO_CASTLING; cr <= ANY_CASTLING; ++cr)
         Zobrist::castling[cr] = rng.rand<Key>();
 
-    Zobrist::side    = rng.rand<Key>();
+    Zobrist::side    = 1;
     Zobrist::noPawns = rng.rand<Key>();
 
     // Prepare the cuckoo tables

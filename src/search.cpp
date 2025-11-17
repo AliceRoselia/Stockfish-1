@@ -139,6 +139,7 @@ void update_all_stats(const Position& pos,
                       SearchedList&   capturesSearched,
                       Depth           depth,
                       Move            TTMove,
+                      Move            nullResponse,
                       int             moveCount);
 
 }  // namespace
@@ -567,6 +568,9 @@ void Search::Worker::clear() {
     pawnCorrectionHistory.fill(5);
     minorPieceCorrectionHistory.fill(0);
     nonPawnCorrectionHistory.fill(0);
+    for (auto& to: nullResponseHistory)
+        for (auto& h: to)
+            h.fill(0);
 
     ttMoveHistory = 0;
 
@@ -972,7 +976,13 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+    auto [nullttHit, nullttData, nullttWriter] = tt.probe(posKey^1);
+    Move nullResponse = nullttHit ? nullttData.move : Move::none();
+    const PieceToHistory* nullResponseHist = nullResponse ? &nullResponseHistory[pos.moved_piece(nullResponse)][nullResponse.to_sq()] : nullptr;
+
+
+
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,nullResponseHist,
                   &pawnHistory, ss->ply);
 
     value = bestValue;
@@ -1393,7 +1403,7 @@ moves_loop:  // When in check, search starts here
     else if (bestMove)
     {
         update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
-                         ttData.move, moveCount);
+                         ttData.move,nullResponse, moveCount);
         if (!PvNode)
             ttMoveHistory << (bestMove == ttData.move ? 809 : -865);
     }
@@ -1588,7 +1598,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
     MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
-                  contHist, &pawnHistory, ss->ply);
+                  contHist, nullptr, &pawnHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
     // cutoff occurs.
@@ -1801,6 +1811,7 @@ void update_all_stats(const Position& pos,
                       SearchedList&   capturesSearched,
                       Depth           depth,
                       Move            ttMove,
+                      Move            nullResponse,
                       int             moveCount) {
 
     CapturePieceToHistory& captureHistory = workerThread.captureHistory;
@@ -1812,11 +1823,16 @@ void update_all_stats(const Position& pos,
 
     if (!pos.capture_stage(bestMove))
     {
+        PieceToHistory& nullResponseHist = workerThread.nullResponseHistory[pos.piece_on(nullResponse.from_sq())][nullResponse.to_sq()];
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 881 / 1024);
+        nullResponseHist[movedPiece][bestMove.to_sq()] << bonus;
 
         // Decrease stats for all non-best quiet moves
         for (Move move : quietsSearched)
+        {
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1083 / 1024);
+            nullResponseHist[pos.moved_piece(move)][move.to_sq()] << -malus;
+        }
     }
     else
     {
