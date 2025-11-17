@@ -1826,7 +1826,7 @@ void update_all_stats(const Position& pos,
     if (!pos.capture_stage(bestMove))
     {
 
-        PieceToHistory& nullResponseHist = workerThread.nullResponseHistory[pos.piece_on(nullResponse.from_sq())][nullResponse.to_sq()];
+        PieceToHistory& nullResponseHist = nullResponse ? workerThread.nullResponseHistory[pos.piece_on(nullResponse.from_sq())][nullResponse.to_sq()] : workerThread.nullResponseHistory[NO_PIECE][0];
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 881 / 1024);
         if (nullResponse)
             nullResponseHist[movedPiece][bestMove.to_sq()] << bonus;
