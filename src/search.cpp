@@ -1825,15 +1825,18 @@ void update_all_stats(const Position& pos,
 
     if (!pos.capture_stage(bestMove))
     {
+
         PieceToHistory& nullResponseHist = workerThread.nullResponseHistory[pos.piece_on(nullResponse.from_sq())][nullResponse.to_sq()];
         update_quiet_histories(pos, ss, workerThread, bestMove, bonus * 881 / 1024);
-        nullResponseHist[movedPiece][bestMove.to_sq()] << bonus;
+        if (nullResponse)
+            nullResponseHist[movedPiece][bestMove.to_sq()] << bonus;
 
         // Decrease stats for all non-best quiet moves
         for (Move move : quietsSearched)
         {
             update_quiet_histories(pos, ss, workerThread, move, -malus * 1083 / 1024);
-            nullResponseHist[pos.moved_piece(move)][move.to_sq()] << -malus;
+            if (nullResponse)
+                nullResponseHist[pos.moved_piece(move)][move.to_sq()] << -malus;
         }
     }
     else
