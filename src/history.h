@@ -78,6 +78,7 @@ class StatsEntry {
     operator const T&() const { return entry; }
 
     void operator<<(int bonus) {
+        // The results have always been mixed. Let's keep trying.
         // Make sure that bonus is in range [-D, D]
         int clampedBonus = std::clamp(bonus, -D, D);
         int absolute_bonus = std::abs(clampedBonus);
