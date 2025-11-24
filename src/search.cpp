@@ -797,6 +797,22 @@ Value Search::Worker::search(
     {
         // Skip early pruning when in check
         ss->staticEval = eval = (ss - 2)->staticEval;
+        if (PvNode)
+        {
+            if (ss->ttHit)
+            {
+                unadjustedStaticEval = ttData.eval;
+                if (!is_valid(unadjustedStaticEval))
+                    unadjustedStaticEval = evaluate(pos);
+            }
+            else
+            {
+                unadjustedStaticEval = evaluate(pos);
+            }
+
+        ss->staticEval = eval = to_corrected_static_eval(unadjustedStaticEval, correctionValue);
+        }
+
         improving             = false;
         goto moves_loop;
     }
