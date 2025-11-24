@@ -974,6 +974,23 @@ moves_loop:  // When in check, search starts here
         && !is_decisive(beta) && is_valid(ttData.value) && !is_decisive(ttData.value))
         return probCutBeta;
 
+    // Before step 13. Try doing null move if the position is bad to try to prune away bad
+
+    bool nullPunish = false;
+
+    if (!excludedMove && pos.non_pawn_material(us) && !ss->inCheck && !is_loss(beta-400))
+    {
+        Depth R = 7 + depth / 3;
+        do_null_move(pos, st, ss);
+        Value nullBeta = beta-400;
+
+        Value nullValue = -search<NonPV>(pos, ss + 1, -nullBeta, -nullBeta + 1, depth - R, false);
+
+        undo_null_move(pos);
+
+        nullPunish = nullValue < nullBeta;
+    }
+
     const PieceToHistory* contHist[] = {
       (ss - 1)->continuationHistory, (ss - 2)->continuationHistory, (ss - 3)->continuationHistory,
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
@@ -986,8 +1003,11 @@ moves_loop:  // When in check, search starts here
 
     int moveCount = 0;
 
+
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+
+
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1209,6 +1229,8 @@ moves_loop:  // When in check, search starts here
 
         // Decrease/increase reduction for moves with a good/bad history
         r -= ss->statScore * 850 / 8192;
+
+        r += nullPunish * 1024;
 
 
         // Step 17. Late moves reduction / extension (LMR)
