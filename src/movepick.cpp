@@ -160,19 +160,19 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         {
             // histories
 
-            m.value = 3967 * (*mainHistory)[us][m.raw()];
-            m.value += 2254 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += 1865 * (*continuationHistory[0])[pc][to];
-            m.value += 1140 * (*continuationHistory[1])[pc][to];
-            m.value += 221 * (*continuationHistory[2])[pc][to];
-            m.value += 410 * (*continuationHistory[3])[pc][to];
+            m.value = 3801 * (*mainHistory)[us][m.raw()];
+            m.value += 2642 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += 2041 * (*continuationHistory[0])[pc][to];
+            m.value += 1190 * (*continuationHistory[1])[pc][to];
+            m.value += 400 * (*continuationHistory[2])[pc][to];
+            m.value += 433 * (*continuationHistory[3])[pc][to];
             //m.value -= 34 * (*continuationHistory[4])[pc][to];
-            m.value += 132 * (*continuationHistory[5])[pc][to];
-            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 30872015;
-            m.value += threatByLesser[pt] & to ? -24414050 : 25699000 * bool(threatByLesser[pt] & from);
+            m.value += 376 * (*continuationHistory[5])[pc][to];
+            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 33033183;
+            m.value += threatByLesser[pt] & to ? -22441698 : 23622840 * bool(threatByLesser[pt] & from);
 
             if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 5672 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                m.value += 6440 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
             //m.value /= 1024;
 
 
