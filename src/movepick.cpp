@@ -28,6 +28,43 @@
 
 namespace Stockfish {
 
+/*
+m.value = mainWeight * (*mainHistory)[us][m.raw()];
+m.value += pawnWeight * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+m.value += contWeight[0] * (*continuationHistory[0])[pc][to];
+m.value += contWeight[1] * (*continuationHistory[1])[pc][to];
+m.value += contWeight[2] * (*continuationHistory[2])[pc][to];
+m.value += contWeight[3] * (*continuationHistory[3])[pc][to];
+m.value += contWeight[5] * (*continuationHistory[5])[pc][to];
+m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * checkWeight;
+m.value += threatByLesser[pt] & to ? -threatWeight1 : threatWeight2 * bool(threatByLesser[pt] & from);
+
+if (ply < LOW_PLY_HISTORY_SIZE)
+    m.value += lowplyWeight  * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                */
+
+int mainWeight = 3851;
+TUNE(SetRange(0,10000),mainWeight);
+int pawnWeight = 2148;
+TUNE(SetRange(0,10000),pawnWeight);
+int contWeight[6] = {1587,1052,280,328,0,187};
+TUNE(SetRange(0,10000),contWeight[0]);
+TUNE(SetRange(0,10000),contWeight[1]);
+TUNE(SetRange(0,10000),contWeight[2]);
+TUNE(SetRange(0,10000),contWeight[3]);
+TUNE(SetRange(0,10000),contWeight[5]);
+int checkWeight = 28835489;
+TUNE(SetRange(0,60000000),checkWeight);
+int threatWeight1 = 25465757;
+TUNE(SetRange(0,60000000),threatWeight1);
+int threatWeight2 = 26806060;
+TUNE(SetRange(0,60000000),threatWeight2);
+int lowplyWeight = 6112;
+TUNE(SetRange(0,10000),lowplyWeight);
+
+
+
+
 namespace {
 
 enum Stages {
@@ -160,18 +197,18 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         {
             // histories
             //These were tuned.
-            m.value = 3849 * (*mainHistory)[us][m.raw()];
-            m.value += 2148 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += 1595 * (*continuationHistory[0])[pc][to];
-            m.value += 1048 * (*continuationHistory[1])[pc][to];
-            m.value += 280 * (*continuationHistory[2])[pc][to];
-            m.value += 326 * (*continuationHistory[3])[pc][to];
-            m.value += 179 * (*continuationHistory[5])[pc][to];
-            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 28676647;
-            m.value += threatByLesser[pt] & to ? -36045908 : 25853889 * bool(threatByLesser[pt] & from);
+            m.value = mainWeight * (*mainHistory)[us][m.raw()];
+            m.value += pawnWeight * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += contWeight[0] * (*continuationHistory[0])[pc][to];
+            m.value += contWeight[1] * (*continuationHistory[1])[pc][to];
+            m.value += contWeight[2] * (*continuationHistory[2])[pc][to];
+            m.value += contWeight[3] * (*continuationHistory[3])[pc][to];
+            m.value += contWeight[5] * (*continuationHistory[5])[pc][to];
+            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * checkWeight;
+            m.value += threatByLesser[pt] & to ? -threatWeight1 : threatWeight2 * bool(threatByLesser[pt] & from);
 
             if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 771 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                m.value += lowplyWeight  * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
             //m.value /= 1024;
 
 
