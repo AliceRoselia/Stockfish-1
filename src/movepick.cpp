@@ -159,7 +159,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         else if constexpr (Type == QUIETS)
         {
             // histories
-
+            //These were tuned.
             m.value = 3849 * (*mainHistory)[us][m.raw()];
             m.value += 2148 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
             m.value += 1595 * (*continuationHistory[0])[pc][to];
