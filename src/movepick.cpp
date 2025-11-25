@@ -121,6 +121,17 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
 // Assigns a numerical value to each move in a list, used for sorting.
 // Captures are ordered by Most Valuable Victim (MVV), preferring captures
 // with a good history. Quiets moves are ordered using the history tables.
+constexpr int historyWeights[8][11] = {
+    {0,0,0,0,0,0,0,0,0,0,0},
+    {7177495,4571,686,1641,1099,221,377,257,-14046746,5575367,1283*8},
+    {29416902,3364,2934,1851,1149,450,477,373,35841223,600372,1018*8},
+    {22046391,3704,2907,1926,1328,446,504,295,35669645,837894,783*8},
+    {23671218,3588,2626,1727,1177,380,351,358,40561372,765325,1216*8},
+    {37344197,2952,2743,1607,1032,415,492,168,42063126,802939,795*8},
+    {42560381,3390,2099,1276,918,171,256,77,0,9999999,1967*8},
+    {0,0,0,0,0,0,0,0,0,0,0}
+};
+
 template<GenType Type>
 ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
@@ -158,23 +169,25 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
         else if constexpr (Type == QUIETS)
         {
+            //Unfortunately, c++ does not support easy assignment of arrays, so, to work around, we will just use a macro.
+            #define currentHistoryWeights historyWeights[pt]
             // histories
             //These were tuned.
-            m.value = 3849 * (*mainHistory)[us][m.raw()];
-            m.value += 2148 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += 1595 * (*continuationHistory[0])[pc][to];
-            m.value += 1048 * (*continuationHistory[1])[pc][to];
-            m.value += 280 * (*continuationHistory[2])[pc][to];
-            m.value += 326 * (*continuationHistory[3])[pc][to];
-            m.value += 179 * (*continuationHistory[5])[pc][to];
-            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 28676647;
-            m.value += threatByLesser[pt] & to ? -36045908 : 25853889 * bool(threatByLesser[pt] & from);
+            m.value = currentHistoryWeights[0];
+            m.value += currentHistoryWeights[1] * (*mainHistory)[us][m.raw()];
+            m.value += currentHistoryWeights[2] * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += currentHistoryWeights[3] * (*continuationHistory[0])[pc][to];
+            m.value += currentHistoryWeights[4] * (*continuationHistory[1])[pc][to];
+            m.value += currentHistoryWeights[5] * (*continuationHistory[2])[pc][to];
+            m.value += currentHistoryWeights[6] * (*continuationHistory[3])[pc][to];
+            m.value += currentHistoryWeights[7] * (*continuationHistory[5])[pc][to];
+            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * currentHistoryWeights[8];
+            m.value += (threatByLesser[pt] & to ? -19 : 20 * bool(threatByLesser[pt] & from))* currentHistoryWeights[9];
 
             if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 771 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                m.value += currentHistoryWeights[10] * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
             //m.value /= 1024;
-
-
+            #undef currentHistoryWeights
         }
 
         else  // Type == EVASIONS
