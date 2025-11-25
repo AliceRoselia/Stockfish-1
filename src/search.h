@@ -41,6 +41,7 @@
 #include "syzygy/tbprobe.h"
 #include "timeman.h"
 #include "types.h"
+#include <fstream>
 
 namespace Stockfish {
 
@@ -279,6 +280,8 @@ class Worker {
     void ensure_network_replicated();
 
     // Public because they need to be updatable by the stats
+    std::fstream debugFile = std::fstream("debug.csv",std::fstream::out);
+
     ButterflyHistory mainHistory;
     LowPlyHistory    lowPlyHistory;
 

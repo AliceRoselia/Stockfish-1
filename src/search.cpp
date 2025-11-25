@@ -49,6 +49,7 @@
 #include "types.h"
 #include "uci.h"
 #include "ucioption.h"
+#include <fstream>
 
 namespace Stockfish {
 
@@ -1397,6 +1398,56 @@ moves_loop:  // When in check, search starts here
     // we update the stats of searched moves.
     else if (bestMove)
     {
+        if (!pos.capture_stage(bestMove) && bestMove != ttData.move)
+        {
+            Bitboard threatByLesser[KING + 1];
+            threatByLesser[PAWN]   = 0;
+            threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
+            threatByLesser[ROOK] =
+              pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
+            threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
+            threatByLesser[KING]  = pos.attacks_by<QUEEN>(~us) | threatByLesser[QUEEN];
+
+            const auto pindex = pawn_history_index(pos);
+            {
+                debugFile<<"1,";
+                debugFile<<depth<<",";
+                debugFile<<mainHistory[us][bestMove.raw()]<<",";
+                debugFile<<pawnHistory[pindex][pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
+                for (int i=0; i<5; ++i)
+                    debugFile<<(*contHist[i])[pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
+                debugFile<<(*contHist[5])[pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
+                debugFile << (int)((bool(pos.check_squares(type_of(pos.moved_piece(bestMove))) & bestMove.to_sq()) && pos.see_ge(bestMove, -75)))<<",";
+                int v = threatByLesser[type_of(pos.moved_piece(bestMove))] & bestMove.to_sq() ? -19 : 20 * bool(threatByLesser[type_of(pos.moved_piece(bestMove))] & bestMove.from_sq());
+                debugFile<<v<<",";
+                if (ss->ply < LOW_PLY_HISTORY_SIZE)
+                    debugFile<< 8 * (lowPlyHistory)[ss->ply][bestMove.raw()] / (1 + ss->ply)<<"\n";
+                else
+                    debugFile<<"0\n";
+                //debugFile<<(int)(type_of(pos.moved_piece(bestMove)))<<"\n";
+            }
+
+
+            for (Move current_move: quietsSearched)
+            {
+                debugFile<<"0,";
+                debugFile<<depth<<",";
+                debugFile<<mainHistory[us][current_move.raw()]<<",";
+                debugFile<<pawnHistory[pindex][pos.moved_piece(current_move)][current_move.to_sq()]<<",";
+                for (int i=0; i<5; ++i)
+                    debugFile<<(*contHist[i])[pos.moved_piece(current_move)][current_move.to_sq()]<<",";
+                debugFile<<(*contHist[5])[pos.moved_piece(current_move)][current_move.to_sq()]<<",";
+                debugFile << (int)((bool(pos.check_squares(type_of(pos.moved_piece(bestMove))) & current_move.to_sq()) && pos.see_ge(current_move, -75)))<<",";
+                int v = threatByLesser[type_of(pos.moved_piece(current_move))] & current_move.to_sq() ? -19 : 20 * bool(threatByLesser[type_of(pos.moved_piece(current_move))] & current_move.from_sq());
+                debugFile<<v<<",";
+                if (ss->ply < LOW_PLY_HISTORY_SIZE)
+                    debugFile<< 8 * (lowPlyHistory)[ss->ply][current_move.raw()] / (1 + ss->ply)<<"\n";
+                else
+                    debugFile<<"0\n";
+                //debugFile<<(int)(type_of(pos.moved_piece(current_move)))<<"\n";
+            }
+        }
+
         update_all_stats(pos, ss, *this, bestMove, prevSq, quietsSearched, capturesSearched, depth,
                          ttData.move, moveCount);
         if (!PvNode)
