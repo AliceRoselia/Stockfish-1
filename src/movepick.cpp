@@ -147,16 +147,16 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         {
             // histories
 
-            m.value = 3988 * (*mainHistory)[us][m.raw()];
-            m.value += 2028 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += 6951 * (*continuationHistory[0])[pc][to];
-            m.value += 2391 * (*continuationHistory[1])[pc][to];
-            m.value += 657 * (*continuationHistory[2])[pc][to];
-            m.value += 520 * (*continuationHistory[3])[pc][to];
-            m.value -= 164 * (*continuationHistory[4])[pc][to];
-            m.value += 126 * (*continuationHistory[5])[pc][to];
+            m.value = 3578 * (*mainHistory)[us][m.raw()];
+            m.value += 1679 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += 5025 * (*continuationHistory[0])[pc][to];
+            m.value += 1910 * (*continuationHistory[1])[pc][to];
+            m.value += 384 * (*continuationHistory[2])[pc][to];
+            m.value += 694 * (*continuationHistory[3])[pc][to];
+            //m.value -= 52 * (*continuationHistory[4])[pc][to];
+            m.value += 214 * (*continuationHistory[5])[pc][to];
             if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 31784 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                m.value += 1760 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
 
             //m.value /= 1024;
 
