@@ -128,16 +128,6 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
     Color us = pos.side_to_move();
 
-    [[maybe_unused]] Bitboard threatByLesser[KING + 1];
-    if constexpr (Type == QUIETS)
-    {
-        threatByLesser[PAWN]   = 0;
-        threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
-        threatByLesser[ROOK] =
-          pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
-        threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
-        threatByLesser[KING]  = pos.attacks_by<QUEEN>(~us) | threatByLesser[QUEEN];
-    }
 
     ExtMove* it = cur;
     for (auto move : ml)
@@ -145,10 +135,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         ExtMove& m = *it++;
         m          = move;
 
-        const Square    from          = m.from_sq();
         const Square    to            = m.to_sq();
         const Piece     pc            = pos.moved_piece(m);
-        const PieceType pt            = type_of(pc);
         const Piece     capturedPiece = pos.piece_on(to);
 
         if constexpr (Type == CAPTURES)
@@ -158,25 +146,21 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         else if constexpr (Type == QUIETS)
         {
             // histories
-            m.value = 2 * (*mainHistory)[us][m.raw()];
-            m.value += 2 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += (*continuationHistory[0])[pc][to];
-            m.value += (*continuationHistory[1])[pc][to];
-            m.value += (*continuationHistory[2])[pc][to];
-            m.value += (*continuationHistory[3])[pc][to];
-            m.value += (*continuationHistory[5])[pc][to];
 
-            // bonus for checks
-            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 16384;
-
-            // penalty for moving to a square threatened by a lesser piece
-            // or bonus for escaping an attack by a lesser piece.
-            int v = threatByLesser[pt] & to ? -19 : 20 * bool(threatByLesser[pt] & from);
-            m.value += PieceValue[pt] * v;
-
-
+            m.value = 3988 * (*mainHistory)[us][m.raw()];
+            m.value += 2028 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += 6951 * (*continuationHistory[0])[pc][to];
+            m.value += 2391 * (*continuationHistory[1])[pc][to];
+            m.value += 657 * (*continuationHistory[2])[pc][to];
+            m.value += 520 * (*continuationHistory[3])[pc][to];
+            m.value -= 164 * (*continuationHistory[4])[pc][to];
+            m.value += 126 * (*continuationHistory[5])[pc][to];
             if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                m.value += 31784 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+
+            //m.value /= 1024;
+
+
         }
 
         else  // Type == EVASIONS
@@ -211,7 +195,7 @@ Move MovePicker::select(Pred filter) {
 // picking the move with the highest score from a list of generated moves.
 Move MovePicker::next_move() {
 
-    constexpr int goodQuietThreshold = -14000;
+    constexpr int goodQuietThreshold = -17000 * 1024;
 top:
     switch (stage)
     {
@@ -255,7 +239,7 @@ top:
 
             endCur = endGenerated = score<QUIETS>(ml);
 
-            partial_insertion_sort(cur, endCur, -3560 * depth);
+            partial_insertion_sort(cur, endCur, -3645440 * depth);
         }
 
         ++stage;
