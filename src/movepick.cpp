@@ -128,6 +128,17 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
     Color us = pos.side_to_move();
 
+    [[maybe_unused]] Bitboard threatByLesser[KING + 1];
+    if constexpr (Type == QUIETS)
+    {
+        threatByLesser[PAWN]   = 0;
+        threatByLesser[KNIGHT] = threatByLesser[BISHOP] = pos.attacks_by<PAWN>(~us);
+        threatByLesser[ROOK] =
+          pos.attacks_by<KNIGHT>(~us) | pos.attacks_by<BISHOP>(~us) | threatByLesser[KNIGHT];
+        threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
+        threatByLesser[KING]  = pos.attacks_by<QUEEN>(~us) | threatByLesser[QUEEN];
+    }
+
 
     ExtMove* it = cur;
     for (auto move : ml)
@@ -135,8 +146,10 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         ExtMove& m = *it++;
         m          = move;
 
+        const Square    from          = m.from_sq();
         const Square    to            = m.to_sq();
         const Piece     pc            = pos.moved_piece(m);
+        const PieceType pt            = type_of(pc);
         const Piece     capturedPiece = pos.piece_on(to);
 
         if constexpr (Type == CAPTURES)
@@ -147,17 +160,19 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         {
             // histories
 
-            m.value = 3578 * (*mainHistory)[us][m.raw()];
-            m.value += 1679 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
-            m.value += 5025 * (*continuationHistory[0])[pc][to];
-            m.value += 1910 * (*continuationHistory[1])[pc][to];
-            m.value += 384 * (*continuationHistory[2])[pc][to];
-            m.value += 694 * (*continuationHistory[3])[pc][to];
-            //m.value -= 52 * (*continuationHistory[4])[pc][to];
-            m.value += 214 * (*continuationHistory[5])[pc][to];
-            if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 1760 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+            m.value = 3967 * (*mainHistory)[us][m.raw()];
+            m.value += 2254 * (*pawnHistory)[pawn_history_index(pos)][pc][to];
+            m.value += 1865 * (*continuationHistory[0])[pc][to];
+            m.value += 1140 * (*continuationHistory[1])[pc][to];
+            m.value += 221 * (*continuationHistory[2])[pc][to];
+            m.value += 410 * (*continuationHistory[3])[pc][to];
+            //m.value -= 34 * (*continuationHistory[4])[pc][to];
+            m.value += 132 * (*continuationHistory[5])[pc][to];
+            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 30872015;
+            m.value += threatByLesser[pt] & to ? -24414050 : 25699000 * bool(threatByLesser[pt] & from);
 
+            if (ply < LOW_PLY_HISTORY_SIZE)
+                m.value += 5672 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
             //m.value /= 1024;
 
 
