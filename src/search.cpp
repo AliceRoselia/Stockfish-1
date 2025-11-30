@@ -681,11 +681,6 @@ Value Search::Worker::search(
     ss->statScore       = 0;
     (ss + 2)->cutoffCnt = 0;
 
-    if (PvNode)
-        ss->lastPVKey = last_PV_index(pos);
-    else
-        ss->lastPVKey = (ss-1)->lastPVKey;
-
     // Step 4. Transposition table lookup
     excludedMove                   = ss->excludedMove;
     posKey                         = pos.key();
@@ -696,6 +691,12 @@ Value Search::Worker::search(
     ttData.value = ttHit ? value_from_tt(ttData.value, ss->ply, pos.rule50_count()) : VALUE_NONE;
     ss->ttPv     = excludedMove ? ss->ttPv : PvNode || (ttHit && ttData.is_pv);
     ttCapture    = ttData.move && pos.capture_stage(ttData.move);
+
+    if (ss->ttPv)
+        ss->lastPVKey = last_PV_index(pos);
+    else
+        ss->lastPVKey = (ss-1)->lastPVKey;
+
 
     // At this point, if excluded, skip straight to step 6, static eval. However,
     // to save indentation, we list the condition in all code between here and there.
@@ -1520,10 +1521,6 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     ss->inCheck = pos.checkers();
     moveCount   = 0;
 
-    if (PvNode)
-        ss->lastPVKey = last_PV_index(pos);
-    else
-        ss->lastPVKey = (ss-1)->lastPVKey;
 
 
     // Used to send selDepth info to GUI (selDepth counts from 1, ply from 0)
@@ -1545,6 +1542,11 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     ttData.value = ttHit ? value_from_tt(ttData.value, ss->ply, pos.rule50_count()) : VALUE_NONE;
     pvHit        = ttHit && ttData.is_pv;
 
+
+    if (PvNode || pvHit)
+        ss->lastPVKey = last_PV_index(pos);
+    else
+        ss->lastPVKey = (ss-1)->lastPVKey;
     // At non-PV nodes we check for an early TT cutoff
     if (!PvNode && ttData.depth >= DEPTH_QS
         && is_valid(ttData.value)  // Can happen when !ttHit or when access race in probe()
@@ -1894,7 +1896,7 @@ void update_quiet_histories(
     int pIndex = pawn_history_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
       << bonus * (bonus > 0 ? 905 : 505) / 1024;
-    workerThread.lastPVHistory[lastPVKey][pos.moved_piece(move)][move.to_sq()] << bonus * 1400/1024;
+    workerThread.lastPVHistory[lastPVKey][pos.moved_piece(move)][move.to_sq()] << bonus * 800/1024;
 }
 
 }
