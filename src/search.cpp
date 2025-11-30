@@ -1896,7 +1896,7 @@ void update_quiet_histories(
     int pIndex = pawn_history_index(pos);
     workerThread.pawnHistory[pIndex][pos.moved_piece(move)][move.to_sq()]
       << bonus * (bonus > 0 ? 905 : 505) / 1024;
-    workerThread.lastPVHistory[lastPVKey][pos.moved_piece(move)][move.to_sq()] << bonus * 1200/1024;
+    workerThread.lastPVHistory[lastPVKey][pos.moved_piece(move)][move.to_sq()] << bonus * 900/1024;
 }
 
 }
