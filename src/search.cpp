@@ -1431,7 +1431,7 @@ moves_loop:  // When in check, search starts here
         mainHistory[~us][((ss - 1)->currentMove).raw()] << scaledBonus * 243 / 32768;
 
         if (!ss->ttPv)
-            lastPVHistory[ss->lastPVKey][pos.piece_on(prevSq)][prevSq] << scaledBonus * 800/32768;
+            lastPVHistory[ss->lastPVKey][pos.piece_on(prevSq)][prevSq] << scaledBonus * 200/32768;
 
         if (type_of(pos.piece_on(prevSq)) != PAWN && ((ss - 1)->currentMove).type_of() != PROMOTION)
             pawnHistory[pawn_history_index(pos)][pos.piece_on(prevSq)][prevSq]
