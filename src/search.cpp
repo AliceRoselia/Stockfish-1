@@ -279,6 +279,7 @@ void Search::Worker::iterative_deepening() {
           &continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
         (ss - i)->continuationCorrectionHistory = &continuationCorrectionHistory[NO_PIECE][0];
         (ss - i)->staticEval                    = VALUE_NONE;
+        (ss - i)->singular                      = false;
     }
 
     for (int i = 0; i <= MAX_PLY + 2; ++i)
@@ -646,6 +647,7 @@ Value Search::Worker::search(
 
     // Step 1. Initialize node
     ss->inCheck   = pos.checkers();
+    ss->singular       = false;
     priorCapture  = pos.captured_piece();
     Color us      = pos.side_to_move();
     ss->moveCount = 0;
@@ -1025,7 +1027,7 @@ moves_loop:  // When in check, search starts here
         }
         if (PvNode)
             (ss + 1)->pv = nullptr;
-
+        ss->singular = false; //reset singular.
         extension  = 0;
         capture    = pos.capture_stage(move);
         movedPiece = pos.moved_piece(move);
@@ -1143,7 +1145,7 @@ moves_loop:  // When in check, search starts here
                                  - (ss->ply * 2 > rootDepth * 3) * 50;
 
                 extension =
-                  1 + (value < singularBeta - doubleMargin) + (value < singularBeta - tripleMargin);
+                  1 + (value < singularBeta - doubleMargin) + (value < singularBeta - tripleMargin) + (ss-1)->singular;
 
                 depth++;
             }
