@@ -45,6 +45,7 @@ namespace Stockfish {
 namespace Zobrist {
 
 Key psq[PIECE_NB][SQUARE_NB];
+Key aux[PIECE_NB][SQUARE_NB];
 Key enpassant[FILE_NB];
 Key castling[CASTLING_RIGHT_NB];
 Key side, noPawns;
@@ -117,7 +118,20 @@ void Position::init() {
 
     for (Piece pc : Pieces)
         for (Square s = SQ_A1; s <= SQ_H8; ++s)
+        {
             Zobrist::psq[pc][s] = rng.rand<Key>();
+            Zobrist::aux[pc][s] = 0;
+            Key auxKey = Zobrist::psq[pc][s]&std::numeric_limits<uint16_t>::max();
+            if (type_of(pc) == PAWN)
+                Zobrist::aux[pc][s] ^= auxKey;
+            else
+            {
+                if (type_of(pc) <= BISHOP)
+                    Zobrist::aux[pc][s] ^= auxKey << 16;
+                Zobrist::aux[pc][s] ^= auxKey<< (32*16*color_of(pc));
+            }
+        }
+
     // pawns on these squares will promote
     std::fill_n(Zobrist::psq[W_PAWN] + SQ_A8, 8, 0);
     std::fill_n(Zobrist::psq[B_PAWN], 8, 0);
@@ -337,9 +351,7 @@ void Position::set_check_info() const {
 void Position::set_state() const {
 
     st->key               = 0;
-    st->minorPieceKey     = 0;
-    st->nonPawnKey[WHITE] = st->nonPawnKey[BLACK] = 0;
-    st->pawnKey                                   = Zobrist::noPawns;
+    st->auxKey            = Zobrist::noPawns&std::numeric_limits<uint16_t>::max();
     st->nonPawnMaterial[WHITE] = st->nonPawnMaterial[BLACK] = VALUE_ZERO;
     st->checkersBB = attackers_to(square<KING>(sideToMove)) & pieces(~sideToMove);
 
@@ -351,21 +363,10 @@ void Position::set_state() const {
         Piece  pc = piece_on(s);
         st->key ^= Zobrist::psq[pc][s];
 
-        if (type_of(pc) == PAWN)
-            st->pawnKey ^= Zobrist::psq[pc][s];
+        if (type_of(pc) != PAWN && type_of(pc) != KING)
+            st->nonPawnMaterial[color_of(pc)] += PieceValue[pc];
 
-        else
-        {
-            st->nonPawnKey[color_of(pc)] ^= Zobrist::psq[pc][s];
-
-            if (type_of(pc) != KING)
-            {
-                st->nonPawnMaterial[color_of(pc)] += PieceValue[pc];
-
-                if (type_of(pc) <= BISHOP)
-                    st->minorPieceKey ^= Zobrist::psq[pc][s];
-            }
-        }
+        st->auxKey ^= Zobrist::aux[pc][s];
     }
 
     if (st->epSquare != SQ_NONE)
@@ -748,7 +749,8 @@ void Position::do_move(Move                      m,
         do_castling<true>(us, from, to, rfrom, rto, &dts, &dp);
 
         k ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
-        st->nonPawnKey[us] ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
+        st->auxKey ^= Zobrist::aux[captured][rfrom] ^ Zobrist::aux[captured][rto];
+        //st->nonPawnKey[us] ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
         captured = NO_PIECE;
     }
     else if (captured)
@@ -772,22 +774,17 @@ void Position::do_move(Move                      m,
                 // Update board and piece lists in ep case, normal captures are updated later
                 remove_piece(capsq, &dts);
             }
-
-            st->pawnKey ^= Zobrist::psq[captured][capsq];
         }
         else
         {
             st->nonPawnMaterial[them] -= PieceValue[captured];
-            st->nonPawnKey[them] ^= Zobrist::psq[captured][capsq];
-
-            if (type_of(captured) <= BISHOP)
-                st->minorPieceKey ^= Zobrist::psq[captured][capsq];
         }
 
         dp.remove_pc = captured;
         dp.remove_sq = capsq;
 
         k ^= Zobrist::psq[captured][capsq];
+        st->auxKey ^= Zobrist::aux[captured][capsq];
         st->materialKey ^=
           Zobrist::psq[captured][8 + pieceCount[captured] - (m.type_of() != EN_PASSANT)];
 
@@ -837,7 +834,6 @@ void Position::do_move(Move                      m,
         else if (m.type_of() == PROMOTION)
         {
             Piece     promotion     = make_piece(us, m.promotion_type());
-            PieceType promotionType = type_of(promotion);
 
             assert(relative_rank(us, to) == RANK_8);
             assert(type_of(promotion) >= KNIGHT && type_of(promotion) <= QUEEN);
@@ -854,27 +850,16 @@ void Position::do_move(Move                      m,
             st->materialKey ^= Zobrist::psq[promotion][8 + pieceCount[promotion] - 1]
                              ^ Zobrist::psq[pc][8 + pieceCount[pc]];
 
-            if (promotionType <= BISHOP)
-                st->minorPieceKey ^= Zobrist::psq[promotion][to];
+            st->auxKey ^= Zobrist::aux[promotion][to];
 
             // Update material
             st->nonPawnMaterial[us] += PieceValue[promotion];
         }
 
-        // Update pawn hash key
-        st->pawnKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
-
         // Reset rule 50 draw counter
         st->rule50 = 0;
     }
-
-    else
-    {
-        st->nonPawnKey[us] ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
-
-        if (type_of(pc) <= BISHOP)
-            st->minorPieceKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
-    }
+    st->auxKey ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
 
     // If en passant is impossible, then k will not change and we can prefetch earlier
     if (tt && !checkEP)
