@@ -877,7 +877,6 @@ Value Search::Worker::search(
 
             return futilityMult * d                               //
                  - 2474 * improving * futilityMult / 1024         //
-                 - 331 * opponentWorsening * futilityMult / 1024  //
                  + std::abs(correctionValue) / 174665;
         };
 
