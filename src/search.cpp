@@ -1176,6 +1176,14 @@ moves_loop:  // When in check, search starts here
             else if (cutNode)
                 extension = -2;
         }
+        if (move.type_of() == NORMAL && type_of(pos.moved_piece(move)) != PAWN && pos.piece_on(move.to_sq()) == NO_PIECE)
+        {
+            ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
+            // If the current move is slower than the previous move...
+            r += std::max(0, ss->moveSlowness - (ss-1)->moveSlowness)/16;
+        }
+        else
+            ss->moveSlowness = VALUE_INFINITE; // Such a move should indeed be fast. Maybe change this to -2000 later on.
 
         // Step 16. Make the move
         do_move(pos, move, st, givesCheck, ss);
@@ -1192,6 +1200,7 @@ moves_loop:  // When in check, search starts here
         r += 714;  // Base reduction offset to compensate for other tweaks
         r -= moveCount * 73;
         r -= std::abs(correctionValue) / 30370;
+
 
         // Increase reduction for cut nodes
         if (cutNode)

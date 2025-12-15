@@ -453,6 +453,11 @@ class Move {
         return Square(data & 0x3F);
     }
 
+    constexpr std::uint16_t reverse_move() const {
+        assert(type_of() == NORMAL);
+        return (data>>6) | ((data&0x3F)<<6);
+    }
+
     constexpr MoveType type_of() const { return MoveType(data & (3 << 14)); }
 
     constexpr PieceType promotion_type() const { return PieceType(((data >> 12) & 3) + KNIGHT); }
