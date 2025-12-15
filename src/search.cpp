@@ -1183,7 +1183,7 @@ moves_loop:  // When in check, search starts here
             r += std::max(0, ss->moveSlowness - (ss-1)->moveSlowness)/16;
         }
         else
-            ss->moveSlowness = -2048; // Such a move is not slow. Maybe let's set it to this value to see.
+            ss->moveSlowness = 0; // Such a move is not slow. Maybe let's set it to this value to see.
 
         // Step 16. Make the move
         do_move(pos, move, st, givesCheck, ss);
