@@ -1180,7 +1180,7 @@ moves_loop:  // When in check, search starts here
         {
             ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
             // If the current move is slower than the previous move...
-            r += std::max(0, ss->moveSlowness - (ss-1)->moveSlowness)/8;
+            r += std::max(0, ss->moveSlowness - (ss-1)->moveSlowness)/16;
         }
         else
             ss->moveSlowness = -2048; // Such a move is not slow. Maybe let's set it to this value to see.
