@@ -1176,7 +1176,7 @@ moves_loop:  // When in check, search starts here
             else if (cutNode)
                 extension = -2;
         }
-        if (move.type_of() == NORMAL && !capture)
+        if (move.type_of() == NORMAL && type_of(pos.moved_piece(move)) != PAWN)
         {
             ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
             // If the current move is slower than the previous move...
