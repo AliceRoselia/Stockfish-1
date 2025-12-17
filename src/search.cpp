@@ -899,7 +899,7 @@ Value Search::Worker::search(
         // Null move dynamic reduction based on depth
         Depth R = 7 + depth / 3;
         do_null_move(pos, st, ss);
-
+        ss->moveSlowness = VALUE_INFINITE; //Very slow.
         Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -beta + 1, depth - R, false);
 
         undo_null_move(pos);
@@ -950,6 +950,12 @@ Value Search::Worker::search(
 
         while ((move = mp.next_move()) != Move::none())
         {
+
+            if (move.type_of() == NORMAL)
+                ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
+            else
+                ss->moveSlowness = -2048; // Such a move is not slow. Maybe let's set it to this value to see.
+
             assert(move.is_ok());
 
             if (move == excludedMove || !pos.legal(move))
