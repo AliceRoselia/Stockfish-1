@@ -1176,14 +1176,14 @@ moves_loop:  // When in check, search starts here
             else if (cutNode)
                 extension = -2;
         }
-        if (move.type_of() == NORMAL)
+        if (move.type_of() == NORMAL && !capture)
         {
             ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
             // If the current move is slower than the previous move...
             r += std::max(0, ss->moveSlowness - (ss-1)->moveSlowness)/16;
         }
         else
-            ss->moveSlowness = -2048; // Such a move is not slow. Maybe let's set it to this value to see.
+            ss->moveSlowness = -4096; // Such a move is not slow. Maybe let's set it to this value to see.
 
         // Step 16. Make the move
         do_move(pos, move, st, givesCheck, ss);
