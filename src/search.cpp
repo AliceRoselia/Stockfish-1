@@ -275,6 +275,7 @@ void Search::Worker::iterative_deepening() {
 
     for (int i = 7; i > 0; --i)
     {
+        (ss - i)->moveSlowness = 0;
         (ss - i)->continuationHistory =
           &continuationHistory[0][0][NO_PIECE][0];  // Use as a sentinel
         (ss - i)->continuationCorrectionHistory = &continuationCorrectionHistory[NO_PIECE][0];
@@ -282,7 +283,10 @@ void Search::Worker::iterative_deepening() {
     }
 
     for (int i = 0; i <= MAX_PLY + 2; ++i)
+    {
         (ss + i)->ply = i;
+        (ss + i)->moveSlowness = 0;
+    }
 
     ss->pv = pv;
 
@@ -1176,7 +1180,7 @@ moves_loop:  // When in check, search starts here
             else if (cutNode)
                 extension = -2;
         }
-        if (move.type_of() == NORMAL && type_of(pos.moved_piece(move)) != PAWN)
+        if (move.type_of() == NORMAL)
         {
             ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
             // If the current move is slower than the previous move...
