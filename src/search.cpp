@@ -899,7 +899,7 @@ Value Search::Worker::search(
         // Null move dynamic reduction based on depth
         Depth R = 7 + depth / 3;
         do_null_move(pos, st, ss);
-        ss->moveSlowness = VALUE_INFINITE; //Very slow.
+        ss->moveSlowness = VALUE_INFINITE; //Disable slowness reduction for the next ply.
         Value nullValue = -search<NonPV>(pos, ss + 1, -beta, -beta + 1, depth - R, false);
 
         undo_null_move(pos);
@@ -947,14 +947,9 @@ Value Search::Worker::search(
 
         MovePicker mp(pos, ttData.move, probCutBeta - ss->staticEval, &captureHistory);
         Depth      probCutDepth = std::clamp(depth - 5 - (ss->staticEval - beta) / 315, 0, depth);
-
+        ss->moveSlowness = VALUE_INFINITE; //Disable move slowness for next ply.
         while ((move = mp.next_move()) != Move::none())
         {
-
-            if (move.type_of() == NORMAL)
-                ss->moveSlowness = mainHistory[us][move.raw()] + mainHistory[us][move.reverse_move()];
-            else
-                ss->moveSlowness = -2048; // Such a move is not slow. Maybe let's set it to this value to see.
 
             assert(move.is_ok());
 
