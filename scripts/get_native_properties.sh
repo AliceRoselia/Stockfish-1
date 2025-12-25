@@ -39,8 +39,10 @@ set_arch_loongarch64() {
 
 # Set the file CPU x86_64 architecture
 set_arch_x86_64() {
-  if check_flags 'avx512f' 'avx512cd' 'avx512vl' 'avx512dq' 'avx512bw' 'avx512ifma' 'avx512vbmi' 'avx512vbmi2' 'avx512vpopcntdq' 'avx512bitalg' 'avx512vnni' 'vpclmulqdq' 'gfni' 'vaes'; then
-    true_arch='x86-64-avx512icl'
+  if check_flags 'avx512f' 'avx512cd' 'avx512vl' 'avx512dq' 'avx512bw' 'avx512ifma' 'avx512vbmi' 'avx512vbmi2' 'avx512vpopcntdq' 'avx512bitalg' 'avx512vnni' 'vpclmulqdq' 'gfni' 'vaes' 'avx512bf16' 'avx512vbmi2' && !check_flags 'avx512vp2intersect' && !check_flags 'avx512fp16'; then
+    true_arch = 'x86-64-avx512icl-zen4'
+  elif check_flags 'avx512f' 'avx512cd' 'avx512vl' 'avx512dq' 'avx512bw' 'avx512ifma' 'avx512vbmi' 'avx512vbmi2' 'avx512vpopcntdq' 'avx512bitalg' 'avx512vnni' 'vpclmulqdq' 'gfni' 'vaes'; then
+    true_arch='x86-64-avx512icl_nozen4'
   elif check_flags 'avx512vnni' 'avx512dq' 'avx512f' 'avx512bw' 'avx512vl'; then
     true_arch='x86-64-vnni512'
   elif check_flags 'avx512f' 'avx512bw'; then

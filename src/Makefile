@@ -291,6 +291,9 @@ ifeq ($(findstring -avx512icl,$(ARCH)),-avx512icl)
 	avx512 = yes
 	vnni512 = yes
 	avx512icl = yes
+	ifeq ($(findstring -x86-64-avx512icl-zen4,$(ARCH)),-x86-64-avx512icl-zen4)
+		zen4 = yes
+	endif
 endif
 
 ifeq ($(sse),yes)
@@ -734,6 +737,9 @@ ifeq ($(vnni512),yes)
 endif
 
 ifeq ($(avx512icl),yes)
+	ifeq ($(zen4),yes)
+		CXXFLAGS += -DZEN4
+	endif
 	CXXFLAGS += -DUSE_AVX512 -DUSE_VNNI -DUSE_AVX512ICL
 	ifeq ($(comp),$(filter $(comp),gcc clang mingw icx))
 		CXXFLAGS += -mavx512f -mavx512cd -mavx512vl -mavx512dq -mavx512bw -mavx512ifma -mavx512vbmi -mavx512vbmi2 -mavx512vpopcntdq -mavx512bitalg -mavx512vnni -mvpclmulqdq -mgfni -mvaes

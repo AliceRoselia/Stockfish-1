@@ -104,8 +104,13 @@ void find_nnz(const std::int32_t* RESTRICT input,
         const __mmask32 nnzMask  = _mm512_test_epi16_mask(inputV01, inputV01);
 
         // Avoid _mm512_mask_compressstoreu_epi16() as it's 256 uOps on Zen4
+
+        #ifdef ZEN4
         __m512i nnz = _mm512_maskz_compress_epi16(nnzMask, base);
         _mm512_storeu_si512(out + count, nnz);
+        #else
+        _mm512_mask_compressstoreu_epi16(out+count, nnzMask, base);
+        #endif // ZEN4
 
         count += popcount(nnzMask);
         base = _mm512_add_epi16(base, increment);
