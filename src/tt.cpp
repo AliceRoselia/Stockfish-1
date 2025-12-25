@@ -69,7 +69,12 @@ struct TTEntry {
     Move     move16;
     int16_t  value16;
     int16_t  eval16;
+    uint16_t reserve2;
+    uint32_t reserve1;
+    // Reserve 6 bytes of memory for future uses.
 };
+
+static_assert(sizeof(TTEntry) == 16, "Suboptimal Cluster size");
 
 // `genBound8` is where most of the details are. We use the following constants to manipulate 5 leading generation bits
 // and 3 trailing miscellaneous bits.
@@ -137,14 +142,13 @@ void TTWriter::write(
 // of TTEntry. Each non-empty TTEntry contains information on exactly one position. The size of a Cluster should
 // divide the size of a cache line for best performance, as the cacheline is prefetched when possible.
 
-static constexpr int ClusterSize = 3;
+static constexpr int ClusterSize = 4;
 
-struct Cluster {
+struct alignas(64) Cluster {
     TTEntry entry[ClusterSize];
-    char    padding[2];  // Pad to 32 bytes
 };
 
-static_assert(sizeof(Cluster) == 32, "Suboptimal Cluster size");
+static_assert(sizeof(Cluster) == 64, "Suboptimal Cluster size");
 
 
 // Sets the size of the transposition table,
