@@ -45,6 +45,15 @@ namespace Stockfish::Eval::NNUE::SIMD {
 // vector registers.
 #define VECTOR
 
+#ifndef USE_AVX512
+"break test for now."
+#endif // USE_AVX512
+
+#ifdef ZEN4
+"break zen4 for now."
+#endif // ZEN4
+
+
 #ifdef USE_AVX512
 using vec_t      = __m512i;
 using vec_i8_t   = __m256i;
