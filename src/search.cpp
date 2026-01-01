@@ -1427,7 +1427,7 @@ moves_loop:  // When in check, search starts here
 
         bonusScale = std::max(bonusScale, 0);
 
-        const int scaledBonus = std::min(130 * depth - 77, 1387) * bonusScale;
+        const int scaledBonus = std::min(130 * depth - 77, 1388) * bonusScale;
 
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
                                       scaledBonus * 406 / 32768);
@@ -1826,8 +1826,8 @@ void update_all_stats(const Position& pos,
     PieceType              capturedPiece;
 
     int bonus =
-      std::min(101 * depth - 91, 1540) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
-    int malus = std::min(802 * depth - 245, 2490) - 17 * moveCount;
+      std::min(101 * depth - 91, 1539) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
+    int malus = std::min(806 * depth - 244, 2490) - 17 * moveCount;
 
     if (!pos.capture_stage(bestMove))
     {
@@ -1897,7 +1897,7 @@ void update_quiet_histories(
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(), bonus * 896 / 1024);
 
     workerThread.sharedHistory.pawn_entry(pos)[pos.moved_piece(move)][move.to_sq()]
-      << bonus * (bonus > 0 ? 902 : 402) / 1024;
+      << bonus * (bonus > 0 ? 906 : 402) / 1024;
 }
 
 }
