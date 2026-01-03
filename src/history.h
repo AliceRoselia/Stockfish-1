@@ -83,7 +83,7 @@ struct StatsEntry {
         int entry_term = val*absolute_bonus/D;
         int term = clampedBonus - entry_term;
         int term2 = term*absolute_bonus/(2*D);
-        //Second order.
+        //That was the second order. 3rd and 4th order can be found below.
         //int term3 = term2*absolute_bonus/(3*D);
         //int term4 = term3*absolute_bonus/(4*D);
 
