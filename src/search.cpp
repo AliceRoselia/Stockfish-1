@@ -1371,6 +1371,8 @@ moves_loop:  // When in check, search starts here
 
                 if (value >= beta)
                 {
+                    for (int i=0; i<7; ++i)
+                        dbg_hit_on(moveCount <= i+1, i);
                     // (*Scaler) Infrequent and small updates scale well
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
@@ -1832,7 +1834,7 @@ void update_all_stats(const Position& pos,
     PieceType              capturedPiece;
 
     int bonus =
-      std::min(100 * depth - 70, 1540) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
+      std::min(102 * depth - 70, 1540) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
     int malus = std::min(800 * depth - 250, 2480) - 17 * moveCount;
 
     if (!pos.capture_stage(bestMove))
