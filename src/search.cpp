@@ -1833,7 +1833,7 @@ void update_all_stats(const Position& pos,
 
     int bonus =
       std::min(102 * depth - 70, 1540) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
-    int malus = std::min(800 * depth - 250, 2480) - 17 * moveCount;
+    int malus = std::min(850 * depth - 250, 2480) - 17 * moveCount;
 
     if (!pos.capture_stage(bestMove))
     {
