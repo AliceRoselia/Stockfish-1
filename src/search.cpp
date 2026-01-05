@@ -1371,6 +1371,8 @@ moves_loop:  // When in check, search starts here
 
                 if (value >= beta)
                 {
+                    for (int i=1; i<=7; ++i)
+                        dbg_hit_on(moveCount <= i, i);
                     // (*Scaler) Infrequent and small updates scale well
                     ss->cutoffCnt += (extension < 2) || PvNode;
                     assert(value >= beta);  // Fail high
@@ -1396,6 +1398,8 @@ moves_loop:  // When in check, search starts here
                 quietsSearched.push_back(move);
         }
     }
+
+    dbg_hit_on(bool(bestMove));
 
     // Step 21. Check for mate and stalemate
     // All legal moves have been searched and if there are no legal moves, it

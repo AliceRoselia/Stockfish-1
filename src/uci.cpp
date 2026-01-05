@@ -228,6 +228,7 @@ void UCIEngine::go(std::istringstream& is) {
 }
 
 void UCIEngine::bench(std::istream& args) {
+    dbg_clear();
     std::string token;
     uint64_t    num, nodes = 0, cnt = 1;
     uint64_t    nodesSearched = 0;
