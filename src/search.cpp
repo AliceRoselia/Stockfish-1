@@ -1435,7 +1435,7 @@ moves_loop:  // When in check, search starts here
 
         bonusScale = std::max(bonusScale, 0);
 
-        const int scaledBonus = std::min(130 * depth, 2200) * bonusScale;
+        const int scaledBonus = std::min(130 * depth - 120, 2200) * bonusScale;
 
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
                                       scaledBonus * 406 / 32768);
@@ -1834,8 +1834,8 @@ void update_all_stats(const Position& pos,
     PieceType              capturedPiece;
 
     int bonus =
-      std::min(100 * depth, 2500) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
-    int malus = std::min(850 * depth, 3900) - 17 * moveCount;
+      std::min(100 * depth - 90, 2500) + 347 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
+    int malus = std::min(850 * depth - 400, 3900) - 17 * moveCount;
 
     if (!pos.capture_stage(bestMove))
     {
