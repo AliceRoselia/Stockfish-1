@@ -64,6 +64,31 @@ using namespace Search;
 
 namespace {
 
+int bonus1 = 130;
+int offset1 = 80;
+int limit1 = 1386;
+TUNE(SetRange(100,160),bonus1);
+TUNE(SetRange(40,120),offset1);
+TUNE(SetRange(1200,1600),limit1);
+int bonus2 = 100;
+int offset2 = 90;
+int limit2 = 1540;
+TUNE(SetRange(70,130),bonus2);
+TUNE(SetRange(50,150),offset2);
+TUNE(SetRange(1200,1800),limit2);
+int bonus3 = 800;
+int offset3 = 250;
+int limit3 = 2480;
+TUNE(SetRange(600,1000),bonus3);
+TUNE(SetRange(100,400),offset3);
+TUNE(SetRange(2100,2800),limit3);
+int lphvalue = 850;
+TUNE(SetRange(750,950),lphvalue);
+int pawnbonus = 905;
+TUNE(SetRange(700,1100),pawnbonus);
+int pawnmalus = 404;
+TUNE(SetRange(300,700),pawnmalus);
+
 constexpr int SEARCHEDLIST_CAPACITY = 32;
 constexpr int mainHistoryDefault    = 68;
 using SearchedList                  = ValueList<Move, SEARCHEDLIST_CAPACITY>;
@@ -1437,7 +1462,7 @@ moves_loop:  // When in check, search starts here
 
         bonusScale = std::max(bonusScale, 0);
 
-        const int scaledBonus = std::min(130 * depth - 80, 1387) * bonusScale;
+        const int scaledBonus = std::min(bonus1 * depth - 80, 1387) * bonusScale;
 
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
                                       scaledBonus * 406 / 32768);
