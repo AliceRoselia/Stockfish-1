@@ -72,6 +72,10 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
         }
 }
 
+int double_positive(int value){
+    return (1+(value>0))*value;
+}
+
 }  // namespace
 
 
@@ -158,8 +162,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         else if constexpr (Type == QUIETS)
         {
             // histories
-            m.value = 2 * (*mainHistory)[us][m.raw()];
-            m.value += 2 * sharedHistory->pawn_entry(pos)[pc][to];
+            m.value = double_positive((*mainHistory)[us][m.raw()]);
+            m.value += double_positive(sharedHistory->pawn_entry(pos)[pc][to]);
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
