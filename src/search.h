@@ -300,8 +300,8 @@ class Worker {
    private:
     void iterative_deepening();
 
-    void do_move(Position& pos, const Move move, StateInfo& st, Stack* const ss);
-    void
+    std::size_t do_move(Position& pos, const Move move, StateInfo& st, Stack* const ss);
+    std::size_t
     do_move(Position& pos, const Move move, StateInfo& st, const bool givesCheck, Stack* const ss);
     void do_null_move(Position& pos, StateInfo& st, Stack* const ss);
     void undo_move(Position& pos, const Move move);

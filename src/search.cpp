@@ -544,11 +544,11 @@ void Search::Worker::iterative_deepening() {
 }
 
 
-void Search::Worker::do_move(Position& pos, const Move move, StateInfo& st, Stack* const ss) {
-    do_move(pos, move, st, pos.gives_check(move), ss);
+std::size_t Search::Worker::do_move(Position& pos, const Move move, StateInfo& st, Stack* const ss) {
+    return do_move(pos, move, st, pos.gives_check(move), ss);
 }
 
-void Search::Worker::do_move(
+std::size_t Search::Worker::do_move(
   Position& pos, const Move move, StateInfo& st, const bool givesCheck, Stack* const ss) {
     bool capture = pos.capture_stage(move);
     // Preferable over fetch_add to avoid locking instructions
@@ -565,6 +565,7 @@ void Search::Worker::do_move(
         ss->continuationCorrectionHistory =
           &continuationCorrectionHistory[dirtyPiece.pc][move.to_sq()];
     }
+    return dirtyThreats.list.size();
 }
 
 void Search::Worker::do_null_move(Position& pos, StateInfo& st, Stack* const ss) {
@@ -1181,7 +1182,9 @@ moves_loop:  // When in check, search starts here
         }
 
         // Step 16. Make the move
-        do_move(pos, move, st, givesCheck, ss);
+        int dirtyThreatCount = do_move(pos, move, st, givesCheck, ss);
+
+
 
         // Add extension to new depth
         newDepth += extension;
@@ -1392,7 +1395,10 @@ moves_loop:  // When in check, search starts here
             if (capture)
                 capturesSearched.push_back(move);
             else
+            {
                 quietsSearched.push_back(move);
+                mainHistory[us][move.raw()] << -dirtyThreatCount*8;
+            }
         }
     }
 
