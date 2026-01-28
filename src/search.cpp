@@ -1397,7 +1397,7 @@ moves_loop:  // When in check, search starts here
             else
             {
                 quietsSearched.push_back(move);
-                mainHistory[us][move.raw()] << -dirtyThreatCount*8;
+                mainHistory[us][move.raw()] << -dirtyThreatCount*4;
             }
         }
     }
