@@ -1888,7 +1888,12 @@ void update_quiet_histories(
   const Position& pos, Stack* ss, Search::Worker& workerThread, Move move, int bonus) {
 
     Color us = pos.side_to_move();
-    workerThread.mainHistory[us][move.raw()] << bonus;  // Untuned to prevent duplicate effort
+    int counterMoveHist = (*(ss-1)->continuationHistory)[pos.moved_piece(move)][move.to_sq()];
+
+    if (bonus < 0)
+        counterMoveHist = -counterMoveHist;
+
+    workerThread.mainHistory[us][move.raw()] << bonus*(32768 - std::max(counterMoveHist,0))/32768;  // Untuned to prevent duplicate effort
 
     if (ss->ply < LOW_PLY_HISTORY_SIZE)
         workerThread.lowPlyHistory[ss->ply][move.raw()] << bonus * 805 / 1024;
