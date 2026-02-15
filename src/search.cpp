@@ -1891,7 +1891,7 @@ void update_quiet_histories(
     int counterMoveHist = (*(ss-1)->continuationHistory)[pos.moved_piece(move)][move.to_sq()];
 
     if (bonus < 0)
-        counterMoveHist = -counterMoveHist;
+        counterMoveHist = 0;
 
     workerThread.mainHistory[us][move.raw()] << bonus*(32768 - std::max(counterMoveHist,0))/32768;  // Untuned to prevent duplicate effort
 
