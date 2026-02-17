@@ -1423,12 +1423,11 @@ moves_loop:  // When in check, search starts here
             threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
             threatByLesser[KING]  = pos.attacks_by<QUEEN>(~us) | threatByLesser[QUEEN];
 
-            const auto pindex = pawn_history_index(pos);
             {
                 debugFile<<"1,";
                 debugFile<<depth<<",";
                 debugFile<<mainHistory[us][bestMove.raw()]<<",";
-                debugFile<<pawnHistory[pindex][pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
+                debugFile<<sharedHistory.pawn_entry(pos)[pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
                 for (int i=0; i<5; ++i)
                     debugFile<<(*contHist[i])[pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
                 debugFile<<(*contHist[5])[pos.moved_piece(bestMove)][bestMove.to_sq()]<<",";
@@ -1436,9 +1435,10 @@ moves_loop:  // When in check, search starts here
                 int v = threatByLesser[type_of(pos.moved_piece(bestMove))] & bestMove.to_sq() ? -19 : 20 * bool(threatByLesser[type_of(pos.moved_piece(bestMove))] & bestMove.from_sq());
                 debugFile<<v<<",";
                 if (ss->ply < LOW_PLY_HISTORY_SIZE)
-                    debugFile<< 8 * (lowPlyHistory)[ss->ply][bestMove.raw()] / (1 + ss->ply)<<"\n";
+                    debugFile<< 8 * (lowPlyHistory)[ss->ply][bestMove.raw()] / (1 + ss->ply)<<",";
                 else
-                    debugFile<<"0\n";
+                    debugFile<<"0,";
+                debugFile<<eval<<"\n";
                 //debugFile<<(int)(type_of(pos.moved_piece(bestMove)))<<"\n";
             }
 
@@ -1448,7 +1448,7 @@ moves_loop:  // When in check, search starts here
                 debugFile<<"0,";
                 debugFile<<depth<<",";
                 debugFile<<mainHistory[us][current_move.raw()]<<",";
-                debugFile<<pawnHistory[pindex][pos.moved_piece(current_move)][current_move.to_sq()]<<",";
+                debugFile<<sharedHistory.pawn_entry(pos)[pos.moved_piece(current_move)][current_move.to_sq()]<<",";
                 for (int i=0; i<5; ++i)
                     debugFile<<(*contHist[i])[pos.moved_piece(current_move)][current_move.to_sq()]<<",";
                 debugFile<<(*contHist[5])[pos.moved_piece(current_move)][current_move.to_sq()]<<",";
@@ -1456,9 +1456,10 @@ moves_loop:  // When in check, search starts here
                 int v = threatByLesser[type_of(pos.moved_piece(current_move))] & current_move.to_sq() ? -19 : 20 * bool(threatByLesser[type_of(pos.moved_piece(current_move))] & current_move.from_sq());
                 debugFile<<v<<",";
                 if (ss->ply < LOW_PLY_HISTORY_SIZE)
-                    debugFile<< 8 * (lowPlyHistory)[ss->ply][current_move.raw()] / (1 + ss->ply)<<"\n";
+                    debugFile<< 8 * (lowPlyHistory)[ss->ply][bestMove.raw()] / (1 + ss->ply)<<",";
                 else
-                    debugFile<<"0\n";
+                    debugFile<<"0,";
+                debugFile<<eval<<"\n";
                 //debugFile<<(int)(type_of(pos.moved_piece(current_move)))<<"\n";
             }
         }
