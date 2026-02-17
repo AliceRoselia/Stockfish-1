@@ -158,25 +158,25 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         else if constexpr (Type == QUIETS)
         {
             // histories
-            m.value = 1956 * (*mainHistory)[us][m.raw()];
-            m.value += 1742 * sharedHistory->pawn_entry(pos)[pc][to];
-            m.value += 980 * (*continuationHistory[0])[pc][to];
-            m.value += 1067 * (*continuationHistory[1])[pc][to];
-            m.value += 252 * (*continuationHistory[2])[pc][to];
-            m.value += 530 * (*continuationHistory[3])[pc][to];
-            m.value += 267 * (*continuationHistory[5])[pc][to];
+            m.value = 1854 * (*mainHistory)[us][m.raw()];
+            m.value += 1744 * sharedHistory->pawn_entry(pos)[pc][to];
+            m.value += 1021 * (*continuationHistory[0])[pc][to];
+            m.value += 1003 * (*continuationHistory[1])[pc][to];
+            m.value += 197 * (*continuationHistory[2])[pc][to];
+            m.value += 458 * (*continuationHistory[3])[pc][to];
+            m.value += 207 * (*continuationHistory[5])[pc][to];
 
             // bonus for checks
-            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 15168424;
+            m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 14692131;
 
             // penalty for moving to a square threatened by a lesser piece
             // or bonus for escaping an attack by a lesser piece.
-            int v = threatByLesser[pt] & to ? -14222469 : 14971020 * bool(threatByLesser[pt] & from);
+            int v = threatByLesser[pt] & to ? -3515 : 3700 * bool(threatByLesser[pt] & from);
             m.value += PieceValue[pt] * v;
 
 
             if (ply < LOW_PLY_HISTORY_SIZE)
-                m.value += 6808 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+                m.value += 7056 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
         }
 
         else  // Type == EVASIONS
@@ -207,7 +207,7 @@ Move MovePicker::select(Pred filter) {
 // picking the move with the highest score from a list of generated moves.
 Move MovePicker::next_move() {
 
-    constexpr int goodQuietThreshold = -14000 * 1024;
+    constexpr int goodQuietThreshold = -1000 * 1024;
 top:
     switch (stage)
     {
