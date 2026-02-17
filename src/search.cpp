@@ -1893,15 +1893,16 @@ void update_quiet_histories(
     if (bonus < 0)
         counterMoveHist = -counterMoveHist;
 
-    workerThread.mainHistory[us][move.raw()] << bonus*(36000 - std::max(counterMoveHist,0))/32768;  // Untuned to prevent duplicate effort
+    int mainBonus = bonus*(32768 - std::max(counterMoveHist,0))/32768;
+    workerThread.mainHistory[us][move.raw()] << mainBonus;  // Untuned to prevent duplicate effort
 
     if (ss->ply < LOW_PLY_HISTORY_SIZE)
-        workerThread.lowPlyHistory[ss->ply][move.raw()] << bonus * 805 / 1024;
+        workerThread.lowPlyHistory[ss->ply][move.raw()] << mainBonus * 805 / 1024;
 
     update_continuation_histories(ss, pos.moved_piece(move), move.to_sq(), bonus * 896 / 1024);
 
     workerThread.sharedHistory.pawn_entry(pos)[pos.moved_piece(move)][move.to_sq()]
-      << bonus * (bonus > 0 ? 905 : 505) / 1024;
+      << mainBonus * (bonus > 0 ? 905 : 505) / 1024;
 }
 
 }
