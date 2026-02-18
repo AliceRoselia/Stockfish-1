@@ -987,8 +987,7 @@ moves_loop:  // When in check, search starts here
         return probCutBeta;
 
     const PieceToHistory* contHist[] = {
-      (ss - 1)->continuationHistory, (ss - 2)->continuationHistory, (ss - 3)->continuationHistory,
-      (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
+      (ss - 1)->continuationHistory, (ss - 2)->continuationHistory};
 
 
     MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
@@ -1868,17 +1867,15 @@ void update_all_stats(const Position& pos,
 // Updates histories of the move pairs formed by moves
 // at ply -1, -2, -3, -4, and -6 with current move.
 void update_continuation_histories(Stack* ss, Piece pc, Square to, int bonus) {
-    static constexpr std::array<ConthistBonus, 6> conthist_bonuses = {
-      {{1, 1106}, {2, 705}, {3, 316}, {4, 572}, {5, 126}, {6, 427}}};
+    static constexpr std::array<ConthistBonus, 2> conthist_bonuses = {
+      {{1, 1106}, {2, 705}}};
 
     for (const auto [i, weight] : conthist_bonuses)
     {
         // Only update the first 2 continuation histories if we are in check
-        if (ss->inCheck && i > 2)
-            break;
 
         if (((ss - i)->currentMove).is_ok())
-            (*(ss - i)->continuationHistory)[pc][to] << (bonus * weight / 1024) + 82 * (i < 2);
+            (*(ss - i)->continuationHistory)[pc][to] << (bonus * weight / 1024) + 82;
     }
 }
 
