@@ -162,9 +162,9 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += 1744 * sharedHistory->pawn_entry(pos)[pc][to];
             m.value += 1021 * (*continuationHistory[0])[pc][to];
             m.value += 1003 * (*continuationHistory[1])[pc][to];
-            m.value += 197*2 * (*continuationHistory[2])[pc][to];
-            m.value += 458*2 * (*continuationHistory[3])[pc][to];
-            m.value += 207*2 * (*continuationHistory[5])[pc][to];
+            m.value += 197 * (*continuationHistory[2])[pc][to];
+            m.value += 458 * (*continuationHistory[3])[pc][to];
+            m.value += 207 * (*continuationHistory[5])[pc][to];
 
             // bonus for checks
             m.value += (bool(pos.check_squares(pt) & to) && pos.see_ge(m, -75)) * 14692131;
