@@ -32,7 +32,6 @@ namespace {
 
 enum Stages {
     // generate main search moves
-    MAIN_TT,
     CAPTURE_INIT,
     GOOD_CAPTURE,
     QUIET_INIT,
@@ -41,17 +40,14 @@ enum Stages {
     BAD_QUIET,
 
     // generate evasion moves
-    EVASION_TT,
     EVASION_INIT,
     EVASION,
 
     // generate probcut moves
-    PROBCUT_TT,
     PROBCUT_INIT,
     PROBCUT,
 
     // generate qsearch moves
-    QSEARCH_TT,
     QCAPTURE_INIT,
     QCAPTURE
 };
@@ -99,11 +95,7 @@ MovePicker::MovePicker(const Position&              p,
     depth(d),
     ply(pl) {
 
-    if (pos.checkers())
-        stage = EVASION_TT + !(ttm && pos.pseudo_legal(ttm));
-
-    else
-        stage = (depth > 0 ? MAIN_TT : QSEARCH_TT) + !(ttm && pos.pseudo_legal(ttm));
+    stage = pos.checkers() ? EVASION_INIT : (depth>0) ? CAPTURE_INIT : QCAPTURE_INIT;
 }
 
 // MovePicker constructor for ProbCut: we generate captures with Static Exchange
@@ -115,7 +107,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     threshold(th) {
     assert(!pos.checkers());
 
-    stage = PROBCUT_TT + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm));
+    stage = PROBCUT_INIT;
 }
 
 // Assigns a numerical value to each move in a list, used for sorting.
@@ -196,7 +188,7 @@ template<typename Pred>
 Move MovePicker::select(Pred filter) {
 
     for (; cur < endCur; ++cur)
-        if (*cur != ttMove && filter())
+        if (filter())
             return *cur++;
 
     return Move::none();
@@ -211,13 +203,6 @@ Move MovePicker::next_move() {
 top:
     switch (stage)
     {
-
-    case MAIN_TT :
-    case EVASION_TT :
-    case QSEARCH_TT :
-    case PROBCUT_TT :
-        ++stage;
-        return ttMove;
 
     case CAPTURE_INIT :
     case PROBCUT_INIT :
