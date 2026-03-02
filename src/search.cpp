@@ -650,6 +650,7 @@ Value Search::Worker::search(
     bool  capture, ttCapture;
     int   priorReduction;
     Piece movedPiece;
+    int TTHistory = 8000;
 
     SearchedList capturesSearched;
     SearchedList quietsSearched;
@@ -870,7 +871,14 @@ Value Search::Worker::search(
     // Step 7. Razoring
     // If eval is really low, skip search entirely and return the qsearch value.
     // For PvNodes, we must have a guard against mates being returned.
-    if (!PvNode && eval < alpha - 507 - 312 * depth * depth)
+    if (ttData.move)
+    {
+        movedPiece = pos.moved_piece(ttData.move);
+        TTHistory = (*(ss - 1)->continuationHistory)[movedPiece][ttData.move.to_sq()] + (*(ss - 2)->continuationHistory)[movedPiece][ttData.move.to_sq()];
+        //Default value = 8000.
+    }
+
+    if (!PvNode && eval + TTHistory/16 < alpha - 312 * depth * depth)
         return qsearch<NonPV>(pos, ss, alpha, beta);
 
     // Step 8. Futility pruning: child node
