@@ -101,7 +101,7 @@ void TTEntry::save(
     if (b == BOUND_EXACT || uint16_t(k) != key16 || d - DEPTH_ENTRY_OFFSET + 2 * pv > depth8 - 4
         || relative_age(generation8))
     {
-        if (d - DEPTH_ENTRY_OFFSET <= depth8 && b == ( v >= value16 ? BOUND_LOWER : BOUND_UPPER))
+        if (d - DEPTH_ENTRY_OFFSET <= depth8 && b == ( v >= value16 ? BOUND_LOWER : BOUND_UPPER) && Bound(genBound8 & 0x3) == ( v >= value16 ? BOUND_UPPER : BOUND_LOWER))
             b = BOUND_EXACT;
         assert(d > DEPTH_ENTRY_OFFSET);
         assert(d < 256 + DEPTH_ENTRY_OFFSET);
