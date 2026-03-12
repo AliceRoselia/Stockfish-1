@@ -1045,6 +1045,44 @@ moves_loop:  // When in check, search starts here
         // Larger values scale well
         if (ss->ttPv)
             r += 949;
+        if (ss->ttPv)
+            r -= 2823 + PvNode * 1013 + (ttData.value > alpha) * 910
+               + (ttData.depth >= depth) * (933 + cutNode * 979);
+
+        r += 690;  // Base reduction offset to compensate for other tweaks
+        r -= moveCount * 70;
+        r -= std::abs(correctionValue) / 26878;
+
+        // Increase reduction for cut nodes
+        if (cutNode)
+            r += 3582 + 1015 * !ttData.move;
+
+        // Increase reduction if ttMove is a capture
+        if (ttCapture)
+            r += 1075;
+
+        // Increase reduction if next ply has a lot of fail high
+        if ((ss + 1)->cutoffCnt > 1)
+            r += 249 + 1073 * ((ss + 1)->cutoffCnt > 2) + 1064 * allNode;
+
+        // For first picked move (ttMove) reduce reduction
+        if (move == ttData.move)
+            r -= 2069;
+
+        if (capture)
+            ss->statScore = 892 * int(PieceValue[pos.captured_piece()]) / 128
+                          + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())];
+        else
+            ss->statScore = 2 * mainHistory[us][move.raw()]
+                          + (*contHist[0])[movedPiece][move.to_sq()]
+                          + (*contHist[1])[movedPiece][move.to_sq()];
+
+        // Decrease/increase reduction for moves with a good/bad history
+        r -= ss->statScore * 454 / 4096;
+
+        // Scale up reductions for expected ALL nodes
+        if (allNode)
+            r += r * 276 / (256 * depth + 254);
 
         // Step 14. Pruning at shallow depths.
         // Depth conditions are important for mate finding.
@@ -1188,44 +1226,6 @@ moves_loop:  // When in check, search starts here
         uint64_t nodeCount = rootNode ? uint64_t(nodes) : 0;
 
         // Decrease reduction for PvNodes (*Scaler)
-        if (ss->ttPv)
-            r -= 2823 + PvNode * 1013 + (ttData.value > alpha) * 910
-               + (ttData.depth >= depth) * (933 + cutNode * 979);
-
-        r += 690;  // Base reduction offset to compensate for other tweaks
-        r -= moveCount * 70;
-        r -= std::abs(correctionValue) / 26878;
-
-        // Increase reduction for cut nodes
-        if (cutNode)
-            r += 3582 + 1015 * !ttData.move;
-
-        // Increase reduction if ttMove is a capture
-        if (ttCapture)
-            r += 1075;
-
-        // Increase reduction if next ply has a lot of fail high
-        if ((ss + 1)->cutoffCnt > 1)
-            r += 249 + 1073 * ((ss + 1)->cutoffCnt > 2) + 1064 * allNode;
-
-        // For first picked move (ttMove) reduce reduction
-        if (move == ttData.move)
-            r -= 2069;
-
-        if (capture)
-            ss->statScore = 892 * int(PieceValue[pos.captured_piece()]) / 128
-                          + captureHistory[movedPiece][move.to_sq()][type_of(pos.captured_piece())];
-        else
-            ss->statScore = 2 * mainHistory[us][move.raw()]
-                          + (*contHist[0])[movedPiece][move.to_sq()]
-                          + (*contHist[1])[movedPiece][move.to_sq()];
-
-        // Decrease/increase reduction for moves with a good/bad history
-        r -= ss->statScore * 454 / 4096;
-
-        // Scale up reductions for expected ALL nodes
-        if (allNode)
-            r += r * 276 / (256 * depth + 254);
 
         // Step 17. Late moves reduction / extension (LMR)
         if (depth >= 2 && moveCount > 1)
