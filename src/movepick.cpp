@@ -279,12 +279,12 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (pos.side_to_move() == WHITE){
             //dbg_mean_of(std::abs(compute_neural_score_WHITE(pos, m)));
-                m.value += 3*compute_neural_score_WHITE(pos, m);
+                m.value += 2*compute_neural_score_WHITE(pos, m);
             }
             else
             {
                 //dbg_mean_of(std::abs(compute_neural_score_BLACK(pos, m)));
-                m.value += 3*compute_neural_score_BLACK(pos,m);
+                m.value += 2*compute_neural_score_BLACK(pos,m);
             }
 
 
