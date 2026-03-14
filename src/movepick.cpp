@@ -159,7 +159,7 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m) {
     return final_accumulator>>16;
 }
 
-int compute_neural_score_BLACK_backup(const Position& pos, const Move& m){
+int compute_neural_score_BLACK(const Position& pos, const Move& m){
     int p = int(type_of(pos.moved_piece(m)))-1;
     Square s = m.to_sq();
     s = Square((int(s)&7)|(56-(56&int(s))));
