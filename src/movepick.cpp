@@ -104,7 +104,7 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m){
         final_accumulator += _mm256_extract_epi32(Temp,i);
 
 
-    return final_accumulator>>12;
+    return final_accumulator>>15;
 }
 
 int compute_neural_score_BLACK(const Position& pos, const Move& m){
@@ -132,7 +132,7 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
         final_accumulator += _mm256_extract_epi32(Temp,i);
 
 
-    return final_accumulator>>12;
+    return final_accumulator>>15;
 }
 
 #else
@@ -156,7 +156,7 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m) {
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
-    return final_accumulator>>12;
+    return final_accumulator>>15;
 }
 
 int compute_neural_score_BLACK(const Position& pos, const Move& m){
@@ -178,7 +178,7 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
-    return final_accumulator>>12;
+    return final_accumulator>>15;
 }
 
 #endif
