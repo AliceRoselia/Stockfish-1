@@ -27,6 +27,10 @@ namespace Stockfish {
 
 class Position;
 
+int compute_neural_score_WHITE(const Position& pos, const Move& m);
+int compute_neural_score_BLACK(const Position& pos, const Move& m);
+
+
 // The MovePicker class is used to pick one pseudo-legal move at a time from the
 // current position. The most important method is next_move(), which emits one
 // new pseudo-legal move on every call, until there are no moves left, when

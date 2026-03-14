@@ -29,6 +29,8 @@
 
 #include "bitboard.h"
 #include "types.h"
+#include "weights_quantized.h"
+#include "misc.h"
 
 namespace Stockfish {
 
@@ -178,6 +180,7 @@ class Position {
     void put_piece(Piece pc, Square s, DirtyThreats* const dts = nullptr);
     void remove_piece(Square s, DirtyThreats* const dts = nullptr);
     void swap_piece(Square s, Piece pc, DirtyThreats* const dts = nullptr);
+    alignas(64) int32_t boardRepresentation[2][32];
 
    private:
     // Initialization helpers (used while setting up a position)
@@ -353,6 +356,12 @@ inline void Position::put_piece(Piece pc, Square s, DirtyThreats* const dts) {
     pieceCount[pc]++;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
 
+    int flipped_s = (int(s)&7)|(56-(56&int(s)));
+    for (int i=0; i<32; ++i){
+        boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
+        boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
+    }
+
     if (dts)
         update_piece_threats<true>(pc, s, dts);
 }
@@ -369,6 +378,12 @@ inline void Position::remove_piece(Square s, DirtyThreats* const dts) {
     board[s] = NO_PIECE;
     pieceCount[pc]--;
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
+
+    int flipped_s = (int(s)&7)|(56-(56&int(s)));
+    for (int i=0; i<32; ++i){
+        boardRepresentation[WHITE][i] -= piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
+        boardRepresentation[BLACK][i] -= piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
+    }
 }
 
 inline void Position::move_piece(Square from, Square to, DirtyThreats* const dts) {
@@ -383,6 +398,13 @@ inline void Position::move_piece(Square from, Square to, DirtyThreats* const dts
     byColorBB[color_of(pc)] ^= fromTo;
     board[from] = NO_PIECE;
     board[to]   = pc;
+
+    int flipped_from = (int(from)&7)|(56-(56&int(from)));
+    int flipped_to = (int(to)&7)|(56-(56&int(to)));
+    for (int i=0; i<32; ++i){
+        boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][to][i] - piece_square_vectors[type_of(pc)+6*color_of(pc)-1][from][i];
+        boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_to][i] - piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_from][i];
+    }
 
     if (dts)
         update_piece_threats<true>(pc, to, dts, fromTo);

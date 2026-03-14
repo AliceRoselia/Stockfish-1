@@ -200,6 +200,11 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si) {
       incremented after Black's move.
 */
 
+    for (int i=0; i<32; ++i){
+        boardRepresentation[0][i] = piece_square_bias[i];
+        boardRepresentation[1][i] = piece_square_bias[i];
+    }
+
     unsigned char      col, row, token;
     size_t             idx;
     Square             sq = SQ_A8;
