@@ -357,10 +357,29 @@ inline void Position::put_piece(Piece pc, Square s, DirtyThreats* const dts) {
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]++;
 
     int flipped_s = (int(s)&7)|(56-(56&int(s)));
+
+    #ifdef USE_AVX2
+
+    for (int i=0; i<32; i+=8)
+    {
+        __m256i* WHITE_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[WHITE][i]);
+        __m256i* BLACK_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[BLACK][i]);
+        __m256i WHITE = _mm256_load_si256(WHITE_ptr);
+        __m256i BLACK = _mm256_load_si256(BLACK_ptr);
+        __m256i psvW = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i])));
+        __m256i psvB = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i])));
+        WHITE = _mm256_add_epi32(WHITE,psvW);
+        BLACK = _mm256_add_epi32(BLACK,psvB);
+        _mm256_store_si256(WHITE_ptr,WHITE);
+        _mm256_store_si256(BLACK_ptr,BLACK);
+    }
+    #else
     for (int i=0; i<32; ++i){
         boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
         boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
+
+    #endif // USE_AVX2
 
     if (dts)
         update_piece_threats<true>(pc, s, dts);
@@ -380,10 +399,28 @@ inline void Position::remove_piece(Square s, DirtyThreats* const dts) {
     pieceCount[make_piece(color_of(pc), ALL_PIECES)]--;
 
     int flipped_s = (int(s)&7)|(56-(56&int(s)));
+
+    #ifdef USE_AVX2
+
+    for (int i=0; i<32; i+=8)
+    {
+        __m256i* WHITE_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[WHITE][i]);
+        __m256i* BLACK_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[BLACK][i]);
+        __m256i WHITE = _mm256_load_si256(WHITE_ptr);
+        __m256i BLACK = _mm256_load_si256(BLACK_ptr);
+        __m256i psvW = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i])));
+        __m256i psvB = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i])));
+        WHITE = _mm256_sub_epi32(WHITE,psvW);
+        BLACK = _mm256_sub_epi32(BLACK,psvB);
+        _mm256_store_si256(WHITE_ptr,WHITE);
+        _mm256_store_si256(BLACK_ptr,BLACK);
+    }
+    #else
     for (int i=0; i<32; ++i){
         boardRepresentation[WHITE][i] -= piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
         boardRepresentation[BLACK][i] -= piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
+    #endif // USE_AVX2
 }
 
 inline void Position::move_piece(Square from, Square to, DirtyThreats* const dts) {
@@ -401,10 +438,32 @@ inline void Position::move_piece(Square from, Square to, DirtyThreats* const dts
 
     int flipped_from = (int(from)&7)|(56-(56&int(from)));
     int flipped_to = (int(to)&7)|(56-(56&int(to)));
+    #ifdef USE_AVX2
+
+    for (int i=0; i<32; i+=8)
+    {
+        __m256i* WHITE_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[WHITE][i]);
+        __m256i* BLACK_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[BLACK][i]);
+        __m256i WHITE = _mm256_load_si256(WHITE_ptr);
+        __m256i BLACK = _mm256_load_si256(BLACK_ptr);
+        __m256i psvW = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*color_of(pc)-1][to][i])));
+        __m256i psvB = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_to][i])));
+        WHITE = _mm256_add_epi32(WHITE,psvW);
+        BLACK = _mm256_add_epi32(BLACK,psvB);
+        psvW = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*color_of(pc)-1][from][i])));
+        psvB = _mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_from][i])));
+        WHITE = _mm256_sub_epi32(WHITE,psvW);
+        BLACK = _mm256_sub_epi32(BLACK,psvB);
+        _mm256_store_si256(WHITE_ptr,WHITE);
+        _mm256_store_si256(BLACK_ptr,BLACK);
+    }
+    #else
+
     for (int i=0; i<32; ++i){
         boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][to][i] - piece_square_vectors[type_of(pc)+6*color_of(pc)-1][from][i];
         boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_to][i] - piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_from][i];
     }
+    #endif // USE_AVX2
 
     if (dts)
         update_piece_threats<true>(pc, to, dts, fromTo);

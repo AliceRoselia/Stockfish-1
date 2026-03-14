@@ -104,7 +104,7 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m){
         final_accumulator += _mm256_extract_epi32(Temp,i);
 
 
-    return final_accumulator>>16;
+    return final_accumulator>>12;
 }
 
 int compute_neural_score_BLACK(const Position& pos, const Move& m){
@@ -132,7 +132,7 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
         final_accumulator += _mm256_extract_epi32(Temp,i);
 
 
-    return final_accumulator>>16;
+    return final_accumulator>>12;
 }
 
 #else
@@ -156,7 +156,7 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m) {
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
-    return final_accumulator>>16;
+    return final_accumulator>>12;
 }
 
 int compute_neural_score_BLACK(const Position& pos, const Move& m){
@@ -178,7 +178,7 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
-    return final_accumulator>>16;
+    return final_accumulator>>12;
 }
 
 #endif
@@ -279,12 +279,14 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (pos.side_to_move() == WHITE){
             //dbg_mean_of(std::abs(compute_neural_score_WHITE(pos, m)));
-                m.value += 2*compute_neural_score_WHITE(pos, m);
+                m.value += compute_neural_score_WHITE(pos, m);
+                //dbg_stdev_of(compute_neural_score_WHITE(pos, m));
             }
             else
             {
                 //dbg_mean_of(std::abs(compute_neural_score_BLACK(pos, m)));
-                m.value += 2*compute_neural_score_BLACK(pos,m);
+                m.value += compute_neural_score_BLACK(pos,m);
+                //dbg_stdev_of(compute_neural_score_BLACK(pos, m));
             }
 
 
