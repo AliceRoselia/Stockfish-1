@@ -178,7 +178,7 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
-    return final_accumulator>>15;
+    return final_accumulator>>10;
 }
 
 #endif
