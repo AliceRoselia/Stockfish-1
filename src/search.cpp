@@ -739,7 +739,7 @@ Value Search::Worker::search(
         // Static evaluation is saved as it was before adjustment by correction history
         ttWriter.write(posKey, VALUE_NONE, ss->ttPv, BOUND_NONE, DEPTH_UNSEARCHED, Move::none(),
                        unadjustedStaticEval, tt.generation());
-        if (eval < alpha)
+        if (cutNode && eval < alpha)
             ss->staticEval = eval = qsearch<NonPV>(pos, ss, alpha, beta);
     }
 
