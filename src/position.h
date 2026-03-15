@@ -180,7 +180,7 @@ class Position {
     void put_piece(Piece pc, Square s, DirtyThreats* const dts = nullptr);
     void remove_piece(Square s, DirtyThreats* const dts = nullptr);
     void swap_piece(Square s, Piece pc, DirtyThreats* const dts = nullptr);
-    alignas(64) int32_t boardRepresentation[2][32];
+    alignas(64) int32_t boardRepresentation[2][16];
 
    private:
     // Initialization helpers (used while setting up a position)
@@ -360,7 +360,7 @@ inline void Position::put_piece(Piece pc, Square s, DirtyThreats* const dts) {
 
     #ifdef USE_AVX2
 
-    for (int i=0; i<32; i+=8)
+    for (int i=0; i<16; i+=8)
     {
         __m256i* WHITE_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[WHITE][i]);
         __m256i* BLACK_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[BLACK][i]);
@@ -374,7 +374,7 @@ inline void Position::put_piece(Piece pc, Square s, DirtyThreats* const dts) {
         _mm256_store_si256(BLACK_ptr,BLACK);
     }
     #else
-    for (int i=0; i<32; ++i){
+    for (int i=0; i<16; ++i){
         boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
         boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
@@ -402,7 +402,7 @@ inline void Position::remove_piece(Square s, DirtyThreats* const dts) {
 
     #ifdef USE_AVX2
 
-    for (int i=0; i<32; i+=8)
+    for (int i=0; i<16; i+=8)
     {
         __m256i* WHITE_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[WHITE][i]);
         __m256i* BLACK_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[BLACK][i]);
@@ -416,7 +416,7 @@ inline void Position::remove_piece(Square s, DirtyThreats* const dts) {
         _mm256_store_si256(BLACK_ptr,BLACK);
     }
     #else
-    for (int i=0; i<32; ++i){
+    for (int i=0; i<16; ++i){
         boardRepresentation[WHITE][i] -= piece_square_vectors[type_of(pc)+6*color_of(pc)-1][s][i];
         boardRepresentation[BLACK][i] -= piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_s][i];
     }
@@ -440,7 +440,7 @@ inline void Position::move_piece(Square from, Square to, DirtyThreats* const dts
     int flipped_to = (int(to)&7)|(56-(56&int(to)));
     #ifdef USE_AVX2
 
-    for (int i=0; i<32; i+=8)
+    for (int i=0; i<16; i+=8)
     {
         __m256i* WHITE_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[WHITE][i]);
         __m256i* BLACK_ptr =  reinterpret_cast<__m256i*>(&boardRepresentation[BLACK][i]);
@@ -459,7 +459,7 @@ inline void Position::move_piece(Square from, Square to, DirtyThreats* const dts
     }
     #else
 
-    for (int i=0; i<32; ++i){
+    for (int i=0; i<16; ++i){
         boardRepresentation[WHITE][i] += piece_square_vectors[type_of(pc)+6*color_of(pc)-1][to][i] - piece_square_vectors[type_of(pc)+6*color_of(pc)-1][from][i];
         boardRepresentation[BLACK][i] += piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_to][i] - piece_square_vectors[type_of(pc)+6*(!color_of(pc))-1][flipped_from][i];
     }

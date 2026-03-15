@@ -85,23 +85,23 @@ int compute_neural_score_WHITE(const Position& pos, const Move& m){
     Square s = m.to_sq();
 
     __m256i Temp1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(&(bias2[p][s][0])));
-    __m256i Temp2 = _mm256_load_si256(reinterpret_cast<const __m256i*>(&(bias2[p][s][8])));
+    //__m256i Temp2 = _mm256_load_si256(reinterpret_cast<const __m256i*>(&(bias2[p][s][8])));
 
-    for (int i=0; i<32; ++i){
+    for (int i=0; i<16; ++i){
         __m256i boardRep = _mm256_set1_epi32(pos.boardRepresentation[WHITE][i]);
 
 
         Temp1 = _mm256_add_epi32(Temp1,_mm256_mullo_epi32(boardRep,_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(move_vectors[p][s][i][0]))))));
-        Temp2 = _mm256_add_epi32(Temp2,_mm256_mullo_epi32(boardRep,_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(move_vectors[p][s][i][8]))))));
+        //Temp2 = _mm256_add_epi32(Temp2,_mm256_mullo_epi32(boardRep,_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(move_vectors[p][s][i][8]))))));
     }
     int final_accumulator = output_bias[p][s];
     Temp1 = _mm256_mullo_epi32(_mm256_max_epi16(_mm256_srli_epi32(Temp1,16),_mm256_set1_epi32(0)),_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(output_layer[p][s][0])))));
-    Temp2 = _mm256_mullo_epi32(_mm256_max_epi16(_mm256_srli_epi32(Temp2,16),_mm256_set1_epi32(0)),_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(output_layer[p][s][8])))));
+    //Temp2 = _mm256_mullo_epi32(_mm256_max_epi16(_mm256_srli_epi32(Temp2,16),_mm256_set1_epi32(0)),_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(output_layer[p][s][8])))));
 
-    __m256i Temp = _mm256_add_epi32(Temp1,Temp2);
+    //__m256i Temp = _mm256_add_epi32(Temp1,Temp2);
 
     for (int i=0; i<8; ++i)
-        final_accumulator += _mm256_extract_epi32(Temp,i);
+        final_accumulator += _mm256_extract_epi32(Temp1,i);
 
 
     return final_accumulator>>10;
@@ -113,23 +113,23 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
     s = Square((int(s)&7)|(56-(56&int(s))));
 
     __m256i Temp1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(&(bias2[p][s][0])));
-    __m256i Temp2 = _mm256_load_si256(reinterpret_cast<const __m256i*>(&(bias2[p][s][8])));
+    //__m256i Temp2 = _mm256_load_si256(reinterpret_cast<const __m256i*>(&(bias2[p][s][8])));
 
-    for (int i=0; i<32; ++i){
+    for (int i=0; i<16; ++i){
         __m256i boardRep = _mm256_set1_epi32(pos.boardRepresentation[BLACK][i]);
 
 
         Temp1 = _mm256_add_epi32(Temp1,_mm256_mullo_epi32(boardRep,_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(move_vectors[p][s][i][0]))))));
-        Temp2 = _mm256_add_epi32(Temp2,_mm256_mullo_epi32(boardRep,_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(move_vectors[p][s][i][8]))))));
+        //Temp2 = _mm256_add_epi32(Temp2,_mm256_mullo_epi32(boardRep,_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(move_vectors[p][s][i][8]))))));
     }
     int final_accumulator = output_bias[p][s];
     Temp1 = _mm256_mullo_epi32(_mm256_max_epi16(_mm256_srli_epi32(Temp1,16),_mm256_set1_epi32(0)),_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(output_layer[p][s][0])))));
-    Temp2 = _mm256_mullo_epi32(_mm256_max_epi16(_mm256_srli_epi32(Temp2,16),_mm256_set1_epi32(0)),_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(output_layer[p][s][8])))));
+    //Temp2 = _mm256_mullo_epi32(_mm256_max_epi16(_mm256_srli_epi32(Temp2,16),_mm256_set1_epi32(0)),_mm256_cvtepi16_epi32(_mm_load_si128(reinterpret_cast<const __m128i*>(&(output_layer[p][s][8])))));
 
-    __m256i Temp = _mm256_add_epi32(Temp1,Temp2);
+    //__m256i Temp = _mm256_add_epi32(Temp1,Temp2);
 
     for (int i=0; i<8; ++i)
-        final_accumulator += _mm256_extract_epi32(Temp,i);
+        final_accumulator += _mm256_extract_epi32(Temp1,i);
 
 
     return final_accumulator>>10;
@@ -163,22 +163,22 @@ int compute_neural_score_BLACK(const Position& pos, const Move& m){
     int p = int(type_of(pos.moved_piece(m)))-1;
     Square s = m.to_sq();
     s = Square((int(s)&7)|(56-(56&int(s))));
-    int32_t Temp[16];
-    for (int i=0; i<16; ++i){
+    int32_t Temp[8];
+    for (int i=0; i<8; ++i){
         Temp[i] = bias2[p][s][i];
     }
 
-    for (int i=0; i<32; ++i){
-        for (int j=0; j<16; ++j){
+    for (int i=0; i<16; ++i){
+        for (int j=0; j<8; ++j){
             Temp[j] += pos.boardRepresentation[BLACK][i]*move_vectors[p][s][i][j];
         }
     }
     int final_accumulator = output_bias[p][s];
-    for (int i=0; i<16; ++i){
+    for (int i=0; i<8; ++i){
         final_accumulator += std::max(Temp[i]>>16,0)*output_layer[p][s][i];
     }
 
-    return final_accumulator>>10;
+    return final_accumulator>>15;
 }
 
 #endif
