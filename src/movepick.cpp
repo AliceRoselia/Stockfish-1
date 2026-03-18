@@ -159,7 +159,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         {
             // histories
             m.value = 2 * (*mainHistory)[us][m.raw()];
-            m.value += 2 * sharedHistory->pawn_entry(pos)[pc][to];
+            m.value += 8 * sharedHistory->pawn_entry(pos)[pc][to];
 
             int contHistValue = (*continuationHistory[0])[pc][to];
             contHistValue += (*continuationHistory[1])[pc][to];
