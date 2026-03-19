@@ -180,7 +180,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
-            m.value += 14000; //Offset for the negative histories so one can compare it to the captures.
+            m.value += 7000; //Offset for the negative histories so one can compare it to the captures.
         }
 
         else  // Type == EVASIONS
