@@ -153,7 +153,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         {
 
 
-            m.value = 4*((*captureHistory)[pc][to][type_of(capturedPiece)]
+            m.value = 3*((*captureHistory)[pc][to][type_of(capturedPiece)]
                     + 7 * int(PieceValue[capturedPiece]));
 
         }
@@ -249,20 +249,17 @@ top:
 
         if (!skipQuiets)
         {
-        ExtMove* tmp = cur;
+            cur = endBadCaptures;
+            MoveList<QUIETS> ml(pos);
+            endCur = score<QUIETS>(ml);
+            cur = moves;
 
-        cur = endBadCaptures;
-        MoveList<QUIETS> ml(pos);
-
-        endCur = score<QUIETS>(ml);
-
-        cur = tmp;
-
-        partial_insertion_sort(cur, endCur, -3560 * depth);
+            partial_insertion_sort(cur, endCur, -3560 * depth);
         }
         else
         {
-            endCur = endCaptures;
+            cur = moves;
+            endCur = endBadCaptures;
         }
 
         ++stage;
@@ -271,10 +268,8 @@ top:
     case EVERYTHING_ELSE:
 
 
-        if ((!skipQuiets || pos.capture_stage(*cur)) && select([&]() {return true;}))
-            return *(cur - 1);
+        return select([&]() {return (!skipQuiets || pos.capture_stage(*cur));});
 
-        return Move::none();
 
     case EVASION_INIT : {
         MoveList<EVASIONS> ml(pos);
