@@ -180,7 +180,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
-            m.value += 5500; //Offset for the negative histories so one can compare it to the captures.
+            m.value += 5000; //Offset for the negative histories so one can compare it to the captures.
         }
 
         else  // Type == EVASIONS
@@ -255,7 +255,7 @@ top:
             endCur = score<QUIETS>(ml);
             cur = moves;
 
-            partial_insertion_sort(cur, endCur, -3560 * depth);
+            partial_insertion_sort(cur, endCur, std::min(-3560 * depth,-14000));
         }
         else
         {
