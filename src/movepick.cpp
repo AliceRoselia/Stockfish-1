@@ -255,7 +255,7 @@ top:
             endCur = score<QUIETS>(ml);
             cur = moves;
 
-            partial_insertion_sort(cur, endCur, -2500*depth);
+            partial_insertion_sort(cur, endCur, -5000*depth);
         }
         else
         {
