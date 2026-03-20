@@ -21,7 +21,6 @@
 #include <cassert>
 #include <limits>
 #include <utility>
-#include <iostream>
 
 #include "bitboard.h"
 #include "misc.h"
@@ -154,14 +153,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         const Piece     capturedPiece = pos.piece_on(to);
 
         if constexpr (Type == CAPTURES)
-        {
-
-
             m.value = 3*((*captureHistory)[pc][to][type_of(capturedPiece)]
                     + 7 * int(PieceValue[capturedPiece]));
-
-        }
-
         else if constexpr (Type == QUIETS)
         {
             // histories
