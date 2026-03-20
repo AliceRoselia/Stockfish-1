@@ -227,7 +227,7 @@ top:
         MoveList<CAPTURES> ml(pos);
 
         cur = endBadCaptures = moves;
-        endCur = endCaptures = score<CAPTURES>(ml);
+        endCur = score<CAPTURES>(ml);
 
         partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
         ++stage;
@@ -253,9 +253,8 @@ top:
             cur = endBadCaptures;
             MoveList<QUIETS> ml(pos);
             endCur = score<QUIETS>(ml);
-            cur = moves;
-
-            partial_insertion_sort(cur, endCur, -5000*depth);
+            partial_insertion_sort(cur, endCur, -3560*depth);
+            badCaptureCur = moves;
         }
         else
         {
@@ -267,6 +266,8 @@ top:
         [[fallthrough]];
 
     case EVERYTHING_ELSE:
+        if (skipQuiets)
+            return
 
 
         return select([&]() {return (!skipQuiets || pos.capture_stage(*cur));});
