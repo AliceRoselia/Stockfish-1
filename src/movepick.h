@@ -56,6 +56,8 @@ class MovePicker {
     Move select(Pred);
     template<GenType T>
     ExtMove* score(MoveList<T>&);
+    Move select_bad_capture();
+    Move select_merge();
     ExtMove* begin() { return cur; }
     ExtMove* end() { return endCur; }
 

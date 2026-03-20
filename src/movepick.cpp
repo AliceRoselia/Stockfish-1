@@ -206,6 +206,38 @@ Move MovePicker::select(Pred filter) {
     return Move::none();
 }
 
+Move MovePicker::select_bad_capture()
+{
+    if (badCaptureCur == endBadCaptures)
+        return Move::none();
+    else if (*badCaptureCur == ttMove)
+    {
+        ++badCaptureCur;
+        if (badCaptureCur == endBadCaptures)
+            return Move::none();
+    }
+    return *badCaptureCur++;
+}
+Move MovePicker::select_merge()
+{
+    if (skipQuiets || cur == endCur)
+    {
+        return select_bad_capture();
+    }
+    if (*cur == ttMove)
+    {
+        if (++cur == endCur)
+            return select_bad_capture();
+    }
+    if (badCaptureCur == endBadCaptures)
+        return *cur++;
+    if (*badCaptureCur == ttMove)
+        ++badCaptureCur;
+    if (badCaptureCur == endBadCaptures)
+        return *cur++;
+    return (cur->value) > (badCaptureCur->value) ? *(cur++) : *(badCaptureCur++);
+}
+
 // This is the most important method of the MovePicker class. We emit one
 // new pseudo-legal move on every call until there are no more moves left,
 // picking the move with the highest score from a list of generated moves.
@@ -250,6 +282,7 @@ top:
 
         if (!skipQuiets)
         {
+
             cur = endBadCaptures;
             MoveList<QUIETS> ml(pos);
             endCur = score<QUIETS>(ml);
@@ -258,19 +291,14 @@ top:
         }
         else
         {
-            cur = moves;
-            endCur = endBadCaptures;
+            badCaptureCur = moves;
         }
 
         ++stage;
         [[fallthrough]];
 
     case EVERYTHING_ELSE:
-        if (skipQuiets)
-            return
-
-
-        return select([&]() {return (!skipQuiets || pos.capture_stage(*cur));});
+        return select_merge();
 
 
     case EVASION_INIT : {
