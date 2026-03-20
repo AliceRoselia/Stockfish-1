@@ -21,6 +21,7 @@
 #include <cassert>
 #include <limits>
 #include <utility>
+#include <iostream>
 
 #include "bitboard.h"
 #include "misc.h"
@@ -57,9 +58,12 @@ enum Stages {
 
 // Sort moves in descending order up to and including a given limit.
 // The order of moves smaller than the limit is left unspecified.
-void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
+void partial_insertion_sort(ExtMove* begin,ExtMove* start, ExtMove* end, int limit) {
+    //for (auto i = begin; i<start; ++i)
+      //  std::cout<<i->value<<" ";
+    //std::cout<<std::endl;
 
-    for (ExtMove *sortedEnd = begin, *p = begin + 1; p < end; ++p)
+    for (ExtMove *sortedEnd = start, *p = start+1; p < end; ++p)
         if (p->value >= limit)
         {
             ExtMove tmp = *p, *q;
@@ -180,7 +184,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
-            m.value += 5000; //Offset for the negative histories so one can compare it to the captures.
+            m.value += 5500; //Offset for the negative histories so one can compare it to the captures.
         }
 
         else  // Type == EVASIONS
@@ -229,7 +233,7 @@ top:
         cur = endBadCaptures = moves;
         endCur = endCaptures = score<CAPTURES>(ml);
 
-        partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
+        partial_insertion_sort(cur,cur, endCur, std::numeric_limits<int>::min());
         ++stage;
         goto top;
     }
@@ -254,8 +258,10 @@ top:
             MoveList<QUIETS> ml(pos);
             endCur = score<QUIETS>(ml);
             cur = moves;
+            //for (auto i= moves; i<endBadCaptures-1; ++i)
+                //dbg_hit_on((i->value) >= (i+1)->value);
 
-            partial_insertion_sort(cur, endCur, -5000*depth);
+            partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth);
         }
         else
         {
@@ -278,7 +284,7 @@ top:
         cur    = moves;
         endCur = score<EVASIONS>(ml);
 
-        partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
+        partial_insertion_sort(cur,cur, endCur, std::numeric_limits<int>::min());
         ++stage;
         [[fallthrough]];
     }
