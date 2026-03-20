@@ -206,6 +206,13 @@ Move MovePicker::select(Pred filter) {
     return Move::none();
 }
 
+Move MovePicker::select_merge()
+{
+    if (ttMove && *cur == ttMove) ++cur;
+    if (ttMove && *badCaptureCur == ttMove) ++badCaptureCur;
+    return (!skipQuiets && (cur->value) > (badCaptureCur->value)) ? *(cur++) : *(badCaptureCur++);
+}
+
 // This is the most important method of the MovePicker class. We emit one
 // new pseudo-legal move on every call until there are no more moves left,
 // picking the move with the highest score from a list of generated moves.
@@ -227,7 +234,7 @@ top:
         MoveList<CAPTURES> ml(pos);
 
         cur = endBadCaptures = moves;
-        endCur = endCaptures = score<CAPTURES>(ml);
+        endCur = score<CAPTURES>(ml);
 
         partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
         ++stage;
@@ -250,26 +257,29 @@ top:
 
         if (!skipQuiets)
         {
-            cur = endBadCaptures;
+            *endBadCaptures = Move::none();
+            endBadCaptures->value = std::numeric_limits<int>::min();
+            cur = ++endBadCaptures;
             MoveList<QUIETS> ml(pos);
             endCur = score<QUIETS>(ml);
-            cur = moves;
-
-            partial_insertion_sort(cur, endCur, -5000*depth);
+            partial_insertion_sort(cur, endCur, -3560*depth);
+            *endCur = Move::none();
+            endCur->value = std::numeric_limits<int>::min();
+            badCaptureCur = moves;
         }
         else
         {
-            cur = moves;
-            endCur = endBadCaptures;
+            badCaptureCur = moves;
+            *endBadCaptures = Move::none();
+            endBadCaptures->value = std::numeric_limits<int>::min();
+            cur = endCur = endBadCaptures;
         }
 
         ++stage;
         [[fallthrough]];
 
     case EVERYTHING_ELSE:
-
-
-        return select([&]() {return (!skipQuiets || pos.capture_stage(*cur));});
+        return select_merge();
 
 
     case EVASION_INIT : {
