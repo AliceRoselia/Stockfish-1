@@ -58,9 +58,6 @@ enum Stages {
 // Sort moves in descending order up to and including a given limit.
 // The order of moves smaller than the limit is left unspecified.
 void partial_insertion_sort(ExtMove* begin,ExtMove* start, ExtMove* end, int limit) {
-    //for (auto i = begin; i<start; ++i)
-      //  std::cout<<i->value<<" ";
-    //std::cout<<std::endl;
 
     for (ExtMove *sortedEnd = start, *p = start+1; p < end; ++p)
         if (p->value >= limit)
@@ -251,8 +248,6 @@ top:
             MoveList<QUIETS> ml(pos);
             endCur = score<QUIETS>(ml);
             cur = moves;
-            //for (auto i= moves; i<endBadCaptures-1; ++i)
-                //dbg_hit_on((i->value) >= (i+1)->value);
 
             partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth);
         }
