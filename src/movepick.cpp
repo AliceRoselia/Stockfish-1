@@ -206,36 +206,11 @@ Move MovePicker::select(Pred filter) {
     return Move::none();
 }
 
-Move MovePicker::select_bad_capture()
-{
-    if (badCaptureCur == endBadCaptures)
-        return Move::none();
-    else if (*badCaptureCur == ttMove)
-    {
-        ++badCaptureCur;
-        if (badCaptureCur == endBadCaptures)
-            return Move::none();
-    }
-    return *badCaptureCur++;
-}
 Move MovePicker::select_merge()
 {
-    if (skipQuiets || cur == endCur)
-    {
-        return select_bad_capture();
-    }
-    if (*cur == ttMove)
-    {
-        if (++cur == endCur)
-            return select_bad_capture();
-    }
-    if (badCaptureCur == endBadCaptures)
-        return *cur++;
-    if (*badCaptureCur == ttMove)
-        ++badCaptureCur;
-    if (badCaptureCur == endBadCaptures)
-        return *cur++;
-    return (cur->value) > (badCaptureCur->value) ? *(cur++) : *(badCaptureCur++);
+    if (ttMove && *cur == ttMove) ++cur;
+    if (ttMove && *badCaptureCur == ttMove) ++badCaptureCur;
+    return (!skipQuiets && (cur->value) > (badCaptureCur->value)) ? *(cur++) : *(badCaptureCur++);
 }
 
 // This is the most important method of the MovePicker class. We emit one
@@ -282,16 +257,22 @@ top:
 
         if (!skipQuiets)
         {
-
-            cur = endBadCaptures;
+            *endBadCaptures = Move::none();
+            endBadCaptures->value = std::numeric_limits<int>::min();
+            cur = ++endBadCaptures;
             MoveList<QUIETS> ml(pos);
             endCur = score<QUIETS>(ml);
             partial_insertion_sort(cur, endCur, -3560*depth);
+            *endCur = Move::none();
+            endCur->value = std::numeric_limits<int>::min();
             badCaptureCur = moves;
         }
         else
         {
             badCaptureCur = moves;
+            *endBadCaptures = Move::none();
+            endBadCaptures->value = std::numeric_limits<int>::min();
+            cur = endCur = endBadCaptures;
         }
 
         ++stage;
