@@ -174,7 +174,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
-            m.value += 4800; //Offset for the negative histories so one can compare it to the captures.
+            m.value += 5500; //Offset for the negative histories so one can compare it to the captures.
         }
 
         else  // Type == EVASIONS
@@ -230,7 +230,7 @@ top:
 
     case GOOD_CAPTURE :
         if (select([&]() {
-                if (pos.see_ge(*cur, -cur->value / 64))
+                if (pos.see_ge(*cur, -cur->value / 54))
                     return true;
                 std::swap(*endBadCaptures++, *cur);
                 return false;
