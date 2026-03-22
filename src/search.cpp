@@ -991,7 +991,7 @@ Value Search::Worker::search(
             if (value >= probCutBeta)
             {
                 bool verificationResult = true;
-                if (depth >= 14)
+                if (depth >= 10)
                 {
                     Value probCutVerificationBeta = beta - 224;
                     ss->excludedMove = move;
