@@ -249,7 +249,7 @@ top:
             endCur = score<QUIETS>(ml);
             cur = moves;
 
-            partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth);
+            partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth + 5500);
         }
         else
         {
