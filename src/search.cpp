@@ -990,12 +990,24 @@ Value Search::Worker::search(
 
             if (value >= probCutBeta)
             {
+                bool verificationResult = true;
+                if (depth >= 14)
+                {
+                    Value probCutVerificationBeta = beta - 224;
+                    ss->excludedMove = move;
+                    Value v = search<NonPV>(pos, ss, probCutVerificationBeta - 1, probCutVerificationBeta, probCutDepth/2, cutNode);
+                    ss->excludedMove = Move::none();
+                    verificationResult = v>=probCutVerificationBeta;
+                }
+                if (value >= probCutBeta && verificationResult)
                 // Save ProbCut data into transposition table
+                {
                 ttWriter.write(posKey, value_to_tt(value, ss->ply), ss->ttPv, BOUND_LOWER,
                                probCutDepth + 1, move, unadjustedStaticEval, tt.generation());
 
                 if (!is_decisive(value))
                     return value - (probCutBeta - beta);
+                }
             }
         }
     }
