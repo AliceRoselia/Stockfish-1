@@ -150,8 +150,8 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         const Piece     capturedPiece = pos.piece_on(to);
 
         if constexpr (Type == CAPTURES)
-            m.value = 3*((*captureHistory)[pc][to][type_of(capturedPiece)]
-                    + 7 * int(PieceValue[capturedPiece]));
+            m.value = 3 * (*captureHistory)[pc][to][type_of(capturedPiece)]
+                    + 20 * int(PieceValue[capturedPiece]);
         else if constexpr (Type == QUIETS)
         {
             // histories
@@ -249,7 +249,7 @@ top:
             endCur = score<QUIETS>(ml);
             cur = moves;
 
-            partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth - 5500);
+            partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth);
         }
         else
         {
