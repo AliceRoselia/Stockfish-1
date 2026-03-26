@@ -128,7 +128,9 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
 
     Color us = pos.side_to_move();
 
+
     [[maybe_unused]] Bitboard threatByLesser[KING + 1];
+    [[maybe_unused]] const auto& pawnEntry = sharedHistory->pawn_entry(pos);
     #if defined(USE_AVX512)
     alignas(64) int histBuffer[KING][SQUARE_NB];
     #endif // defined
@@ -142,13 +144,14 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
         threatByLesser[QUEEN] = pos.attacks_by<ROOK>(~us) | threatByLesser[ROOK];
         threatByLesser[KING]  = 0;
         #if defined(USE_AVX512)
+
         for (PieceType pt = PAWN; pt <= KING; ++pt)
         {
             Piece pc = make_piece(us,pt);
             for (int i=0; i<64; i+=16)
             {
                 __m512i* buff = reinterpret_cast<__m512i*>(&(histBuffer[pt-1][i]));
-                __m512i  curHist =  _mm512_cvtepi16_epi32(_mm256_slli_epi16(_mm256_load_si256(reinterpret_cast<const __m256i*>(&(sharedHistory->pawn_entry(pos)[pc][i]))),1));
+                __m512i  curHist =  _mm512_cvtepi16_epi32(_mm256_slli_epi16(_mm256_load_si256(reinterpret_cast<const __m256i*>(&(pawnEntry[pc][i]))),1));
                 for (int j: {0,1,2,3,5})
                 {
                     const __m256i* curConthist = reinterpret_cast<const __m256i*>(&(*continuationHistory[j])[pc][i]);
@@ -186,7 +189,7 @@ ExtMove* MovePicker::score(MoveList<Type>& ml) {
             m.value += histBuffer[pt-1][to];
             #else
 
-            m.value += 2 * sharedHistory->pawn_entry(pos)[pc][to];
+            m.value += 2 * pawnEntry[pc][to];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
