@@ -232,7 +232,7 @@ top:
 
     case GOOD_CAPTURE :
         if (select([&]() {
-                if (pos.see_ge(*cur, -cur->value / 51))
+                if (pos.see_ge(*cur, -cur->value / 57))
                     return true;
                 std::swap(*endBadCaptures++, *cur);
                 return false;
