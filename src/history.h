@@ -84,6 +84,37 @@ struct StatsEntry {
     }
 };
 
+struct CounterMoveGinientry{
+
+private:
+    uint16_t purity;
+    Move lastMove;
+    static constexpr uint32_t gain = std::numeric_limits<uint16_t>::max();
+    static constexpr uint32_t oldFactor = 64000;
+public:
+    static constexpr uint16_t LIMIT()
+    {
+        return gain;
+    }
+
+    void operator=(const uint16_t& v) {
+        purity = v;
+        lastMove = Move::none();
+        //Reset.
+    }
+
+    operator int() const {
+        return purity;
+    }
+    void operator<<(Move bestResponse)
+    {
+        purity = (purity*(oldFactor) + (gain+1-oldFactor) * (bestResponse != lastMove))/(gain+1);
+        bestResponse = lastMove;
+    }
+};
+
+using CounterMoveGini = MultiArray<CounterMoveGinientry,PIECE_NB, SQUARE_NB>;
+
 enum StatsType {
     NoCaptures,
     Captures

@@ -599,6 +599,8 @@ void Search::Worker::undo_null_move(Position& pos) { pos.undo_null_move(); }
 void Search::Worker::clear() {
     mainHistory.fill(0);
     captureHistory.fill(-678);
+    counterMoveGini.fill(CounterMoveGinientry::LIMIT());
+
 
     // Each thread is responsible for clearing their part of shared history
     sharedHistory.correctionHistory.clear_range(0, numaThreadIdx, numaTotal);
@@ -1010,7 +1012,7 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &counterMoveGini, &captureHistory, contHist,
                   &sharedHistory, ss->ply);
 
     value = bestValue;
@@ -1629,7 +1631,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // Initialize a MovePicker object for the current position, and prepare to search
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
-    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
+    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &counterMoveGini, &captureHistory,
                   contHist, &sharedHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
@@ -1850,6 +1852,10 @@ void update_all_stats(const Position& pos,
     int bonus =
       std::min(128 * depth - 77, 1529) + 353 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
     int malus = std::min(882 * depth - 204, 2122);
+
+    Move prevMove = (ss-1)->currentMove;
+    if (prevMove.is_ok())
+        workerThread.counterMoveGini[pos.piece_on(prevMove.to_sq())][prevMove.to_sq()] << bestMove;
 
     if (!pos.capture_stage(bestMove))
     {

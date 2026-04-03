@@ -43,6 +43,7 @@ class MovePicker {
                Depth,
                const ButterflyHistory*,
                const LowPlyHistory*,
+               const CounterMoveGini*,
                const CapturePieceToHistory*,
                const PieceToHistory**,
                const SharedHistories*,
@@ -62,6 +63,7 @@ class MovePicker {
     const Position&              pos;
     const ButterflyHistory*      mainHistory;
     const LowPlyHistory*         lowPlyHistory;
+    const CounterMoveGini*       counterMoveGini;
     const CapturePieceToHistory* captureHistory;
     const PieceToHistory**       continuationHistory;
     const SharedHistories*       sharedHistory;
