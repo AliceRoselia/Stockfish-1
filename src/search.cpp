@@ -599,7 +599,7 @@ void Search::Worker::undo_null_move(Position& pos) { pos.undo_null_move(); }
 void Search::Worker::clear() {
     mainHistory.fill(0);
     captureHistory.fill(-678);
-    counterMoveGini.fill(CounterMoveGinientry::LIMIT());
+    counterMoveGini.fill(0);
 
 
     // Each thread is responsible for clearing their part of shared history
