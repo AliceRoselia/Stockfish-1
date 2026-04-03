@@ -109,7 +109,7 @@ public:
     void operator<<(Move bestResponse)
     {
         purity = (purity*(oldFactor) + (gain+1-oldFactor) * (bestResponse != lastMove))/(gain+1);
-        bestResponse = lastMove;
+        lastMove = bestResponse;
     }
 };
 
