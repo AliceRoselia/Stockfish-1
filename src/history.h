@@ -76,14 +76,14 @@ struct StatsEntry {
 
     void operator<<(int bonus) {
         // Make sure that bonus is in range [-D, D]
-        int clampedBonus = std::clamp(bonus, -D, D);
-        int absolute_bonus = std::abs(clampedBonus);
+        //int clampedBonus = std::clamp(bonus, -D, D);
+        int absolute_bonus = std::abs(bonus);
         T val = *this;
         int entry_term = entry*absolute_bonus/D;
-        int term = clampedBonus - entry_term;
+        int term = bonus - entry_term;
         int term2 = term*absolute_bonus/(2*D);
 
-        *this            = val + term - term2;
+        *this            = std::clamp(val + term - term2,-D,D);
 
         assert(std::abs(T(*this)) <= D);
     }
