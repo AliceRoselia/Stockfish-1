@@ -1451,7 +1451,7 @@ moves_loop:  // When in check, search starts here
         bonusScale = std::max(bonusScale, 0);
 
         // scaledBonus ranges from 0 to roughly 2.3M, overflows happen for multipliers larger than 900
-        const int scaledBonus = (135 * depth - 80) * bonusScale;
+        const int scaledBonus = std::min(135 * depth - 80, 1400) * bonusScale;
 
         update_continuation_histories(ss - 1, pos.piece_on(prevSq), prevSq,
                                       scaledBonus * 221 / 16384);
@@ -1833,8 +1833,8 @@ void update_all_stats(const Position& pos,
     Piece                  movedPiece     = pos.moved_piece(bestMove);
     PieceType              capturedPiece;
 
-    int bonus = 128 * depth - 77 + 353 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
-    int malus = 882 * depth - 204;
+    int bonus = std::min(128 * depth - 77, 1529) + 353 * (bestMove == ttMove) + (ss - 1)->statScore / 32;
+    int malus = std::min(882 * depth - 204, 2122);
 
     if (!pos.capture_stage(bestMove))
     {
