@@ -81,7 +81,7 @@ struct StatsEntry {
         int absolute_bonus = std::abs(bonus);
 
         T val = *this;
-        int entry_term = entry*absolute_bonus/D;
+        int entry_term = val*absolute_bonus/D;
         int term = bonus - entry_term;
         int term2 = term*absolute_bonus/(2*D);
         int term3 = term2*absolute_bonus/(3*D);
