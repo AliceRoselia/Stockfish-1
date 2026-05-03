@@ -1337,11 +1337,10 @@ moves_loop:  // When in check, search starts here
             Piece counterMovedPiece = pos.moved_piece(counterMove);
             Square counterMovedSquare = counterMove.to_sq();
             int counterMoveMainHist = mainHistory[~us][counterMove.raw()];
-            int test = (*(ss->continuationHistory))[counterMovedPiece][counterMovedSquare];
             int counterMoveSecondContHist = (*contHist[0])[counterMovedPiece][counterMovedSquare];
 
 
-            nextPlyGenericCounterMove = (counterMoveMainHist*2 + counterMoveSecondContHist > test) && !pos.capture_stage(counterMove);
+            nextPlyGenericCounterMove = (counterMoveMainHist*2 + counterMoveSecondContHist > 8000);
         }
 
         // Step 19. Undo move
