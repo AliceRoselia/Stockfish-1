@@ -1340,7 +1340,7 @@ moves_loop:  // When in check, search starts here
             int counterMoveSecondContHist = (*contHist[0])[counterMovedPiece][counterMovedSquare];
 
 
-            nextPlyGenericCounterMove = (counterMoveMainHist*2 + counterMoveSecondContHist > 12000);
+            nextPlyGenericCounterMove = (counterMoveMainHist*2 + counterMoveSecondContHist > 12000) && !pos.capture_stage(counterMove);
         }
 
         // Step 19. Undo move
