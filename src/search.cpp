@@ -1038,6 +1038,8 @@ moves_loop:  // When in check, search starts here
 
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
+    bool nextPlyGenericCounterMove = false;
+
     while ((move = mp.next_move()) != Move::none())
     {
         assert(move.is_ok());
@@ -1241,6 +1243,9 @@ moves_loop:  // When in check, search starts here
         if (ttCapture)
             r += 1054;
 
+        if (nextPlyGenericCounterMove)
+            r += 1024;
+
         // Increase reduction if next ply has a lot of fail high
         if ((ss + 1)->cutoffCnt > 1)
             r += 251 + 1124 * ((ss + 1)->cutoffCnt > 2) + 1042 * allNode;
@@ -1324,6 +1329,18 @@ moves_loop:  // When in check, search starts here
                 newDepth = std::max(newDepth, 1);
 
             value = -search<PV>(pos, ss + 1, -beta, -alpha, newDepth, false);
+        }
+
+        if (move == ttData.move && value < alpha)
+        {
+            Move counterMove = (ss+1)->currentMove;
+            Piece counterMovedPiece = pos.moved_piece(counterMove);
+            Square counterMovedSquare = counterMove.to_sq();
+            int counterMoveMainHist = mainHistory[~us][counterMove.raw()];
+            int counterMoveSecondContHist = (*contHist[0])[counterMovedPiece][counterMovedSquare];
+
+
+            nextPlyGenericCounterMove = (counterMoveMainHist*2 + counterMoveSecondContHist > 12000);
         }
 
         // Step 19. Undo move
