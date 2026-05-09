@@ -714,12 +714,10 @@ bool Position::pseudo_legal(const Move m) const {
 
     // Use a slower but simpler function for uncommon cases
     // yet we skip the legality check of MoveList<LEGAL>().
-    if (m.type_of() != NORMAL)
+    if (m.type_of() > PROMOTION)
         return checkers() ? MoveList<EVASIONS>(*this).contains(m)
                           : MoveList<NON_EVASIONS>(*this).contains(m);
 
-    // Is not a promotion, so the promotion piece must be empty
-    assert(m.promotion_type() - KNIGHT == NO_PIECE_TYPE);
 
     // If the 'from' square is not occupied by a piece belonging to the side to
     // move, the move is obviously not legal.
@@ -733,9 +731,6 @@ bool Position::pseudo_legal(const Move m) const {
     // Handle the special case of a pawn move
     if (type_of(pc) == PAWN)
     {
-        // We have already handled promotion moves, so destination cannot be on the 8th/1st rank
-        if ((Rank8BB | Rank1BB) & to)
-            return false;
 
         // Check if it's a valid capture, single push, or double push
         const bool isCapture    = bool(attacks_bb<PAWN>(from, us) & pieces(~us) & to);
