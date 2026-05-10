@@ -154,6 +154,7 @@ MovePicker::MovePicker(const Position&              p,
                        Move                         ttm,
                        Depth                        d,
                        const ButterflyHistory*      mh,
+                       const BoardColorHistory*     bh,
                        const LowPlyHistory*         lph,
                        const CapturePieceToHistory* cph,
                        const PieceToHistory**       ch,
@@ -161,6 +162,7 @@ MovePicker::MovePicker(const Position&              p,
                        int                          pl) :
     pos(p),
     mainHistory(mh),
+    boardColorHistory(bh),
     lowPlyHistory(lph),
     captureHistory(cph),
     continuationHistory(ch),
@@ -230,6 +232,8 @@ ExtMove* MovePicker::score(const MoveList<Type>& ml) {
             // histories
             m.value = 2 * (*mainHistory)[us][m.raw()];
             m.value += 2 * sharedHistory->pawn_entry(pos)[pc][to];
+            m.value += (*boardColorHistory)[~us][WHITE][board_color_key(pos,~us,WHITE)][pc][to];
+            m.value += (*boardColorHistory)[~us][BLACK][board_color_key(pos,~us,BLACK)][pc][to];
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];

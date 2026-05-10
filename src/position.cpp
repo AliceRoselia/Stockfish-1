@@ -494,6 +494,7 @@ void Position::set_state() const {
     st->minorPieceKey     = 0;
     st->nonPawnKey[WHITE] = st->nonPawnKey[BLACK] = 0;
     st->pawnKey                                   = Zobrist::noPawns;
+    st->boardColorKey[WHITE][WHITE] = st->boardColorKey[WHITE][BLACK] = st->boardColorKey[BLACK][WHITE] = st->boardColorKey[BLACK][BLACK] = 0;
     st->nonPawnMaterial[WHITE] = st->nonPawnMaterial[BLACK] = VALUE_ZERO;
     st->checkersBB = attackers_to(square<KING>(sideToMove)) & pieces(~sideToMove);
 
@@ -504,6 +505,8 @@ void Position::set_state() const {
         Square s  = pop_lsb(b);
         Piece  pc = piece_on(s);
         st->key ^= Zobrist::psq[pc][s];
+
+        st->boardColorKey[color_of(pc)][(int)(s)&1] ^= Zobrist::psq[pc][s];
 
         if (type_of(pc) == PAWN)
             st->pawnKey ^= Zobrist::psq[pc][s];
@@ -880,6 +883,8 @@ void Position::do_move(Move                      m,
         do_castling<true>(us, from, to, rfrom, rto, &dts, &dp);
 
         k ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
+        st->boardColorKey[us][(int)(rfrom)&1] ^= Zobrist::psq[captured][rfrom];
+        st->boardColorKey[us][(int)(rto)&1] ^= Zobrist::psq[captured][rto];
         st->nonPawnKey[us] ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
         captured = NO_PIECE;
     }
@@ -916,6 +921,8 @@ void Position::do_move(Move                      m,
                 st->minorPieceKey ^= Zobrist::psq[captured][capsq];
         }
 
+        st->boardColorKey[~us][(int)(capsq)&1] ^= Zobrist::psq[captured][capsq];
+
         dp.remove_pc = captured;
         dp.remove_sq = capsq;
 
@@ -931,6 +938,8 @@ void Position::do_move(Move                      m,
 
     // Update hash key
     k ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
+    st->boardColorKey[us][(int)(from)&1] ^= Zobrist::psq[pc][from];
+    st->boardColorKey[us][(int)(to)&1] ^= Zobrist::psq[pc][to];
 
     // Reset en passant square
     if (st->epSquare != SQ_NONE)
