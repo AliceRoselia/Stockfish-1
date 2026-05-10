@@ -43,7 +43,7 @@ constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 5;
 
 inline Key board_color_key(const Position& pos, Color side, Color boardColor){
-    return pos.board_color_key(side,boardColor)&BOARD_COLOR_HISTORY_SIZE;
+    return pos.board_color_key(side,boardColor)&(BOARD_COLOR_HISTORY_SIZE-1);
 }
 
 static_assert((PAWN_HISTORY_BASE_SIZE & (PAWN_HISTORY_BASE_SIZE - 1)) == 0,
