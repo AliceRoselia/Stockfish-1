@@ -234,6 +234,7 @@ ExtMove* MovePicker::score(const MoveList<Type>& ml) {
             m.value += 2 * sharedHistory->pawn_entry(pos)[pc][to];
             m.value += (*boardColorHistory)[~us][WHITE][board_color_key(pos,~us,WHITE)][pt][to];
             m.value += (*boardColorHistory)[~us][BLACK][board_color_key(pos,~us,BLACK)][pt][to];
+            //Not sure if this would work.
             m.value += (*continuationHistory[0])[pc][to];
             m.value += (*continuationHistory[1])[pc][to];
             m.value += (*continuationHistory[2])[pc][to];
