@@ -159,7 +159,7 @@ using PawnHistory =
   DynStats<AtomicStats<std::int16_t, 8192, PIECE_NB, SQUARE_NB>, PAWN_HISTORY_BASE_SIZE>;
 
 // BoardColorHistory is addressed by the pieces of the opponent on the color (board parity) and a move's [piece][to]
-using BoardColorHistory = Stats<std::int16_t, 8192, COLOR_NB, COLOR_NB, BOARD_COLOR_HISTORY_SIZE, PIECE_TYPE_NB, SQUARE_NB>;
+using BoardColorHistory = Stats<std::int16_t, 16384, COLOR_NB, COLOR_NB, BOARD_COLOR_HISTORY_SIZE, PIECE_TYPE_NB, SQUARE_NB>;
 
 // Correction histories record differences between the static evaluation of
 // positions and their search score. It is used to improve the static evaluation
