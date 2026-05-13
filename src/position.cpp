@@ -506,13 +506,12 @@ void Position::set_state() const {
         Piece  pc = piece_on(s);
         st->key ^= Zobrist::psq[pc][s];
 
-        st->boardColorKey[color_of(pc)][(int)(s)&1] ^= Zobrist::psq[pc][s];
-
         if (type_of(pc) == PAWN)
             st->pawnKey ^= Zobrist::psq[pc][s];
 
         else
         {
+            st->boardColorKey[color_of(pc)][(int)(s)&1] ^= Zobrist::psq[pc][s];
             st->nonPawnKey[color_of(pc)] ^= Zobrist::psq[pc][s];
 
             if (type_of(pc) != KING)
@@ -916,12 +915,11 @@ void Position::do_move(Move                      m,
         {
             st->nonPawnMaterial[them] -= PieceValue[captured];
             st->nonPawnKey[them] ^= Zobrist::psq[captured][capsq];
+            st->boardColorKey[~us][(int)(capsq)&1] ^= Zobrist::psq[captured][capsq];
 
             if (type_of(captured) <= BISHOP)
                 st->minorPieceKey ^= Zobrist::psq[captured][capsq];
         }
-
-        st->boardColorKey[~us][(int)(capsq)&1] ^= Zobrist::psq[captured][capsq];
 
         dp.remove_pc = captured;
         dp.remove_sq = capsq;
@@ -938,8 +936,6 @@ void Position::do_move(Move                      m,
 
     // Update hash key
     k ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
-    st->boardColorKey[us][(int)(from)&1] ^= Zobrist::psq[pc][from];
-    st->boardColorKey[us][(int)(to)&1] ^= Zobrist::psq[pc][to];
 
     // Reset en passant square
     if (st->epSquare != SQ_NONE)
@@ -1037,6 +1033,8 @@ void Position::do_move(Move                      m,
 
     else
     {
+        st->boardColorKey[us][(int)(from)&1] ^= Zobrist::psq[pc][from];
+        st->boardColorKey[us][(int)(to)&1] ^= Zobrist::psq[pc][to];
         st->nonPawnKey[us] ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
 
         if (type_of(pc) <= BISHOP)
