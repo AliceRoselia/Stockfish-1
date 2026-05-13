@@ -619,6 +619,7 @@ void Search::Worker::undo_null_move(Position& pos) { pos.undo_null_move(); }
 // Reset histories, usually before a new game
 void Search::Worker::clear() {
     mainHistory.fill(-5);
+    boardColorHistory.fill(0);
     captureHistory.fill(-699);
 
     // Each thread is responsible for clearing their part of shared history
@@ -1031,7 +1032,7 @@ moves_loop:  // When in check, search starts here
       (ss - 4)->continuationHistory, (ss - 5)->continuationHistory, (ss - 6)->continuationHistory};
 
 
-    MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+    MovePicker mp(pos, ttData.move, depth, &mainHistory, &boardColorHistory, &lowPlyHistory, &captureHistory, contHist,
                   &sharedHistory, ss->ply);
 
     value = bestValue;
@@ -1651,7 +1652,7 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta)
     // Initialize a MovePicker object for the current position, and prepare to search
     // the moves. We presently use two stages of move generator in quiescence search:
     // captures, or evasions only when in check.
-    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &lowPlyHistory, &captureHistory,
+    MovePicker mp(pos, ttData.move, DEPTH_QS, &mainHistory, &boardColorHistory, &lowPlyHistory, &captureHistory,
                   contHist, &sharedHistory, ss->ply);
 
     // Step 5. Loop through all pseudo-legal moves until no moves remain or a beta
@@ -1928,6 +1929,9 @@ void update_quiet_histories(
 
     Color us = pos.side_to_move();
     workerThread.mainHistory[us][move.raw()] << bonus;  // Untuned to prevent duplicate effort
+
+    workerThread.boardColorHistory[~us][WHITE][board_color_key(pos,~us,WHITE)][type_of(pos.moved_piece(move))][move.to_sq()] << bonus;
+    workerThread.boardColorHistory[~us][BLACK][board_color_key(pos,~us,BLACK)][type_of(pos.moved_piece(move))][move.to_sq()] << bonus;
 
     if (ss->ply < LOW_PLY_HISTORY_SIZE)
         workerThread.lowPlyHistory[ss->ply][move.raw()] << bonus * 663 / 1024;

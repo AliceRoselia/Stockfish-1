@@ -46,6 +46,7 @@ struct StateInfo {
     // Copied when making a move
     Key    materialKey;
     Key    pawnKey;
+    Key    boardColorKey[COLOR_NB][COLOR_NB];
     Key    minorPieceKey;
     Key    nonPawnKey[COLOR_NB];
     Value  nonPawnMaterial[COLOR_NB];
@@ -161,6 +162,7 @@ class Position {
     Key key() const;
     Key material_key() const;
     Key pawn_key() const;
+    Key board_color_key(Color side, Color squareColor) const;
     Key minor_piece_key() const;
     Key non_pawn_key(Color c) const;
 
@@ -321,6 +323,8 @@ inline Key Position::adjust_key50(Key k) const {
 }
 
 inline Key Position::pawn_key() const { return st->pawnKey; }
+
+inline Key Position::board_color_key(Color side, Color squareColor) const {return st->boardColorKey[side][squareColor];}
 
 inline Key Position::material_key() const { return st->materialKey; }
 
