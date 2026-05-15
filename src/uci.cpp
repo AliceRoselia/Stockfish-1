@@ -82,7 +82,7 @@ void UCIEngine::init_search_update_listeners() {
     engine.set_on_update_full(
       [this](const auto& i) { on_update_full(i, engine.get_options()["UCI_ShowWDL"]); });
     engine.set_on_bestmove([](const auto& bm, const auto& p) { on_bestmove(bm, p); });
-    engine.set_on_verify_networks([](const auto& s) { print_info_string(s); });
+    engine.set_on_verify_network([](const auto& s) { print_info_string(s); });
 }
 
 void UCIEngine::loop() {
@@ -100,7 +100,7 @@ void UCIEngine::loop() {
         std::istringstream is(cmd);
 
         token.clear();  // Avoid a stale if getline() returns nothing or a blank line
-        is >> std::skipws >> token;
+        is >> token;
 
         if (token == "quit" || token == "stop")
             engine.stop();
@@ -152,15 +152,12 @@ void UCIEngine::loop() {
             sync_cout << compiler_info() << sync_endl;
         else if (token == "export_net")
         {
-            std::pair<std::optional<std::string>, std::string> files[2];
+            std::pair<std::optional<std::string>, std::string> file;
 
-            if (is >> std::skipws >> files[0].second)
-                files[0].first = files[0].second;
+            if (is >> file.second)
+                file.first = file.second;
 
-            if (is >> std::skipws >> files[1].second)
-                files[1].first = files[1].second;
-
-            engine.save_network(files);
+            engine.save_network(file);
         }
         else if (token == "--help" || token == "help" || token == "--license" || token == "license")
             sync_cout
@@ -248,7 +245,7 @@ void UCIEngine::bench(std::istream& args) {
     for (const auto& cmd : list)
     {
         std::istringstream is(cmd);
-        is >> std::skipws >> token;
+        is >> token;
 
         if (token == "go" || token == "eval")
         {
@@ -309,7 +306,7 @@ void UCIEngine::benchmark(std::istream& args) {
     engine.set_on_iter([](const auto&) {});
     engine.set_on_update_no_moves([](const auto&) {});
     engine.set_on_bestmove([](const auto&, const auto&) {});
-    engine.set_on_verify_networks([](const auto&) {});
+    engine.set_on_verify_network([](const auto&) {});
 
     Benchmark::BenchmarkSetup setup = Benchmark::setup_benchmark(args);
 
@@ -330,7 +327,7 @@ void UCIEngine::benchmark(std::istream& args) {
     for (const auto& cmd : setup.commands)
     {
         std::istringstream is(cmd);
-        is >> std::skipws >> token;
+        is >> token;
 
         if (token == "go")
         {
@@ -381,7 +378,7 @@ void UCIEngine::benchmark(std::istream& args) {
     for (const auto& cmd : setup.commands)
     {
         std::istringstream is(cmd);
-        is >> std::skipws >> token;
+        is >> token;
 
         if (token == "go")
         {
@@ -541,8 +538,7 @@ std::string UCIEngine::format_score(const Score& s) {
                    return std::string("mate ") + std::to_string(m);
                },
                [](Score::Tablebase tb) -> std::string {
-                   return std::string("cp ")
-                        + std::to_string((tb.win ? TB_CP - tb.plies : -TB_CP - tb.plies));
+                   return std::string("cp ") + std::to_string((tb.win ? TB_CP : -TB_CP) - tb.plies);
                },
                [](Score::InternalUnits units) -> std::string {
                    return std::string("cp ") + std::to_string(units.value);
