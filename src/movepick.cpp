@@ -36,9 +36,7 @@ enum Stages {
     CAPTURE_INIT,
     GOOD_CAPTURE,
     QUIET_INIT,
-    GOOD_QUIET,
-    BAD_CAPTURE,
-    BAD_QUIET,
+    EVERYTHING_ELSE,
 
     // generate evasion moves
     EVASION_TT,
@@ -108,30 +106,9 @@ struct MoveSorter {
 
 // Sort moves in descending order up to and including a given limit.
 // The order of moves smaller than the limit is left unspecified.
-void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
-    ExtMove *sortedEnd = begin, *p = begin + 1;
+void partial_insertion_sort(ExtMove* begin,ExtMove* start, ExtMove* end, int limit) {
 
-#ifdef USE_AVX512ICL
-    if (begin == end)
-        return;
-
-    MoveSorter sorter(*begin);
-    for (; p < end; ++p)
-    {
-        if (p->value >= limit)
-        {
-            if (sortedEnd - begin + 1 >= MoveSorter::MAX_ELEMENTS)  // sorter full
-                break;
-
-            sorter.insert(*p);
-            *p = *++sortedEnd;
-        }
-    }
-    sorter.write_sorted(begin, sortedEnd - begin + 1);
-    // Use scalar implementation for any remaining elements
-#endif
-
-    for (; p < end; ++p)
+    for (ExtMove *sortedEnd = start, *p = start+1; p < end; ++p)
         if (p->value >= limit)
         {
             ExtMove tmp = *p, *q;
@@ -222,9 +199,10 @@ ExtMove* MovePicker::score(const MoveList<Type>& ml) {
         const Piece     capturedPiece = pos.piece_on(to);
 
         if constexpr (Type == CAPTURES)
-            m.value = (*captureHistory)[pc][to][type_of(capturedPiece)]
-                    + 7 * int(PieceValue[capturedPiece]);
-
+        {
+            m.value = 3*((*captureHistory)[pc][to][type_of(capturedPiece)]
+                    + 7 * int(PieceValue[capturedPiece]));
+        }
         else if constexpr (Type == QUIETS)
         {
             // histories
@@ -247,6 +225,7 @@ ExtMove* MovePicker::score(const MoveList<Type>& ml) {
 
             if (ply < LOW_PLY_HISTORY_SIZE)
                 m.value += 8 * (*lowPlyHistory)[ply][m.raw()] / (1 + ply);
+            m.value += 5500;
         }
 
         else  // Type == EVASIONS
@@ -276,8 +255,6 @@ Move MovePicker::select(Pred filter) {
 // new pseudo-legal move on every call until there are no more moves left,
 // picking the move with the highest score from a list of generated moves.
 Move MovePicker::next_move() {
-
-    constexpr int goodQuietThreshold = -14000;
 top:
     switch (stage)
     {
@@ -297,14 +274,14 @@ top:
         cur = endBadCaptures = moves;
         endCur = endCaptures = score<CAPTURES>(ml);
 
-        partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
+        partial_insertion_sort(cur,cur, endCur, std::numeric_limits<int>::min());
         ++stage;
         goto top;
     }
 
     case GOOD_CAPTURE :
         if (select([&]() {
-                if (pos.see_ge(*cur, -cur->value / 18))
+                if (pos.see_ge(*cur, -cur->value / 54))
                     return true;
                 std::swap(*endBadCaptures++, *cur);
                 return false;
@@ -315,53 +292,38 @@ top:
         [[fallthrough]];
 
     case QUIET_INIT :
+
         if (!skipQuiets)
         {
+            cur = endBadCaptures;
             MoveList<QUIETS> ml(pos);
+            endCur = score<QUIETS>(ml);
+            cur = moves;
 
-            endCur = endGenerated = score<QUIETS>(ml);
-
-            partial_insertion_sort(cur, endCur, -3560 * depth);
+            partial_insertion_sort(cur,endBadCaptures-1, endCur, -3560*depth);
+        }
+        else
+        {
+            cur = moves;
+            endCur = endBadCaptures;
         }
 
         ++stage;
         [[fallthrough]];
 
-    case GOOD_QUIET :
-        if (!skipQuiets && select([&]() { return cur->value > goodQuietThreshold; }))
-            return *(cur - 1);
+    case EVERYTHING_ELSE:
 
-        // Prepare the pointers to loop over the bad captures
-        cur    = moves;
-        endCur = endBadCaptures;
 
-        ++stage;
-        [[fallthrough]];
+        return select([&]() {return (!skipQuiets || pos.capture_stage(*cur));});
 
-    case BAD_CAPTURE :
-        if (select([]() { return true; }))
-            return *(cur - 1);
-
-        // Prepare the pointers to loop over quiets again
-        cur    = endCaptures;
-        endCur = endGenerated;
-
-        ++stage;
-        [[fallthrough]];
-
-    case BAD_QUIET :
-        if (!skipQuiets)
-            return select([&]() { return cur->value <= goodQuietThreshold; });
-
-        return Move::none();
 
     case EVASION_INIT : {
         MoveList<EVASIONS> ml(pos);
 
         cur    = moves;
-        endCur = endGenerated = score<EVASIONS>(ml);
+        endCur = score<EVASIONS>(ml);
 
-        partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
+        partial_insertion_sort(cur,cur, endCur, std::numeric_limits<int>::min());
         ++stage;
         [[fallthrough]];
     }
