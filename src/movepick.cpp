@@ -304,7 +304,12 @@ top:
 
     case GOOD_CAPTURE :
         if (select([&]() {
-                if (pos.see_ge(*cur, -cur->value / 18))
+                const Square    to            = cur->to_sq();
+                const Piece     pc            = pos.moved_piece(*cur);
+                const Piece     capturedPiece = pos.piece_on(to);
+                const int newvalue = (*captureHistory)[pc][to][type_of(capturedPiece)]
+                    + 7 * int(PieceValue[capturedPiece]);
+                if (pos.see_ge(*cur, -newvalue / 18))
                     return true;
                 std::swap(*endBadCaptures++, *cur);
                 return false;
