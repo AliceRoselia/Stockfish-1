@@ -36,10 +36,15 @@
 namespace Stockfish {
 
 constexpr int PAWN_HISTORY_BASE_SIZE   = 8192;  // has to be a power of 2
+constexpr int BOARD_COLOR_HISTORY_SIZE = 8192;
 constexpr int UINT_16_HISTORY_SIZE     = std::numeric_limits<uint16_t>::max() + 1;
 constexpr int CORRHIST_BASE_SIZE       = UINT_16_HISTORY_SIZE;
 constexpr int CORRECTION_HISTORY_LIMIT = 1024;
 constexpr int LOW_PLY_HISTORY_SIZE     = 5;
+
+inline Key board_color_key(const Position& pos, Color side, Color boardColor){
+    return pos.board_color_key(side,boardColor)&(BOARD_COLOR_HISTORY_SIZE-1);
+}
 
 static_assert((PAWN_HISTORY_BASE_SIZE & (PAWN_HISTORY_BASE_SIZE - 1)) == 0,
               "PAWN_HISTORY_BASE_SIZE has to be a power of 2");
@@ -152,6 +157,9 @@ using ContinuationHistory = MultiArray<PieceToHistory, PIECE_NB, SQUARE_NB>;
 // PawnHistory is addressed by the pawn structure and a move's [piece][to]
 using PawnHistory =
   DynStats<AtomicStats<std::int16_t, 8192, PIECE_NB, SQUARE_NB>, PAWN_HISTORY_BASE_SIZE>;
+
+// BoardColorHistory is addressed by the pieces of the opponent on the color (board parity) and a move's [piece][to]
+using BoardColorHistory = Stats<std::int16_t, 8192, COLOR_NB, COLOR_NB, BOARD_COLOR_HISTORY_SIZE, PIECE_TYPE_NB, SQUARE_NB>;
 
 // Correction histories record differences between the static evaluation of
 // positions and their search score. It is used to improve the static evaluation
