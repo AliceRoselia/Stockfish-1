@@ -116,8 +116,31 @@ inline int H2(Key h) { return (h >> 16) & 0x1fff; }
 static std::array<Key, 8192>  cuckoo;
 static std::array<Move, 8192> cuckooMove;
 
+#ifdef USE_AVX512
+static Bitboard superpiece_mask_table[64][64];
+static Bitboard reverse_superpiece_mask_table[64][64];
+
+void init_superpiece_mask_tables(){
+    for (Square from = SQ_A1; from <= SQ_H8; ++from)
+    {
+        Bitboard superpiece_from = PseudoAttacks[KNIGHT][from] | PseudoAttacks[QUEEN][from];
+        for (Square blocker = SQ_A1; blocker <= SQ_H8; ++blocker)
+        {
+            Bitboard superpiece_blocked = PseudoAttacks[KNIGHT][from] | attacks_bb(QUEEN,from,square_bb(blocker));
+            superpiece_mask_table[blocker][from] = superpiece_blocked;
+            reverse_superpiece_mask_table[blocker][from] = superpiece_from & ~superpiece_blocked;
+        }
+    }
+}
+
+#endif // USE_AVX512
+
 // Initializes at startup the various arrays used to compute hash keys
 void Position::init() {
+
+    #ifdef USE_AVX512
+    init_superpiece_mask_tables();
+    #endif // USE_AVX512
 
     PRNG rng(1070372);
 
@@ -413,6 +436,11 @@ Position::set(const string& fenStr, bool isChess960, StateInfo* si) {
         else
             return PositionSetError("Invalid FEN. Invalid en-passant square.");
     }
+
+    #ifdef USE_AVX512
+    for (Square s = SQ_A1; s <= SQ_H8; ++s)
+        superpiece_attacks[s] = attacks_bb<QUEEN>(s,pieces());
+    #endif // USE_AVX512
 
     if (!enpassant || !legalEP)
         st->epSquare = SQ_NONE;
@@ -805,6 +833,104 @@ bool Position::gives_check(Move m) const {
     }
     }
 }
+#ifdef USE_AVX512
+void Position::add_blocker(Square s){
+    auto superpiece_masks = superpiece_mask_table[s];
+
+    //We will unroll everything because there are only 8 rows.
+
+    __m512i row1 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[0]));
+    __m512i row2 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[8]));
+    __m512i row3 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[16]));
+    __m512i row4 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[24]));
+    __m512i row5 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[32]));
+    __m512i row6 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[40]));
+    __m512i row7 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[48]));
+    __m512i row8 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[56]));
+
+    __m512i mask1 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[0]));
+    __m512i mask2 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[8]));
+    __m512i mask3 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[16]));
+    __m512i mask4 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[24]));
+    __m512i mask5 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[32]));
+    __m512i mask6 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[40]));
+    __m512i mask7 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[48]));
+    __m512i mask8 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[56]));
+
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[0]),_mm512_and_epi64(row1,mask1));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[8]),_mm512_and_epi64(row2,mask2));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[16]),_mm512_and_epi64(row3,mask3));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[24]),_mm512_and_epi64(row4,mask4));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[32]),_mm512_and_epi64(row5,mask5));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[40]),_mm512_and_epi64(row6,mask6));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[48]),_mm512_and_epi64(row7,mask7));
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[56]),_mm512_and_epi64(row8,mask8));
+
+}
+void Position::remove_blocker(Square s){
+    Bitboard occupied = superpiece_attacks[s] & PseudoAttacks(QUEEN,s) & pieces();
+    auto reverse_superpiece_masks = reverse_superpiece_mask_table[s];
+
+    //We will unroll everything because there are only 8 rows.
+
+    __m512i row1 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[0]));
+    __m512i row2 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[8]));
+    __m512i row3 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[16]));
+    __m512i row4 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[24]));
+    __m512i row5 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[32]));
+    __m512i row6 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[40]));
+    __m512i row7 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[48]));
+    __m512i row8 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[56]));
+
+    __m512i mask1 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[0])); //
+    __m512i mask2 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[8]));
+    __m512i mask3 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[16]));
+    __m512i mask4 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[24]));
+    __m512i mask5 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[32]));
+    __m512i mask6 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[40]));
+    __m512i mask7 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[48]));
+    __m512i mask8 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&reverse_superpiece_masks[56]));
+
+    row1 = _mm512_or_epi64(row1,mask1);
+    row2 = _mm512_or_epi64(row2,mask2);
+    row3 = _mm512_or_epi64(row3,mask3);
+    row4 = _mm512_or_epi64(row4,mask4);
+    row5 = _mm512_or_epi64(row5,mask5);
+    row6 = _mm512_or_epi64(row6,mask6);
+    row7 = _mm512_or_epi64(row7,mask7);
+    row8 = _mm512_or_epi64(row8,mask8);
+
+    while (occupied)
+    {
+        Square s2 = pop_lsb(occupied);
+        auto superpiece_masks = superpiece_mask_table[s2];
+        mask1 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[0]));
+        mask2 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[8]));
+        mask3 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[16]));
+        mask4 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[24]));
+        mask5 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[32]));
+        mask6 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[40]));
+        mask7 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[48]));
+        mask8 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[56]));
+        row1 = _mm512_and_epi64(row1,mask1);
+        row2 = _mm512_and_epi64(row2,mask2);
+        row3 = _mm512_and_epi64(row3,mask3);
+        row4 = _mm512_and_epi64(row4,mask4);
+        row5 = _mm512_and_epi64(row5,mask5);
+        row6 = _mm512_and_epi64(row6,mask6);
+        row7 = _mm512_and_epi64(row7,mask7);
+        row8 = _mm512_and_epi64(row8,mask8);
+    }
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[0]),row1);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[8]),row2);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[16]),row3);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[24]),row4);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[32]),row5);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[40]),row6);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[48]),row7);
+    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[56]),row8);
+}
+#endif // USE_AVX512
 
 
 // Makes a move, and saves all information necessary
@@ -854,12 +980,13 @@ void Position::do_move(Move                      m,
     assert(captured == NO_PIECE || color_of(captured) == (m.type_of() != CASTLING ? them : us));
     assert(type_of(captured) != KING);
 
+    [[maybe_unused]] Square rfrom, rto;
+
     if (m.type_of() == CASTLING)
     {
         assert(pc == make_piece(us, KING));
         assert(captured == make_piece(us, ROOK));
 
-        Square rfrom, rto;
         do_castling<true>(us, from, to, rfrom, rto, &dts, &dp);
 
         k ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
@@ -1030,6 +1157,28 @@ void Position::do_move(Move                      m,
             put_piece(toPc, to, &dts);
         }
     }
+
+    #ifdef USE_AVX512
+    if (m.type_of() == CASTLING)
+    {
+        captured = NO_PIECE;
+        add_blocker(to);
+        add_blocker(rto);
+        remove_blocker(rfrom);
+    }
+    else if (captured)
+    {
+        if (m.type_of() == EN_PASSANT)
+        {
+            add_blocker(to);
+            remove_blocker(to - pawn_push(us));
+        }
+    }
+    else{
+        add_blocker(to);
+    }
+    remove_blocker(from);
+    #endif // USE_AVX512
 
     // Set capture piece
     st->capturedPiece = captured;

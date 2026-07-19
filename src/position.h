@@ -126,6 +126,12 @@ class Position {
     Bitboard pinners(Color c) const;
 
     // Attacks to/from a given square
+    #ifdef USE_AVX512
+    alignas(64) Bitboard superpiece_attacks[64];
+    void add_blocker(Square s);
+    void remove_blocker(Square s);
+    #endif // USE_AVX512
+
     Bitboard attackers_to(Square s) const;
     Bitboard attackers_to(Square s, Bitboard occupied) const;
     bool     attackers_to_exist(Square s, Bitboard occupied, Color c) const;

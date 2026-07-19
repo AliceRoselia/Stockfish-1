@@ -194,7 +194,11 @@ Move* generate_moves(const Position& pos, Move* moveList, Bitboard target) {
     while (bb)
     {
         Square   from = pop_lsb(bb);
+        #ifdef USE_AVX512
+        Bitboard b    = pos.superpiece_attacks[from] & PseudoAttacks[Pt][from];
+        #else
         Bitboard b    = Attacks::attacks_bb<Pt>(from, pos.pieces()) & target;
+        #endif // USE_AVX512
 
         moveList = splat_moves(moveList, from, b);
     }
