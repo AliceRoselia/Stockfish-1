@@ -183,7 +183,6 @@ Move* generate_pawn_moves(const Position& pos, Move* moveList, Bitboard target) 
     return moveList;
 }
 
-
 template<Color Us, PieceType Pt>
 Move* generate_moves(const Position& pos, Move* moveList, Bitboard target) {
 
@@ -195,7 +194,7 @@ Move* generate_moves(const Position& pos, Move* moveList, Bitboard target) {
     {
         Square   from = pop_lsb(bb);
         #ifdef USE_AVX512
-        Bitboard b    = pos.superpiece_attacks[from] & PseudoAttacks[Pt][from];
+        Bitboard b    = pos.superpiece_attacks[from] & Stockfish::Attacks::PseudoAttacks[Pt][from] & target;
         #else
         Bitboard b    = Attacks::attacks_bb<Pt>(from, pos.pieces()) & target;
         #endif // USE_AVX512

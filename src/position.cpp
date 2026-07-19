@@ -117,10 +117,12 @@ static std::array<Key, 8192>  cuckoo;
 static std::array<Move, 8192> cuckooMove;
 
 #ifdef USE_AVX512
-static Bitboard superpiece_mask_table[64][64];
-static Bitboard reverse_superpiece_mask_table[64][64];
+alignas(64) static Bitboard superpiece_mask_table[64][64];
+alignas(64) static Bitboard reverse_superpiece_mask_table[64][64];
 
-void init_superpiece_mask_tables(){
+#include<iostream>
+
+inline void init_superpiece_mask_tables(){
     for (Square from = SQ_A1; from <= SQ_H8; ++from)
     {
         Bitboard superpiece_from = PseudoAttacks[KNIGHT][from] | PseudoAttacks[QUEEN][from];
@@ -439,7 +441,7 @@ Position::set(const string& fenStr, bool isChess960, StateInfo* si) {
 
     #ifdef USE_AVX512
     for (Square s = SQ_A1; s <= SQ_H8; ++s)
-        superpiece_attacks[s] = attacks_bb<QUEEN>(s,pieces());
+        superpiece_attacks[s] = attacks_bb<QUEEN>(s,pieces()) | attacks_bb<KNIGHT>(s,pieces());
     #endif // USE_AVX512
 
     if (!enpassant || !legalEP)
@@ -833,8 +835,10 @@ bool Position::gives_check(Move m) const {
     }
     }
 }
+
 #ifdef USE_AVX512
 void Position::add_blocker(Square s){
+    //std::cout<<"Add blocker"<<std::endl;
     auto superpiece_masks = superpiece_mask_table[s];
 
     //We will unroll everything because there are only 8 rows.
@@ -857,18 +861,21 @@ void Position::add_blocker(Square s){
     __m512i mask7 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[48]));
     __m512i mask8 = _mm512_load_epi64(reinterpret_cast<const __m512i*>(&superpiece_masks[56]));
 
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[0]),_mm512_and_epi64(row1,mask1));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[8]),_mm512_and_epi64(row2,mask2));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[16]),_mm512_and_epi64(row3,mask3));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[24]),_mm512_and_epi64(row4,mask4));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[32]),_mm512_and_epi64(row5,mask5));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[40]),_mm512_and_epi64(row6,mask6));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[48]),_mm512_and_epi64(row7,mask7));
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[56]),_mm512_and_epi64(row8,mask8));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[0]),_mm512_and_epi64(row1,mask1));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[8]),_mm512_and_epi64(row2,mask2));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[16]),_mm512_and_epi64(row3,mask3));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[24]),_mm512_and_epi64(row4,mask4));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[32]),_mm512_and_epi64(row5,mask5));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[40]),_mm512_and_epi64(row6,mask6));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[48]),_mm512_and_epi64(row7,mask7));
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[56]),_mm512_and_epi64(row8,mask8));
 
 }
 void Position::remove_blocker(Square s){
-    Bitboard occupied = superpiece_attacks[s] & PseudoAttacks(QUEEN,s) & pieces();
+    //std::cout<<"Remove blocker"<<std::endl;
+    //Bitboard occupied = attacks_bb<QUEEN>(s,pieces());
+    Bitboard occupied = superpiece_attacks[s] & PseudoAttacks[QUEEN][s] & pieces();
+    //std::cout<<Bitboards::pretty(occupied)<<std::endl;
     auto reverse_superpiece_masks = reverse_superpiece_mask_table[s];
 
     //We will unroll everything because there are only 8 rows.
@@ -921,14 +928,14 @@ void Position::remove_blocker(Square s){
         row7 = _mm512_and_epi64(row7,mask7);
         row8 = _mm512_and_epi64(row8,mask8);
     }
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[0]),row1);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[8]),row2);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[16]),row3);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[24]),row4);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[32]),row5);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[40]),row6);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[48]),row7);
-    _mm512_storeu_epi64(reinterpret_cast<const __m512i*>(&superpiece_attacks[56]),row8);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[0]),row1);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[8]),row2);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[16]),row3);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[24]),row4);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[32]),row5);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[40]),row6);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[48]),row7);
+    _mm512_storeu_epi64(reinterpret_cast<__m512i*>(&superpiece_attacks[56]),row8);
 }
 #endif // USE_AVX512
 
@@ -980,7 +987,7 @@ void Position::do_move(Move                      m,
     assert(captured == NO_PIECE || color_of(captured) == (m.type_of() != CASTLING ? them : us));
     assert(type_of(captured) != KING);
 
-    [[maybe_unused]] Square rfrom, rto;
+    Square rfrom, rto;
 
     if (m.type_of() == CASTLING)
     {
@@ -1159,12 +1166,12 @@ void Position::do_move(Move                      m,
     }
 
     #ifdef USE_AVX512
+    remove_blocker(from);
     if (m.type_of() == CASTLING)
     {
-        captured = NO_PIECE;
+        remove_blocker(rfrom);
         add_blocker(to);
         add_blocker(rto);
-        remove_blocker(rfrom);
     }
     else if (captured)
     {
@@ -1177,7 +1184,6 @@ void Position::do_move(Move                      m,
     else{
         add_blocker(to);
     }
-    remove_blocker(from);
     #endif // USE_AVX512
 
     // Set capture piece
@@ -1244,10 +1250,9 @@ void Position::undo_move(Move m) {
         pc = make_piece(us, PAWN);
         swap_piece(to, pc);
     }
-
+    Square rfrom, rto;
     if (m.type_of() == CASTLING)
     {
-        Square rfrom, rto;
         do_castling<false>(us, from, to, rfrom, rto);
     }
     else
@@ -1272,6 +1277,26 @@ void Position::undo_move(Move m) {
             put_piece(st->capturedPiece, capsq);  // Restore the captured piece
         }
     }
+    #ifdef USE_AVX512
+    if (m.type_of() == CASTLING)
+    {
+        remove_blocker(to);
+        remove_blocker(rto);
+        add_blocker(rfrom);
+    }
+    else if (st->capturedPiece)
+    {
+        if (m.type_of() == EN_PASSANT)
+        {
+            add_blocker(to - pawn_push(us));
+            remove_blocker(to);
+        }
+    }
+    else{
+        remove_blocker(to);
+    }
+    add_blocker(from);
+    #endif // USE_AVX512
 
     // Finally point our state pointer back to the previous state
     st = st->previous;
