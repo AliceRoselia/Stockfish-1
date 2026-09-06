@@ -43,7 +43,7 @@ Value Eval::evaluate(const Eval::NNUE::Network&     network,
                      const Position&                pos,
                      Eval::NNUE::AccumulatorStack&  accumulators,
                      Eval::NNUE::AccumulatorCaches& caches,
-                     int                            optimism) {
+                     [[maybe_unused]] int                            optimism) {
 
     assert(!pos.checkers());
 
@@ -51,21 +51,7 @@ Value Eval::evaluate(const Eval::NNUE::Network&     network,
 
     Value nnue = psqt + positional;
 
-    // Blend optimism and eval with nnue complexity
-    int nnueComplexity = std::abs(psqt - positional);
-    optimism += optimism * i64(nnueComplexity) / 476;
-    nnue -= nnue * i64(nnueComplexity) / 18236;
-
-    int material = 534 * pos.count<PAWN>() + pos.non_pawn_material();
-    int v        = nnue + (nnue * i64(material) + optimism * i64(7675)) / 91000;
-
-    // Damp down the evaluation linearly when shuffling
-    v -= v * pos.rule50_count() / 199;
-
-    // Guarantee evaluation does not hit the tablebase range
-    v = std::clamp(v, VALUE_TB_LOSS_IN_MAX_PLY + 1, VALUE_TB_WIN_IN_MAX_PLY - 1);
-
-    return v;
+    return nnue;
 }
 
 // Like evaluate(), but instead of returning a value, it returns
