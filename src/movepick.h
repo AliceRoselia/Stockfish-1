@@ -65,6 +65,9 @@ class MovePicker {
     const SharedHistories*       sharedHistory;
     Move                         ttMove;
     ExtMove *                    cur, *endCur, *endBadCaptures, *endCaptures, *endGenerated;
+    #if defined(__GNUC__) || defined(__clang__)
+    void*                        stagePointer;
+    #endif // defined
     int                          stage;
     int                          threshold;
     Depth                        depth;

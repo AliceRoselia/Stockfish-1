@@ -150,6 +150,8 @@ void partial_insertion_sort(ExtMove* begin, ExtMove* end, int limit) {
 // good moves first, and how important move ordering is at the current node.
 
 // MovePicker constructor for the main search and for the quiescence search
+
+
 MovePicker::MovePicker(const Position&              p,
                        Move                         ttm,
                        Depth                        d,
@@ -174,6 +176,9 @@ MovePicker::MovePicker(const Position&              p,
 
     else
         stage = (depth > 0 ? MAIN_TT : QSEARCH_TT) + !(ttm && pos.pseudo_legal(ttm));
+    #if defined(__GNUC__) || defined(__clang__)
+        stagePointer = nullptr;
+    #endif // defined
 }
 
 // MovePicker constructor for ProbCut: we generate captures with Static Exchange
@@ -186,6 +191,9 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     assert(!pos.checkers());
 
     stage = PROBCUT_TT + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm));
+    #if defined(__GNUC__) || defined(__clang__)
+        stagePointer = nullptr;
+    #endif // defined
 }
 
 // Assigns a numerical value to each move in a list, used for sorting.
@@ -279,46 +287,126 @@ Move MovePicker::select(Pred filter) {
 // This is the most important method of the MovePicker class. We emit one
 // new pseudo-legal move on every call until there are no more moves left,
 // picking the move with the highest score from a list of generated moves.
+#if (defined(__GNUC__) || defined(__clang__))
+
+#define start_state_machine if (stagePointer == nullptr) stagePointer = stageTable[stage]; \
+goto *stagePointer;
+#define advance_stage ++stage; stagePointer = stageTable[stage];
+#define finish_state_machine
+#define TT_STAGE TT_LABEL:
+#define CAPTURE_INIT_STAGE CAPTURE_INIT_LABEL:
+#define GOOD_CAPTURE_STAGE GOOD_CAPTURE_LABEL:
+#define QUIET_INIT_STAGE QUIET_INIT_LABEL:
+#define GOOD_QUIET_STAGE GOOD_QUIET_LABEL:
+#define BAD_CAPTURE_STAGE BAD_CAPTURE_LABEL:
+#define BAD_QUIET_STAGE BAD_QUIET_LABEL:
+#define EVASION_INIT_STAGE EVASION_INIT_LABEL:
+#define CAPTURE_ANY_STAGE CAPTURE_ANY_LABEL:
+#define PROBCUT_STAGE PROBCUT_LABEL:
+#define FALLTHROUGH
+
+#else
+
+#define advance_stage ++stage;
+#define start_state_machine switch(stage){
+#define finish_state_machine }
+
+#define TT_STAGE case MAIN_TT:\
+    case EVASION_TT:\
+    case QSEARCH_TT:\
+    case PROBCUT_TT:
+#define CAPTURE_INIT_STAGE case CAPTURE_INIT :\
+    case PROBCUT_INIT:\
+    case QCAPTURE_INIT:
+#define GOOD_CAPTURE_STAGE case GOOD_CAPTURE:
+#define QUIET_INIT_STAGE case QUIET_INIT:
+#define GOOD_QUIET_STAGE case GOOD_QUIET:
+#define BAD_CAPTURE_STAGE case BAD_CAPTURE:
+#define BAD_QUIET_STAGE case BAD_QUIET:
+#define EVASION_INIT_STAGE case EVASION_INIT:
+#define CAPTURE_ANY_STAGE case EVASION:\
+    case QCAPTURE:
+#define PROBCUT_STAGE case PROBCUT :
+
+#define FALLTHROUGH [[fallthrough]];
+
+#endif // defined
+
+/*
+enum Stages {
+    // generate main search moves
+    MAIN_TT,
+    CAPTURE_INIT,
+    GOOD_CAPTURE,
+    QUIET_INIT,
+    GOOD_QUIET,
+    BAD_CAPTURE,
+    BAD_QUIET,
+
+    // generate evasion moves
+    EVASION_TT,
+    EVASION_INIT,
+    EVASION,
+
+    // generate probcut moves
+    PROBCUT_TT,
+    PROBCUT_INIT,
+    PROBCUT,
+
+    // generate qsearch moves
+    QSEARCH_TT,
+    QCAPTURE_INIT,
+    QCAPTURE
+};
+*/
+
 Move MovePicker::next_move() {
+    #if (defined(__GNUC__) || defined(__clang__))
+    #pragma GCC diagnostic push //Ignore this for now. Nonstandard feature for GCC and CLANG.
+    #pragma GCC diagnostic ignored "-Wpedantic"
+    static constexpr void* stageTable[] = {&&TT_LABEL, &&CAPTURE_INIT_LABEL, &&GOOD_CAPTURE_LABEL, &&QUIET_INIT_LABEL,
+&&GOOD_QUIET_LABEL, &&BAD_CAPTURE_LABEL, &&BAD_QUIET_LABEL, &&TT_LABEL,
+&&EVASION_INIT_LABEL, &&CAPTURE_ANY_LABEL, &&TT_LABEL, &&CAPTURE_INIT_LABEL,
+&&PROBCUT_LABEL, &&TT_LABEL, &&CAPTURE_INIT_LABEL, &&CAPTURE_ANY_LABEL
+};
+#endif
 
     constexpr int goodQuietThreshold = -14000;
 top:
-    switch (stage)
-    {
+    start_state_machine
 
-    case MAIN_TT :
-    case EVASION_TT :
-    case QSEARCH_TT :
-    case PROBCUT_TT :
-        ++stage;
+    #if (defined(__GNUC__) || defined(__clang__))
+    #pragma GCC diagnostic pop //Now we can re-enable the thing.
+    #endif
+
+    TT_STAGE
+        advance_stage
         return ttMove;
 
-    case CAPTURE_INIT :
-    case PROBCUT_INIT :
-    case QCAPTURE_INIT : {
+    CAPTURE_INIT_STAGE{
         MoveList<CAPTURES> ml(pos);
 
         cur = endBadCaptures = moves;
         endCur = endCaptures = score<CAPTURES>(ml);
 
         partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
-        ++stage;
+        advance_stage
         goto top;
     }
 
-    case GOOD_CAPTURE :
-        if (select([&]() {
-                if (pos.see_ge(*cur, -cur->value / 18))
-                    return true;
-                std::swap(*endBadCaptures++, *cur);
-                return false;
-            }))
-            return *(cur - 1);
+    GOOD_CAPTURE_STAGE
+    if (select([&]() {
+            if (pos.see_ge(*cur, -cur->value / 18))
+                return true;
+            std::swap(*endBadCaptures++, *cur);
+            return false;
+        }))
+        return *(cur - 1);
 
-        ++stage;
-        [[fallthrough]];
+    advance_stage
+    FALLTHROUGH
 
-    case QUIET_INIT :
+    QUIET_INIT_STAGE
         if (!skipQuiets)
         {
             MoveList<QUIETS> ml(pos);
@@ -328,10 +416,10 @@ top:
             partial_insertion_sort(cur, endCur, -3560 * depth);
         }
 
-        ++stage;
-        [[fallthrough]];
+        advance_stage
+        FALLTHROUGH
 
-    case GOOD_QUIET :
+    GOOD_QUIET_STAGE
         if (!skipQuiets && select([&]() { return cur->value > goodQuietThreshold; }))
             return *(cur - 1);
 
@@ -339,10 +427,10 @@ top:
         cur    = moves;
         endCur = endBadCaptures;
 
-        ++stage;
-        [[fallthrough]];
+        advance_stage
+        FALLTHROUGH
 
-    case BAD_CAPTURE :
+    BAD_CAPTURE_STAGE
         if (select([]() { return true; }))
             return *(cur - 1);
 
@@ -350,37 +438,36 @@ top:
         cur    = endCaptures;
         endCur = endGenerated;
 
-        ++stage;
-        [[fallthrough]];
+        advance_stage
+        FALLTHROUGH
 
-    case BAD_QUIET :
+    BAD_QUIET_STAGE
         if (!skipQuiets)
             return select([&]() { return cur->value <= goodQuietThreshold; });
 
         return Move::none();
 
-    case EVASION_INIT : {
+    EVASION_INIT_STAGE {
         MoveList<EVASIONS> ml(pos);
 
         cur    = moves;
         endCur = endGenerated = score<EVASIONS>(ml);
 
         partial_insertion_sort(cur, endCur, std::numeric_limits<int>::min());
-        ++stage;
-        [[fallthrough]];
+        advance_stage
+        FALLTHROUGH
     }
-
-    case EVASION :
-    case QCAPTURE :
+    CAPTURE_ANY_STAGE
         return select([]() { return true; });
 
-    case PROBCUT :
+    PROBCUT_STAGE
         return select([&]() { return pos.see_ge(*cur, threshold); });
-    }
+    finish_state_machine
 
     assert(false);
     return Move::none();  // Silence warning
 }
+
 
 void MovePicker::skip_quiet_moves() { skipQuiets = true; }
 
