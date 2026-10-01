@@ -1424,7 +1424,7 @@ moves_loop:  // When in check, search starts here
 
             // If expected reduction is high, we reduce search depth here
             value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha,
-                                   newDepth - (r > 5234) - (r > 5487 && newDepth > 2) + (move == ttData.move && (ss->statScore < -10000)) , !cutNode);
+                                   newDepth - (r > 5234) - (r > 5487 && newDepth > 2) + (move == ttData.move && (ss->statScore < -18000)) , !cutNode);
         }
 
         // Step 20. For PV nodes only, do a full PV search on the first move
